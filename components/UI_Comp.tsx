@@ -12,17 +12,12 @@ export default function UI_Comp() {
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
-  const { data, isLoading } = useBalance({
+  const { data } = useBalance({
     address: address,
     token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
-  }) as {
-    data: { formatted: string; symbol: string } | undefined;
-    isLoading: boolean;
-  };
+  });
   
 
-  
-  
   if (isConnected) {
   
   return(
@@ -31,7 +26,7 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {isLoading ? (
+            {data?.value ? (
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
