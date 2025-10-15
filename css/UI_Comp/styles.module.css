@@ -1,0 +1,99 @@
+.container,
+.connector,
+.connector div,
+.info,
+.info span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 100dvw;
+    height: 100dvh;
+    backdrop-filter: blur(10px);
+    z-index: 999;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.connector {
+    width: min(400px, 100dvw);
+    height: 500px;
+    background-color: var(--background_wagmi);
+    position: fixed;
+    border: 2px solid var(--foreground_wagmi);
+    flex-flow: column;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease forwards;
+}
+.connector div {
+    flex-flow: column;
+    padding: 1rem 0;
+    width: 90%;
+}
+
+.connector div p {
+    color: #f00;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.connector img {
+    margin: 1rem 0;
+    filter: var(--invert-cordy-image);
+}
+.connector button {
+    width: 300px;
+    padding: 1rem;
+    background-color: var(--foreground_wagmi);
+    color: var(--background_wagmi);
+    font-weight: bold;
+    cursor: pointer;
+    border: transparent;
+    transition: all 0.5s ease;
+    margin: 1rem 0;
+    transition: all 0.5s ease-in-out;
+}
+.connector button:hover {
+    opacity: 0.5;
+}
+.connector button:active {
+    transform: scale(0.5);
+}
+.info span {
+    flex-flow: column;
+}
+.info span p {
+    width: 80%;
+    overflow: hidden;    
+    white-space: nowrap;  
+    text-overflow: ellipsis; 
+    margin: 1rem 0;
+    font-weight: bolder;
+}
+.closed {
+    padding: 1rem;
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-weight: bolder;
+    cursor: pointer;
+}
+@media (max-width: 800px) {
+    .connector {
+        bottom: 0;
+    }
+}
+

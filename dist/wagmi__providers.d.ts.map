@@ -1,0 +1,1 @@
+{"version":3,"file":"wagmi__providers.d.ts","sourceRoot":"","sources":["../wagmi__providers.tsx"],"names":[],"mappings":"AACA,OAAO,EAAuC,SAAS,EAAE,MAAM,OAAO,CAAC;AAMvE,KAAK,iBAAiB,GAAG;IACvB,SAAS,EAAE,MAAM,IAAI,CAAC;IACtB,UAAU,EAAE,MAAM,IAAI,CAAC;CACxB,CAAC;AAMF,MAAM,CAAC,OAAO,UAAU,eAAe,CAAC,EAAE,QAAQ,EAAE,EAAE;IAAE,QAAQ,EAAE,SAAS,CAAA;CAAE,2CAkB5E;AAED,wBAAgB,cAAc,sBAI7B"}

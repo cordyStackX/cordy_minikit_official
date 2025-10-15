@@ -1,0 +1,40 @@
+:root {
+    --foreground_wagmi: #171717;
+    --background_wagmi: #FAFAFA;
+    --invert-cordy-image: invert(1);
+    --invert-cordy-image_1: invert(0);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground_wagmi: #ededed;
+        --background_wagmi: #121212;
+        --invert-cordy-image: invert(0);
+        --invert-cordy-image_1: invert(1);
+    }
+}
+
+.button__button {
+    width: 150px;
+    padding: 0.8rem;
+    background-color: var(--foreground_wagmi);
+    color: var(--background_wagmi);
+    font-weight: bold;
+    cursor: pointer;
+    border: transparent;
+    transition: all 0.5s ease-in-out;
+    overflow: hidden;    
+    white-space: nowrap;  
+    text-overflow: ellipsis; 
+    text-align: center;
+}
+.button__button img {
+    filter: var(--invert-cordy-image_1);
+}
+
+.button__button:hover {
+    opacity: 0.5;
+}
+.button__button:active {
+    transform: scale(0.6);
+}
