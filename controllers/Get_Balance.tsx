@@ -3,16 +3,13 @@ import ERC20_ABI from "../config/ERC20_ABI.json";
 
 // RPC URLs for different chains
 const RPC_URLS: Record<number, string> = {
-  1: process.env.NEXT_PUBLIC_MAINNET_RPC || "https://eth.llamarpc.com", // Ethereum Mainnet
-  8453: process.env.NEXT_PUBLIC_BASE_RPC || "https://mainnet.base.org", // Base Mainnet
-  84532: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org", // Base Sepolia
-  // Add more chains as needed
+  1: process.env.NEXT_PUBLIC_RPC_ENDPOINT || "https://eth.llamarpc.com"
 };
 
 export default async function getTokenBalance(
   address: string, 
   tokenAddress: string, 
-  chainId: number = 8453, // Default to Base mainnet
+  chainId: number = 1,
   decimals: number = 18
 ) {
   

@@ -28,7 +28,7 @@ export default function UI_Comp() {
       address, 
       process.env.NEXT_PUBLIC_TOKENADDRESS,
       chainId, // Pass the current chain ID
-      18 // You can make this configurable too
+      18
     );
 
     setBalance(balance);
