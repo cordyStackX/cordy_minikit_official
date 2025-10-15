@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
-  const { isConnected, address, chainId, chain } = useAccount();
+  const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
@@ -18,16 +18,15 @@ export default function UI_Comp() {
     
     Get_Balance();
 
-  }, [balance, chainId]); // Re-fetch when chain changes
+  }, [balance]); // Re-fetch when chain changes
 
   const Get_Balance = async () => {
 
-    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS || !chainId) return;
+    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
 
     const balance = await getTokenBalance(
       address, 
-      process.env.NEXT_PUBLIC_TOKENADDRESS,
-      chainId
+      process.env.NEXT_PUBLIC_TOKENADDRESS
     );
 
     setBalance(balance);
@@ -54,7 +53,6 @@ export default function UI_Comp() {
                 <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
-              
             ) : (
                 <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
             )}
