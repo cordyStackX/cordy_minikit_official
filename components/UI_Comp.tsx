@@ -1,9 +1,9 @@
 "use client";
 import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
-import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
+import { WalletButton, Disconnect } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 
@@ -12,32 +12,13 @@ export default function UI_Comp() {
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
-  const [balance, setBalance] = useState("");
+  const { data, isLoading, error } = useBalance({
+    address,
+    token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
+  });
 
-  useEffect(() => {
-    
-    Get_Balance();
-
-  }, [balance]); // Re-fetch when chain changes
-
-  const Get_Balance = async () => {
-
-    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
-
-    const balance = await getTokenBalance(
-      address, 
-      process.env.NEXT_PUBLIC_TOKENADDRESS
-    );
-
-    setBalance(balance);
-    return;
-  };
   
   if (isConnected) {
-  
-  if (balance === "") {
-    Get_Balance();
-  }
   
   return(
     <div className={UI_Comp__css.container}>
@@ -45,14 +26,16 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {balance ? (
+            {!isLoading && data ? (
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
+            ) : error ? (
+                <p style={{color: "#f00"}}>Error loading balance</p>
             ) : (
                 <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
             )}
