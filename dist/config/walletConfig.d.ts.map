@@ -1,1 +1,1 @@
-{"version":3,"file":"walletConfig.d.ts","sourceRoot":"","sources":["../../config/walletConfig.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,YAAY,EAAE,MAAM,OAAO,CAAC;AAO3C,eAAO,MAAM,MAAM,EAAE,UAAU,CAAC,OAAO,YAAY,CAejD,CAAC"}
+{"version":3,"file":"walletConfig.d.ts","sourceRoot":"","sources":["../../config/walletConfig.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,YAAY,EAA0B,MAAM,OAAO,CAAC;AAQnE,wBAAgB,SAAS,IAAI,UAAU,CAAC,OAAO,YAAY,CAAC,CAiB3D;AAGD,eAAO,MAAM,MAAM,EAAE,UAAU,CAAC,OAAO,YAAY,CAEV,CAAC"}
