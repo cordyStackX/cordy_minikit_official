@@ -40,6 +40,7 @@ It’s designed to be embedded in frontend frameworks or browser extensions wher
 
 ### 2. High-level Architecture
 
+```json
 root
 ├── chains/ # chain definitions and helpers
 ├── client__provider.tsx # provider client wrapper (wagmi/viem context)
@@ -50,6 +51,7 @@ root
 ├── dist/ # compiled JS + .d.ts for publishing
 ├── index.ts # main export aggregator
 └── package.json
+```
 
 
 
