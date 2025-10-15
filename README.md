@@ -7,8 +7,8 @@ Unauthorized removal of this notice violates the license terms.
 
 # 🧩 cordy_minikit — Web3 Mini Kit by cordyStackX
 
-A lightweight Web3 toolkit for building wallet UIs, controllers, and provider wrappers — designed for modern frameworks like **Next.js**, **Vite**, and **React-based browser extensions**.  
-Built with ⚡ **Wagmi**, 🪄 **Viem**, and 🧠 **TypeScript** (compiled to JS for runtime).
+A lightweight Web3 toolkit for building wallet UIs, controllers, and provider wrappers — designed for modern frameworks like **Next.js** and **Vite**
+Built with **Wagmi**, **Viem**, **Ethers** and **TypeScript** (compiled to JS for runtime).
 
 ---
 
@@ -24,7 +24,7 @@ Built with ⚡ **Wagmi**, 🪄 **Viem**, and 🧠 **TypeScript** (compiled to JS
   Easy theming support for dark/light mode.
 - 📦 **Tree-shakable, Typed, and Lightweight**
 - 🧩 **Framework-Agnostic**
-  Works with Next.js, Vite, CRA, or React extensions.
+  Works with Next.js or Vite.
 
 ---
 
