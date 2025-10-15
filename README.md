@@ -1,3 +1,10 @@
+---
+© 2025 Cordy StackX (@cordystackx)
+Licensed under the MIT License.  
+Unauthorized removal of this notice violates the license terms.
+---
+
+
 # 🧩 cordy_minikit — Web3 Mini Kit by cordyStackX
 
 A lightweight Web3 toolkit for building wallet UIs, controllers, and provider wrappers — designed for modern frameworks like **Next.js**, **Vite**, and **React-based browser extensions**.  
