@@ -32,12 +32,23 @@ export default function WalletButton({ onStatusChange }) {
             }, isPending: pendingConnector?.uid === connector.uid && isPending }, connector.uid))) }));
 }
 function WalletOption({ connector, onClick, isPending }) {
-    const [ready, setReady] = React.useState(false);
+    const [ready, setReady] = React.useState(true); // ✅ default to true so it still renders
+    const [installed, setInstalled] = React.useState(true);
     React.useEffect(() => {
         (async () => {
-            const provider = await connector.getProvider();
-            setReady(!!provider);
+            try {
+                const provider = await connector.getProvider();
+                setInstalled(!!provider); // true if wallet found
+            }
+            catch {
+                setInstalled(false);
+            }
         })();
     }, [connector]);
-    return (_jsx("button", { disabled: !ready || isPending, onClick: onClick, children: isPending ? "Connecting..." : connector.name }));
+    const disabled = isPending || !installed;
+    return (_jsx("button", { disabled: disabled, onClick: onClick, children: isPending
+            ? "Connecting..."
+            : !installed
+                ? `${connector.name} (Not Installed)`
+                : connector.name }));
 }

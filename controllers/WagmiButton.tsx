@@ -58,18 +58,29 @@ function WalletOption({
   onClick: () => void; 
   isPending: boolean 
 }) {
-  const [ready, setReady] = React.useState(false);
+  const [ready, setReady] = React.useState(true); // ✅ default to true so it still renders
+  const [installed, setInstalled] = React.useState(true);
 
   React.useEffect(() => {
     (async () => {
-      const provider = await connector.getProvider();
-      setReady(!!provider);
+      try {
+        const provider = await connector.getProvider();
+        setInstalled(!!provider); // true if wallet found
+      } catch {
+        setInstalled(false);
+      }
     })();
   }, [connector]);
 
+  const disabled = isPending || !installed;
+
   return (
-    <button disabled={!ready || isPending} onClick={onClick}>
-      {isPending ? "Connecting..." : connector.name}
+    <button disabled={disabled} onClick={onClick}>
+      {isPending
+        ? "Connecting..."
+        : !installed
+        ? `${connector.name} (Not Installed)`
+        : connector.name}
     </button>
   );
 }
