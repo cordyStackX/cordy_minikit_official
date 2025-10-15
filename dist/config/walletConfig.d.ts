@@ -1,4 +1,5 @@
 import { createConfig } from 'wagmi';
-export declare function getConfig(): ReturnType<typeof createConfig>;
+import type { Chain } from 'wagmi/chains';
+export declare function getConfig(chains?: Record<string, Chain>): ReturnType<typeof createConfig>;
 export declare const config: ReturnType<typeof createConfig>;
 //# sourceMappingURL=walletConfig.d.ts.map
