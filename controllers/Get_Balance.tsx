@@ -19,7 +19,7 @@ export default async function getTokenBalance(
     try {
       symbol = await contract.symbol();
     } catch {
-      symbol = ""; // fallback if the contract doesn't implement symbol()
+      symbol = "Unknown";
     }
 
     return { balance: formattedBalance, symbol };

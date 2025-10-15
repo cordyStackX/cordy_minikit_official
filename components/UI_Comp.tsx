@@ -5,20 +5,38 @@ import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useBalance} from "wagmi";
 import { FaUser } from 'react-icons/fa';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
-  const { data } = useBalance({
-    address: address,
-    token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
-  });
-  
+  const [balance, setBalance] = useState("");
+  const [symbol, setSymbol] = useState("");
 
+  useEffect(() => {
+    
+    Get_Balance();
+
+  }, [balance]);
+
+  const Get_Balance = async () => {
+
+    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
+
+    const { balance, symbol } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+
+    setBalance(balance);
+    setSymbol(symbol);
+    return;
+  };
+  
   if (isConnected) {
+  
+  if (balance === "") {
+    Get_Balance();
+  }
   
   return(
     <div className={UI_Comp__css.container}>
@@ -26,12 +44,12 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {data?.value ? (
+            {balance ? (
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#f0f"}}>Network: {chain?.name || "Unknown" }</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
               

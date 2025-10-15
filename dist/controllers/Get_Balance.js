@@ -13,7 +13,7 @@ export default async function getTokenBalance(address, tokenAddress, decimals = 
             symbol = await contract.symbol();
         }
         catch {
-            symbol = ""; // fallback if the contract doesn't implement symbol()
+            symbol = "Unknown";
         }
         return { balance: formattedBalance, symbol };
     }
