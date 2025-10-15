@@ -5,16 +5,20 @@ import { WalletButton, Disconnect } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useBalance } from "wagmi";
 import { FaUser } from 'react-icons/fa';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
+  
+  const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}` | undefined;
+  
   const { data, isLoading, error } = useBalance({
     address,
-    token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
+    token: tokenAddress,
+    chainId: chain?.id,
   });
 
   
@@ -35,7 +39,12 @@ export default function UI_Comp() {
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
             ) : error ? (
-                <p style={{color: "#f00"}}>Error loading balance</p>
+                <span>
+                  <FaUser size={70} />
+                  <p style={{color: "#f00"}}>Error loading balance</p>
+                  <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
+                  <p style={{color: "#ff0"}}>{address}</p>
+                </span>
             ) : (
                 <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
             )}
