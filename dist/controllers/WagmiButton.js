@@ -32,7 +32,6 @@ export default function WalletButton({ onStatusChange }) {
             }, isPending: pendingConnector?.uid === connector.uid && isPending }, connector.uid))) }));
 }
 function WalletOption({ connector, onClick, isPending }) {
-    const [ready, setReady] = React.useState(true); // ✅ default to true so it still renders
     const [installed, setInstalled] = React.useState(true);
     React.useEffect(() => {
         (async () => {

@@ -6,7 +6,7 @@ import type { Chain } from 'wagmi/chains';
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
 // Function to create config - only called on client side
-export function getConfig(chains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
+export default function getConfig(chains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
   // Combine default chains with custom chains
   const allChains = [mainnet, base, ...Object.values(chains)] as const as readonly [Chain, ...Chain[]];
   

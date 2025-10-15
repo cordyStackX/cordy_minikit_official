@@ -3,7 +3,7 @@ import { mainnet, base } from 'wagmi/chains';
 import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 // Function to create config - only called on client side
-export function getConfig(chains = {}) {
+export default function getConfig(chains = {}) {
     // Combine default chains with custom chains
     const allChains = [mainnet, base, ...Object.values(chains)];
     // Create transports dynamically for all chains
