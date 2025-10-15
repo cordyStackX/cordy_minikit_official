@@ -44,7 +44,7 @@ export default function UI_Comp() {
           <div className={UI_Comp__css.info}>
             {balance ? (
               <span>
-                <FaUser size={70} />chainchain
+                <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#f0f"}}>Network: {chain?.name || "Unknown" }</p>
                 <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
