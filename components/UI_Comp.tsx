@@ -1,42 +1,40 @@
 "use client";
 import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
-import { WalletButton, Disconnect } from "../controllers";
+import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount } from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
-  const { isConnected, address, chain } = useAccount();
+  const { isConnected, address } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
-  
-  const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}` | undefined;
-  
-  const { data, isLoading, error } = useBalance({
-    address,
-    token: tokenAddress,
-    chainId: chain?.id,
-  });
+  const [balance, setBalance] = useState("");
 
-  // Debug logging
   useEffect(() => {
-    console.log('=== UI_Comp Debug ===');
-    console.log('Connected:', isConnected);
-    console.log('Address:', address);
-    console.log('Chain ID:', chain?.id);
-    console.log('Chain Name:', chain?.name);
-    console.log('Token Address:', tokenAddress);
-    console.log('Balance Loading:', isLoading);
-    console.log('Balance Data:', data);
-    console.log('Balance Error:', error);
-    console.log('=====================');
-  }, [isConnected, address, chain?.id, chain?.name, tokenAddress, isLoading, data, error]);
+    
+    Get_Balance();
 
+  }, [balance]);
+
+  const Get_Balance = async () => {
+
+    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
+
+    const balance = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+
+    setBalance(balance);
+    return;
+  };
   
   if (isConnected) {
+  
+  if (balance === "") {
+    Get_Balance();
+  }
   
   return(
     <div className={UI_Comp__css.container}>
@@ -44,21 +42,14 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {!isLoading && data ? (
+            {balance ? (
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
-            ) : error ? (
-                <span>
-                  <FaUser size={70} />
-                  <p style={{color: "#f00"}}>Error loading balance</p>
-                  <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
-                  <p style={{color: "#ff0"}}>{address}</p>
-                </span>
+              
             ) : (
                 <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
             )}

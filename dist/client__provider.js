@@ -5,6 +5,6 @@ import dynamic from 'next/dynamic';
 const WalletProviders = dynamic(() => import('./wagmi__providers'), {
     ssr: false,
 });
-export default function ProvidersClientWrapper({ children, config }) {
-    return _jsx(WalletProviders, { config: config, children: children });
+export default function ProvidersClientWrapper({ children }) {
+    return _jsx(WalletProviders, { children: children });
 }
