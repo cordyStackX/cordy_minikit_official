@@ -5,41 +5,22 @@ import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useBalance} from "wagmi";
 import { FaUser } from 'react-icons/fa';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
-  const [balance, setBalance] = useState("");
   const { data } = useBalance({
     address: address,
     token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
   });
   
 
-  useEffect(() => {
-    
-    Get_Balance();
-
-  }, [balance]);
-
-  const Get_Balance = async () => {
-
-    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
-
-    const { balance } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
-
-    setBalance(balance);
-    return;
-  };
+  
   
   if (isConnected) {
-  
-  if (balance === "") {
-    Get_Balance();
-  }
   
   return(
     <div className={UI_Comp__css.container}>
@@ -47,7 +28,7 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {balance ? (
+            {data ? (
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
