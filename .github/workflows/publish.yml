@@ -1,0 +1,41 @@
+name: 📦 Build & Publish cordy_minikit
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*' # Publishes only on version tags (like v1.0.0)
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: 🛠️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node.js (latest LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: ⚡ Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 📦 Install dependencies
+        run: pnpm install
+
+      - name: 🧱 Build the package
+        run: pnpm run build
+
+      - name: 🧪 Verify package contents
+        run: ls -R dist

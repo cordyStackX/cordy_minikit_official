@@ -67,25 +67,25 @@ NEXT_PUBLIC_PLATFORM_ADDRESS=
 
 2. Import the Providers inside the layout.ts
 ```bash
-    import { ProvidersClientWrapper } from "@cordystackx/cordy_minikit";
-        
-        <ProvidersClientWrapper>
-            {children}
-        </ProvidersClientWrapper>
+import { ProvidersClientWrapper } from "@cordystackx/cordy_minikit";
+    
+    <ProvidersClientWrapper>
+        {children}
+    </ProvidersClientWrapper>
 
 ```
 3. Use of Connect Buttons
 ```bash
-    import { ConnectWalletBT } from "@cordystackx/cordy_minikit";
-        
-        <ConnectWalletBT/>
+import { ConnectWalletBT } from "@cordystackx/cordy_minikit";
+    
+    <ConnectWalletBT/>
 
 ```
 4. Use of Transactions
 ```bash
-    import { CordyStackTrans } from "@cordystackx/cordy_minikit";
-        
-        CordyStackTrans(address: string, cost: number | string);
+import { CordyStackTrans } from "@cordystackx/cordy_minikit";
+    
+    CordyStackTrans(address: string, cost: number | string);
 
 ```
 
