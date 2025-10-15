@@ -35,7 +35,7 @@ Built with **Wagmi**, **Viem**, **Ethers** and **TypeScript** (compiled to JS fo
 ### 1. Purpose
 
 `@cordystackx/cordy_minikit` provides modular Web3 utilities and UI components for dApp builders.  
-It’s designed to be embedded in frontend frameworks or browser extensions where you want instant Web3 wallet connectivity and a clean UI layer.
+It’s designed to be embedded in frontend frameworks where you want instant Web3 wallet connectivity and a clean UI layer.
 
 **Main Goals:**
 - Simplify wallet integrations.
