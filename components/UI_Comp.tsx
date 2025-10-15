@@ -26,9 +26,7 @@ export default function UI_Comp() {
 
     const balance = await getTokenBalance(
       address, 
-      process.env.NEXT_PUBLIC_TOKENADDRESS,
-      chainId, // Pass the current chain ID
-      18
+      process.env.NEXT_PUBLIC_TOKENADDRESS
     );
 
     setBalance(balance);
