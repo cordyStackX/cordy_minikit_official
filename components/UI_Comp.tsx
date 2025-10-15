@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
-  const { isConnected, address, chainId } = useAccount();
+  const { isConnected, address, chainId, chain } = useAccount();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
@@ -51,6 +51,7 @@ export default function UI_Comp() {
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
+                <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
                 <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
