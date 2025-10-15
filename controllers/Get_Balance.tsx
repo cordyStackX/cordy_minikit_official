@@ -5,7 +5,7 @@ export default async function getTokenBalance(
   address: string,
   tokenAddress: string,
   decimals: number = 18
-) {
+): Promise<{ balance: string; symbol: string }> {
   try {
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_ENDPOINT);
     const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);

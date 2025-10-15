@@ -13,7 +13,7 @@ export default function UI_Comp() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
-  const [symbol, setSymbol] = useState("")
+  const [symbol, setSymbol] = useState("");
 
   useEffect(() => {
     
