@@ -13,6 +13,7 @@ export default function UI_Comp() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
+  const [symbol, setSymbol] = useState("")
 
   useEffect(() => {
     
@@ -24,9 +25,10 @@ export default function UI_Comp() {
 
     if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
 
-    const balance = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+    const { balance, symbol } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
 
     setBalance(balance);
+    setSymbol(symbol);
     return;
   };
   
@@ -47,7 +49,7 @@ export default function UI_Comp() {
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#f0f"}}>Network: {chain?.name || "Unknown" }</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {process.env.NEXT_PUBLIC_SYMBOL}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
               
