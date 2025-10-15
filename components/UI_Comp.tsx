@@ -5,7 +5,7 @@ import { WalletButton, Disconnect } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useBalance } from "wagmi";
 import { FaUser } from 'react-icons/fa';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
@@ -15,23 +15,25 @@ export default function UI_Comp() {
   
   const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}` | undefined;
   
-  // Try to get token balance first
-  const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useBalance({
+  const { data, isLoading, error } = useBalance({
     address,
     token: tokenAddress,
     chainId: chain?.id,
   });
 
-  // Fallback to native balance if token fails
-  const { data: nativeData, isLoading: nativeLoading, error: nativeError } = useBalance({
-    address,
-    chainId: chain?.id,
-  });
-
-  // Use token balance if available, otherwise use native balance
-  const data = tokenData || nativeData;
-  const isLoading = tokenLoading || nativeLoading;
-  const error = tokenData ? undefined : (tokenError && nativeError ? tokenError : undefined);
+  // Debug logging
+  useEffect(() => {
+    console.log('=== UI_Comp Debug ===');
+    console.log('Connected:', isConnected);
+    console.log('Address:', address);
+    console.log('Chain ID:', chain?.id);
+    console.log('Chain Name:', chain?.name);
+    console.log('Token Address:', tokenAddress);
+    console.log('Balance Loading:', isLoading);
+    console.log('Balance Data:', data);
+    console.log('Balance Error:', error);
+    console.log('=====================');
+  }, [isConnected, address, chain?.id, chain?.name, tokenAddress, isLoading, data, error]);
 
   
   if (isConnected) {
@@ -46,7 +48,7 @@ export default function UI_Comp() {
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#9f0"}}>Network: {chain?.name || `Chain ID: ${chain?.id}` || 'Unknown'}</p>
+                <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
                 <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
@@ -54,7 +56,7 @@ export default function UI_Comp() {
                 <span>
                   <FaUser size={70} />
                   <p style={{color: "#f00"}}>Error loading balance</p>
-                  <p style={{color: "#9f0"}}>Network: {chain?.name || `Chain ID: ${chain?.id}` || 'Unknown'}</p>
+                  <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
                   <p style={{color: "#ff0"}}>{address}</p>
                 </span>
             ) : (
