@@ -6,7 +6,7 @@ export default async function getTokenBalance(address: string, tokenAddress: str
   if (!address) return "0";
 
   try {
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_LINK_PROJECT_ID_SEPOLIA);
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_LINK_PROJECT_ID_COINBASED);
     const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
     const balance = await contract.balanceOf(address);
     return ethers.formatUnits(balance, 18); 

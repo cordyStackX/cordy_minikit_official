@@ -58,7 +58,6 @@ function WalletOption({
   onClick: () => void; 
   isPending: boolean 
 }) {
-  const [ready, setReady] = React.useState(true); // ✅ default to true so it still renders
   const [installed, setInstalled] = React.useState(true);
 
   React.useEffect(() => {
