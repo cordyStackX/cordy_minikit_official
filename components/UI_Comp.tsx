@@ -15,11 +15,23 @@ export default function UI_Comp() {
   
   const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}` | undefined;
   
-  const { data, isLoading, error } = useBalance({
+  // Try to get token balance first
+  const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useBalance({
     address,
     token: tokenAddress,
     chainId: chain?.id,
   });
+
+  // Fallback to native balance if token fails
+  const { data: nativeData, isLoading: nativeLoading, error: nativeError } = useBalance({
+    address,
+    chainId: chain?.id,
+  });
+
+  // Use token balance if available, otherwise use native balance
+  const data = tokenData || nativeData;
+  const isLoading = tokenLoading || nativeLoading;
+  const error = tokenData ? undefined : (tokenError && nativeError ? tokenError : undefined);
 
   
   if (isConnected) {
@@ -34,7 +46,7 @@ export default function UI_Comp() {
               <span>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
+                <p style={{color: "#9f0"}}>Network: {chain?.name || `Chain ID: ${chain?.id}` || 'Unknown'}</p>
                 <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
@@ -42,7 +54,7 @@ export default function UI_Comp() {
                 <span>
                   <FaUser size={70} />
                   <p style={{color: "#f00"}}>Error loading balance</p>
-                  <p style={{color: "#9f0"}}>Network: {chain?.name || 'Unknown'}</p>
+                  <p style={{color: "#9f0"}}>Network: {chain?.name || `Chain ID: ${chain?.id}` || 'Unknown'}</p>
                   <p style={{color: "#ff0"}}>{address}</p>
                 </span>
             ) : (
