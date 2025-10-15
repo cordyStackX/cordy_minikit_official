@@ -18,7 +18,7 @@ export default function UI_Comp() {
     
     Get_Balance();
 
-  }, [balance]); // Re-fetch when chain changes
+  }, [balance, chain?.id]); // Re-fetch when chain changes
 
   const Get_Balance = async () => {
 
@@ -26,7 +26,9 @@ export default function UI_Comp() {
 
     const balance = await getTokenBalance(
       address, 
-      process.env.NEXT_PUBLIC_TOKENADDRESS
+      process.env.NEXT_PUBLIC_TOKENADDRESS,
+      chain?.id, // Pass the current chain ID
+      18 // You can make this configurable
     );
 
     setBalance(balance);

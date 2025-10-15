@@ -5,16 +5,16 @@ const RPC_URLS = {
     1: process.env.NEXT_PUBLIC_MAINNET_RPC || "https://eth.llamarpc.com", // Ethereum Mainnet
     8453: process.env.NEXT_PUBLIC_BASE_RPC || "https://mainnet.base.org", // Base Mainnet
     84532: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org", // Base Sepolia
+    1114: process.env.NEXT_PUBLIC_CORE_TESTNET_RPC || "https://rpc.test2.btcs.network", // Core Blockchain TestNet
     // Add more chains as needed
 };
-export default async function getTokenBalance(address, tokenAddress, chainId = 8453, // Default to Base mainnet
-decimals = 18) {
-    if (!address)
-        return "0";
+export default async function getTokenBalance(address, tokenAddress, chainId, decimals = 18) {
     try {
-        const rpcUrl = RPC_URLS[chainId];
+        // Use provided chainId or fallback to env variable or default
+        const selectedChainId = chainId || 8453; // Default to Base if not provided
+        const rpcUrl = RPC_URLS[selectedChainId] || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
         if (!rpcUrl) {
-            console.error(`No RPC URL configured for chain ID: ${chainId}`);
+            console.error(`No RPC URL configured for chain ID: ${selectedChainId}`);
             return "0";
         }
         const provider = new ethers.JsonRpcProvider(rpcUrl);

@@ -29,7 +29,7 @@ export default function getConfig(customChains: Record<string, Chain> = {}): Ret
   });
 }
 
-export const config =
+export const config: ReturnType<typeof createConfig> =
   typeof window !== "undefined"
     ? getConfig()
     : ({} as ReturnType<typeof createConfig>);
