@@ -12,7 +12,8 @@ export default async function getTokenBalance(address, tokenAddress, decimals = 
         try {
             symbol = await contract.symbol();
         }
-        catch {
+        catch (err) {
+            console.log(err);
             symbol = "Unknown";
         }
         return { balance: formattedBalance, symbol };

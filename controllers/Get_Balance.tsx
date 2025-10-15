@@ -18,7 +18,8 @@ export default async function getTokenBalance(
     let symbol: string;
     try {
       symbol = await contract.symbol();
-    } catch {
+    } catch(err) {
+      console.log(err);
       symbol = "Unknown";
     }
 
