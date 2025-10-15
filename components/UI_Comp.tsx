@@ -3,7 +3,7 @@ import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
 import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance} from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 
@@ -13,7 +13,11 @@ export default function UI_Comp() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
-  const [symbol, setSymbol] = useState("");
+  const { data } = useBalance({
+    address: address,
+    token: process.env.NEXT_PUBLIC_TOKENADDRESS as `0x${string}`
+  });
+  
 
   useEffect(() => {
     
@@ -25,10 +29,9 @@ export default function UI_Comp() {
 
     if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
 
-    const { balance, symbol } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+    const { balance } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
 
     setBalance(balance);
-    setSymbol(symbol);
     return;
   };
   
@@ -49,7 +52,7 @@ export default function UI_Comp() {
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#f0f"}}>Network: {chain?.name || "Unknown" }</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {data?.symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
               
