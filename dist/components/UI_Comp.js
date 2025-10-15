@@ -9,17 +9,19 @@ import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 export default function UI_Comp() {
     const { closeModal } = useWalletModal();
-    const { isConnected, address } = useAccount();
+    const { isConnected, address, chainId } = useAccount();
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState();
     const [balance, setBalance] = useState("");
     useEffect(() => {
         Get_Balance();
-    }, [balance]);
+    }, [balance, chainId]); // Re-fetch when chain changes
     const Get_Balance = async () => {
-        if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS)
+        if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS || !chainId)
             return;
-        const balance = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+        const balance = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS, chainId, // Pass the current chain ID
+        18 // You can make this configurable too
+        );
         setBalance(balance);
         return;
     };
