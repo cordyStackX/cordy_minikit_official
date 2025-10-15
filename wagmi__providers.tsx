@@ -2,7 +2,8 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
-import { config } from "./config/walletConfig";
+import type { Config } from "wagmi";
+import { config as defaultConfig } from "./config/walletConfig";
 import { UI_Comp } from "./components";
 
 type WalletContextType = {
@@ -14,11 +15,17 @@ const WalletContext = createContext<WalletContextType | null>(null);
 
 const queryClient = new QueryClient();
 
-export default function WalletProviders({ children }: { children: ReactNode }) {
+export default function WalletProviders({ 
+  children,
+  config 
+}: { 
+  children: ReactNode;
+  config?: Config;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config || defaultConfig}>
       <QueryClientProvider client={queryClient}>
         <WalletContext.Provider
           value={{
