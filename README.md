@@ -40,7 +40,7 @@ It’s designed to be embedded in frontend frameworks or browser extensions wher
 
 ### 2. High-level Architecture
 
-```json
+```bash
 root
 ├── chains/ # chain definitions and helpers
 ├── client__provider.tsx # provider client wrapper (wagmi/viem context)
