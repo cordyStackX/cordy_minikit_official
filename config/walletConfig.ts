@@ -5,14 +5,13 @@ import type { Chain } from 'wagmi/chains';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
-// Function to create config - only called on client side
-export default function getConfig(chains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
-  // Combine default chains with custom chains
-  const allChains = [mainnet, base, ...Object.values(chains)] as const as readonly [Chain, ...Chain[]];
-  
-  // Create transports dynamically for all chains
+export default function getConfig(customChains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
+  const allChains = [mainnet, base, ...Object.values(customChains)] as const;
+
+  // Use the chain's RPC URL if available
   const transports = allChains.reduce((acc, chain) => {
-    acc[chain.id] = http();
+    const rpcUrl = chain.rpcUrls?.default?.http?.[0];
+    acc[chain.id] = rpcUrl ? http(rpcUrl) : http();
     return acc;
   }, {} as Record<number, ReturnType<typeof http>>);
 
@@ -23,13 +22,14 @@ export default function getConfig(chains: Record<string, Chain> = {}): ReturnTyp
       walletConnect({ projectId }),
       coinbaseWallet({
         appName: "cordy_minikit",
-        version: "3"
-      })
+        version: "3",
+      }),
     ],
     transports,
   });
 }
 
-export const config: ReturnType<typeof createConfig> = typeof window !== 'undefined' 
-  ? getConfig() 
-  : {} as ReturnType<typeof createConfig>;
+export const config =
+  typeof window !== "undefined"
+    ? getConfig()
+    : ({} as ReturnType<typeof createConfig>);
