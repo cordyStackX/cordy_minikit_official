@@ -52,7 +52,7 @@ export default function UI_Comp() {
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#f0f"}}>Network: {chain?.name || "Unknown" }</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {data?.symbol}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(data?.formatted).toFixed(2)} {data?.symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
               </span>
               
