@@ -39,6 +39,7 @@ export default async function CordyStackTrans(address: string, cost: number) {
       console.error("   1. You're connected to the correct network");
       console.error("   2. The token contract address is correct");
       console.error("   3. The contract is deployed on this network");
+      alert("Wrong Mainnet");
       return false;
     }
 
