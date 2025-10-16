@@ -2,7 +2,8 @@
 .connector,
 .connector div,
 .info,
-.info span {
+.info span,
+.connector button  {
     display: flex;
     justify-content: center;
     align-items: center;
