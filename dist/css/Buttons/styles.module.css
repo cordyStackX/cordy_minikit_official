@@ -1,6 +1,6 @@
 :root {
     --foreground_wagmi_34535: #171717;
-    --meduim_dark_wagmi_34535: #252525;
+    --meduim_dark_wagmi_34535: #818181;
     --background_wagmi_34535: #FAFAFA;
     --invert-cordy-image_34535: invert(1);
     --invert-cordy-image_1_34535: invert(0);
@@ -9,7 +9,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --foreground_wagmi_34535: #ededed;
-        --meduim_dark_wagmi_34535: #818181;
+        --meduim_dark_wagmi_34535: #252525;
         --background_wagmi_34535: #121212;
         --invert-cordy-image_34535: invert(0);
         --invert-cordy-image_1_34535: invert(1);
@@ -20,7 +20,7 @@
     width: 150px;
     padding: 0.8rem;
     background-color: var(--foreground_wagmi_34535);
-    color: var(--background_wagmi);
+    color: var(--background_wagmi_34535);
     font-weight: bold;
     cursor: pointer;
     border: transparent;
