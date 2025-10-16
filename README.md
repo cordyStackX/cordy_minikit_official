@@ -137,6 +137,7 @@ export default function RootLayout({
 ## Usage
 
 1. Connect Buttons — ConnectWalletBT
+
 The ConnectWalletBT component provides a plug-and-play wallet connection button for any Web3 application.
 It automatically handles connecting, disconnecting, and managing wallet sessions using Wagmi and Viem under the hood.
 

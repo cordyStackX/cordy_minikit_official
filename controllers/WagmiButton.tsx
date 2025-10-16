@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { useConnect } from "wagmi";
 import type { Connector } from "wagmi";
+import Images from "../config/Image.json";
 
 export default function WalletButton({ 
   onStatusChange 
@@ -75,6 +76,12 @@ function WalletOption({
 
   return (
     <button disabled={disabled} onClick={onClick}>
+      <img
+        src={(Images as Record<string, string>)[connector.name] || Images.logo}
+        alt={connector.name}
+        width={30}
+        height={30}
+      />
       {isPending
         ? "Connecting..."
         : !installed
