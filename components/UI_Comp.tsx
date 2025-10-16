@@ -22,6 +22,13 @@ export default function UI_Comp() {
 
   }, [balance]);
 
+  useEffect(() => {
+    if (!isConnected) {
+      setBalance("");
+      setSymbol("");
+    }
+  }, [isConnected]);
+
   const Get_Balance = async () => {
 
     if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
@@ -61,7 +68,11 @@ export default function UI_Comp() {
           </div>
         )}
         
-        <button onClick={() => {disconnect(), closeModal}}>DisConnect</button>
+        <button onClick={() => {
+          setBalance("");
+          setSymbol("");
+          disconnect();
+        }}>DisConnect</button>
         <a href="https://cordy-stack-x.vercel.app/">
           Powered By CordyStackX
         </a>
