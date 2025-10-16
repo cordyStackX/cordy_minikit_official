@@ -51,7 +51,7 @@
     }
 }
 .connector img {
-    margin: 1rem 0;
+    margin: 1rem 0.3rem;
     filter: var(--invert-cordy-image);
 }
 .connector button {
@@ -72,11 +72,7 @@
 .connector button:active {
     transform: scale(0.5);
 }
-.connector img {
-    width: 5px;
-    height: 5px;
-    margin: 0 0.3rem;
-}
+
 .info span {
     flex-flow: column;
 }
