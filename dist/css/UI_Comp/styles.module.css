@@ -22,13 +22,14 @@
 
 .connector {
     width: min(400px, 100dvw);
-    height: 500px;
+    height: 400px;
     background-color: var(--background_wagmi);
     position: fixed;
-    border: 2px solid var(--foreground_wagmi);
+    box-shadow: 0 2rem 1rem #000;
     flex-flow: column;
     overflow: hidden;
     animation: fadeIn 0.5s ease forwards;
+    border-radius: 20px;
 }
 .connector div {
     flex-flow: column;
@@ -90,6 +91,8 @@
     top: 0;
     right: 0;
     font-weight: bolder;
+    border-radius: 50%;
+    background-color: #fff;
     cursor: pointer;
 }
 @media (max-width: 800px) {
