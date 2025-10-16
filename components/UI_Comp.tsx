@@ -5,8 +5,10 @@ import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useDisconnect} from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
+import pkg from "../package.json";
+import links from "../config/links.json";
 
-export default function UI_Comp(_props: { title?: string }) {
+export default function UI_Comp() {
   const { closeModal } = useWalletModal();
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
@@ -15,20 +17,11 @@ export default function UI_Comp(_props: { title?: string }) {
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
 
-  const title = _props.title || "Cordy Minikit";
-
   useEffect(() => {
     
     Get_Balance();
 
   }, [balance]);
-
-  useEffect(() => {
-    if (!isConnected) {
-      setBalance("");
-      setSymbol("");
-    }
-  }, [isConnected]);
 
   const Get_Balance = async () => {
 
@@ -69,13 +62,11 @@ export default function UI_Comp(_props: { title?: string }) {
         )}
         
         <button onClick={() => {
-          setBalance("");
-          setSymbol("");
           closeModal();
           disconnect();
         }}>DisConnect</button>
-        <a href="https://cordy-stack-x.vercel.app/">
-          Powered By CordyStackX
+        <a href={links.NPM_Pack_links}>
+          Powered By CordyStackX | Version {pkg.version}
         </a>
 
       </div>
@@ -87,7 +78,7 @@ export default function UI_Comp(_props: { title?: string }) {
     <div className={UI_Comp__css.container}>
       <div className={UI_Comp__css.connector}>
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-        <h2>{title}</h2>
+        <h2>Connect Your Wallet</h2>
 
         <div>
             <h3>{loading ? "Loading..." : ""}</h3>
@@ -99,8 +90,8 @@ export default function UI_Comp(_props: { title?: string }) {
             />      
             <p>{errorMsg}</p>
         </div>
-        <a href="https://cordy-stack-x.vercel.app/">
-          Powered By CordyStackX
+        <a href={links.NPM_Pack_links}>
+          Powered By CordyStackX | Version {pkg.version}
         </a>
       </div>
     </div>
