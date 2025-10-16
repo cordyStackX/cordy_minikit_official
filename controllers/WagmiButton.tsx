@@ -79,8 +79,8 @@ function WalletOption({
       <img
         src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
         alt={connector.name}
-        width={10}
-        height={10}
+        width={20}
+        height={20}
       />
       {isPending
         ? "Connecting..."

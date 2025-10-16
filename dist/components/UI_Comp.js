@@ -1,6 +1,5 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
 import { WalletButton, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
@@ -35,7 +34,7 @@ export default function UI_Comp() {
                             disconnect();
                         }, children: "DisConnect" }), _jsx("a", { href: "https://cordy-stack-x.vercel.app/", children: "Powered By CordyStackX" })] }) }));
     }
-    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("img", { src: Image__src.logo, width: 50, height: 50 }), _jsx("h2", { children: "Cordy MiniKit" }), _jsxs("div", { children: [_jsx("h3", { children: loading ? "Loading..." : "" }), _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
+    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Cordy MiniKit" }), _jsxs("div", { children: [_jsx("h3", { children: loading ? "Loading..." : "" }), _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                 setLoading(isPending);
                                 setErrorMsg(error);
                             } }), _jsx("p", { children: errorMsg })] }), _jsx("a", { href: "https://cordy-stack-x.vercel.app/", children: "Powered By CordyStackX" })] }) }));
