@@ -46,7 +46,7 @@ function WalletOption({ connector, onClick, isPending }) {
         })();
     }, [connector]);
     const disabled = isPending || !installed;
-    return (_jsxs("button", { disabled: disabled, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 25, height: 15 }), isPending
+    return (_jsxs("button", { disabled: disabled, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 23, height: 15 }), isPending
                 ? "Connecting..."
                 : !installed
                     ? `${connector.name} (Not Installed)`

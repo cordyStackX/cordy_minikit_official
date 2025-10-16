@@ -52,7 +52,7 @@
     }
 }
 .connector img {
-    margin: 1rem 0.3rem;
+    margin: 0 0.3rem;
     filter: var(--invert-cordy-image);
 }
 .connector button {
