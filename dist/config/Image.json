@@ -1,6 +1,6 @@
 {
     "logo": "https://cordy-stack-x.vercel.app/logo.svg",
-    "Coinbased Wallet": "../assets/coinbased.svg",
-    "MetaMask": "../assets/metamask.png",
-    "WalletConnect": "../assets/WalletConnect.png"
+    "Coinbased Wallet": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/coinbased.svg",
+    "MetaMask": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/metamask.png",
+    "WalletConnect": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/WalletConnect.png"
 }
