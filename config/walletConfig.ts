@@ -1,6 +1,6 @@
 import { http, createConfig } from 'wagmi';
 import { mainnet, base } from 'wagmi/chains';
-import { walletConnect, metaMask } from 'wagmi/connectors';
+import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import type { Chain } from 'wagmi/chains';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
@@ -19,7 +19,11 @@ export default function getConfig(customChains: Record<string, Chain> = {}): Ret
     chains: allChains,
     connectors: [
       metaMask(),
-      walletConnect({ projectId })
+      walletConnect({ projectId }),
+      coinbaseWallet({
+        appName: "cordy_minikit",
+        version: "3",
+      }),
     ],
     transports,
   });
