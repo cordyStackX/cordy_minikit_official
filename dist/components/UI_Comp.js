@@ -18,12 +18,6 @@ export default function UI_Comp() {
     useEffect(() => {
         Get_Balance();
     }, [balance]);
-    useEffect(() => {
-        if (!isConnected) {
-            setBalance("");
-            setSymbol("");
-        }
-    }, [isConnected]);
     const Get_Balance = async () => {
         if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS)
             return;
@@ -37,8 +31,7 @@ export default function UI_Comp() {
             Get_Balance();
         }
         return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), isConnected && (_jsx("div", { className: UI_Comp__css.info, children: balance ? (_jsxs("span", { children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#f0f" }, children: ["Network: ", chain?.name || "Unknown"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(balance).toFixed(2), " ", symbol] }), _jsx("p", { style: { color: "#ff0" }, children: address })] })) : (_jsx("p", { style: { color: "var(--foreground_wagmi)" }, children: "Loading balance..." })) })), _jsx("button", { onClick: () => {
-                            setBalance("");
-                            setSymbol("");
+                            closeModal();
                             disconnect();
                         }, children: "DisConnect" }), _jsx("a", { href: "https://cordy-stack-x.vercel.app/", children: "Powered By CordyStackX" })] }) }));
     }
