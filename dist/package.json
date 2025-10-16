@@ -1,6 +1,6 @@
 {
     "name": "@cordystackx/cordy_minikit",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "publishConfig": {
         "access": "public",
         "registry": "https://registry.npmjs.org/"
@@ -13,7 +13,7 @@
     ],
     "scripts": {
         "build": "tsc && pnpm run copy-css",
-        "copy-css": "mkdir -p dist/css/Buttons dist/css/UI_Comp && cp css/Buttons/styles.module.css dist/css/Buttons/ && cp css/UI_Comp/styles.module.css dist/css/UI_Comp/",
+        "copy-css": "mkdir -p dist/css/UI_Comp && cp css/UI_Comp/styles.module.css dist/css/UI_Comp/",
         "release": "pnpm publish --access public"
     },
     "keywords": [

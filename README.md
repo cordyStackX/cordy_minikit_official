@@ -115,7 +115,6 @@ import {
     Providers
 } from "@/app/services/minikit/providers";
 import '@cordystackx/cordy_minikit/dist/css/UI_Comp/styles.module.css';
-import '@cordystackx/cordy_minikit/dist/css/Buttons/styles.module.css';
 
 export default function RootLayout({
   children,
