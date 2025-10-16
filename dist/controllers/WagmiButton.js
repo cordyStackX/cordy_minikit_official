@@ -1,7 +1,8 @@
 "use client";
-import { jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
+import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useEffect } from "react";
 import { useConnect } from "wagmi";
+import Images from "../config/Image.json";
 export default function WalletButton({ onStatusChange }) {
     const { connectors, connectAsync, status } = useConnect();
     const [pendingConnector, setPendingConnector] = React.useState(null);
@@ -45,9 +46,9 @@ function WalletOption({ connector, onClick, isPending }) {
         })();
     }, [connector]);
     const disabled = isPending || !installed;
-    return (_jsx("button", { disabled: disabled, onClick: onClick, children: isPending
-            ? "Connecting..."
-            : !installed
-                ? `${connector.name} (Not Installed)`
-                : connector.name }));
+    return (_jsxs("button", { disabled: disabled, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images.logo, alt: connector.name, width: 30, height: 30 }), isPending
+                ? "Connecting..."
+                : !installed
+                    ? `${connector.name} (Not Installed)`
+                    : connector.name] }));
 }
