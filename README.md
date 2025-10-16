@@ -177,24 +177,7 @@ async function handlePayment() {
 
 ---
 
-### 4. Custom UI Component
-
-The `UI_Comp` component displays wallet connection UI with balance information:
-
-```tsx
-import { UI_Comp } from "@cordystackx/cordy_minikit";
-
-export default function WalletUI() {
-  return <UI_Comp title="My Custom Wallet" />;
-}
-```
-
-**Props:**
-- `title` (optional): Custom title for the wallet modal (defaults to "Cordy Minikit")
-
----
-
-### 5. Custom Chain Support
+### 4. Custom Chain Support
 
 Configure custom chains for your dApp:
 
@@ -329,11 +312,6 @@ flowchart TD
 ```
 - Props: `className` (optional) - Custom CSS class
 
-#### `UI_Comp`
-```tsx
-<UI_Comp title?: string />
-```
-- Props: `title` (optional) - Custom modal title (default: "Cordy Minikit")
 
 ### Hooks
 
