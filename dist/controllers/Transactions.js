@@ -1,7 +1,6 @@
 import { ethers, parseUnits } from 'ethers';
 import tokenAbi from '../config/ERC20_ABI.json';
 const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
-const platformAddress = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || "";
 export default async function CordyStackTrans(address, cost) {
     if (!address) {
         console.error("Address Not Found");
@@ -18,7 +17,7 @@ export default async function CordyStackTrans(address, cost) {
             console.log("Insuficient Funds");
             return false;
         }
-        const tx = await tokenContract.transfer(platformAddress, amount);
+        const tx = await tokenContract.transfer(address, amount);
         const receipt = await tx.wait();
         if (receipt) {
             console.log("Transaction Complete TX hash", receipt);

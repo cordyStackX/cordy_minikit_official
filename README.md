@@ -50,7 +50,6 @@ Create a `.env.local` file in your project root:
 ```bash
 NEXT_PUBLIC_RPC_ENDPOINT=https://your-rpc-endpoint.com
 NEXT_PUBLIC_TOKENADDRESS=0x...
-NEXT_PUBLIC_PLATFORM_ADDRESS=0x...
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 

@@ -2,7 +2,6 @@ import { ethers, parseUnits } from 'ethers';
 import tokenAbi from '../config/ERC20_ABI.json';
 
 const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
-const platformAddress = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || "";
 
 export default async function CordyStackTrans(address: string, cost: number) {
 
@@ -25,7 +24,7 @@ export default async function CordyStackTrans(address: string, cost: number) {
       return false;
     }
 
-    const tx = await tokenContract.transfer(platformAddress, amount);
+    const tx = await tokenContract.transfer(address, amount);
     const receipt = await tx.wait();
 
     if (receipt) {
