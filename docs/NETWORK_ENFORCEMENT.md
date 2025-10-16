@@ -95,8 +95,37 @@ const cleanup = setupNetworkGuard(
 
 ## Supported Networks
 
+### Ethereum
+- **Ethereum Mainnet** (Chain ID: 1)
+- **Sepolia Testnet** (Chain ID: 11155111)
+
+### Base (Coinbase L2)
 - **Base Mainnet** (Chain ID: 8453)
 - **Base Sepolia** (Chain ID: 84532)
+
+### Core Blockchain
+- **Core Mainnet** (Chain ID: 1116)
+- **Core Testnet** (Chain ID: 1115)
+
+### Polygon
+- **Polygon Mainnet** (Chain ID: 137)
+- **Polygon Amoy Testnet** (Chain ID: 80002)
+
+### Arbitrum
+- **Arbitrum One** (Chain ID: 42161)
+- **Arbitrum Sepolia** (Chain ID: 421614)
+
+### Optimism
+- **Optimism Mainnet** (Chain ID: 10)
+- **Optimism Sepolia** (Chain ID: 11155420)
+
+### Avalanche
+- **Avalanche C-Chain** (Chain ID: 43114)
+- **Avalanche Fuji Testnet** (Chain ID: 43113)
+
+### BNB Chain
+- **BNB Smart Chain** (Chain ID: 56)
+- **BNB Smart Chain Testnet** (Chain ID: 97)
 
 ## How It Works
 

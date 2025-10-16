@@ -29,7 +29,7 @@ export default async function CordyStackTrans(address: string, cost: number) {
     
     if (!requiredNetwork) {
       console.error("❌ Contract not found on any supported network");
-      console.error("💡 Supported networks: Base Mainnet, Base Sepolia");
+      console.error("💡 Supported networks: Ethereum, Base, Core, Polygon, Arbitrum, Optimism, Avalanche, BNB Chain");
       return false;
     }
 
