@@ -61,7 +61,7 @@ export default function UI_Comp() {
           </div>
         )}
         
-        <button onClick={() => {disconnect(), setBalance(""), setSymbol("")}}>DisConnect</button>
+        <button onClick={() => {disconnect(), closeModal}}>DisConnect</button>
         <a href="https://cordy-stack-x.vercel.app/">
           Powered By CordyStackX
         </a>
