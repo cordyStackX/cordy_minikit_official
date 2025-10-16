@@ -21,7 +21,7 @@ Built with **Wagmi**, **Viem**, **Ethers** and **TypeScript** (compiled to JS fo
 - 🔗 **Wallet Connect / Disconnect**  
   Simple connect button and hooks for EVM-based wallets.
 - 🧰 **Prebuilt UI Components**  
-  Reusable components like `ConnectWalletBT`, `UI_Comp`.
+  Reusable components like `ConnectWalletBT`, `CordyStackTrans`.
 - ⚙️ **Controllers**  
   Manage wallet actions, balances, and transactions.
 - 🎨 **CSS Modules + CSS Variables**  
@@ -136,7 +136,10 @@ export default function RootLayout({
 
 ## Usage
 
-1. For Connect Buttons 
+1. Connect Buttons — ConnectWalletBT
+The ConnectWalletBT component provides a plug-and-play wallet connection button for any Web3 application.
+It automatically handles connecting, disconnecting, and managing wallet sessions using Wagmi and Viem under the hood.
+
 ```ts
 import { 
     ConnectWalletBT
@@ -145,14 +148,24 @@ import {
 <ConnectWalletBT />
 ```
 
-2. For Button Transactions
+2. Button Transactions - CordyStackTrans
+
+The CordyStackTrans function provides a simple and reusable transaction handler for EVM-based networks.
+It allows developers to trigger ERC20 or native token transfers directly from UI components with minimal setup.
+
 ```ts
-import { 
-    CordyStackTrans
-} from "@cordystackx/cordy_minikit";
+import { CordyStackTrans } from "@cordystackx/cordy_minikit";
 
-CordyStackTrans(address: string, cost: number)
+// Example Usage
+CordyStackTrans(address: string, cost: number);
 
+const trans = CordyStackTrans();
+
+if (trans) {
+  return true;  // Transaction successfull
+} else {
+  return false; // Transaction failed or rejected
+}
 ```
 
 
