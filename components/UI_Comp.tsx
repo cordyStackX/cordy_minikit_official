@@ -1,15 +1,16 @@
 "use client";
 import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
-import { WalletButton, Disconnect, getTokenBalance } from "../controllers";
+import { WalletButton, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
-import { useAccount, useBalance} from "wagmi";
+import { useAccount, useDisconnect} from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
   const { isConnected, address, chain } = useAccount();
+  const { disconnect } = useDisconnect();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
@@ -60,7 +61,7 @@ export default function UI_Comp() {
           </div>
         )}
         
-        <Disconnect />
+        <button onClick={() => {disconnect(), setBalance(""), setSymbol("")}}>DisConnect</button>
         <a href="https://cordy-stack-x.vercel.app/">
           Powered By CordyStackX
         </a>
