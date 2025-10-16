@@ -1,6 +1,5 @@
 import { ethers, parseUnits } from 'ethers';
 import tokenAbi from '../config/ERC20_ABI.json';
-import { detectContractNetwork, enforceNetwork } from '../utils/networkEnforcer';
 
 const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
 const rpcUrl = process.env.NEXT_PUBLIC_RPC_ENDPOINT || "";
@@ -23,49 +22,27 @@ export default async function CordyStackTrans(address: string, cost: number) {
   }
 
   try {
-    // Step 1: Detect which network the contract is on
-    console.log("🔍 Detecting contract network...");
-    const requiredNetwork = await detectContractNetwork(tokenAddress);
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
     
-    if (!requiredNetwork) {
-      console.error("❌ Contract not found on any supported network");
-      console.error("💡 Supported networks: Ethereum, Base, Core, Polygon, Arbitrum, Optimism, Avalanche, BNB Chain");
+    // Get current network
+    const network = await provider.getNetwork();
+    console.log(`🌐 Connected to network: ${network.name} (Chain ID: ${network.chainId})`);
+
+    // Verify contract exists on this network
+    console.log(`🔍 Checking contract at ${tokenAddress}...`);
+    const contractCode = await provider.getCode(tokenAddress);
+    
+    if (contractCode === "0x") {
+      console.error(`❌ No contract found at ${tokenAddress} on chain ${network.chainId}`);
+      console.error("❌ Please check:");
+      console.error("   1. You're connected to the correct network");
+      console.error("   2. The token contract address is correct");
+      console.error("   3. The contract is deployed on this network");
       return false;
     }
 
-    console.log(`✅ Contract requires: ${requiredNetwork.chainName} (Chain ID: ${requiredNetwork.chainId})`);
-
-    // Step 2: Get current wallet provider
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const network = await provider.getNetwork();
-    
-    // Step 3: Force switch to correct network if needed
-    if (Number(network.chainId) !== requiredNetwork.chainId) {
-      console.warn(`⚠️ Wrong network: ${network.name} (${network.chainId})`);
-      console.log(`🔄 Forcing switch to ${requiredNetwork.chainName}...`);
-      
-      try {
-        await enforceNetwork(requiredNetwork.chainId, requiredNetwork);
-        
-        // Refresh provider after network switch
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const newProvider = new ethers.BrowserProvider(window.ethereum);
-        const newNetwork = await newProvider.getNetwork();
-        
-        if (Number(newNetwork.chainId) !== requiredNetwork.chainId) {
-          console.error("❌ Network switch failed");
-          return false;
-        }
-        
-        console.log(`✅ Successfully switched to ${requiredNetwork.chainName}`);
-      } catch (err: any) {
-        console.error("❌ Network enforcement failed:", err.message);
-        return false;
-      }
-    }
-
-    // Step 4: Proceed with transaction on correct network
-    const signer = await provider.getSigner();
+    console.log("✅ Contract found on network");
 
     // Create contract instance
     const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);

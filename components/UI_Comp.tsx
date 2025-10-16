@@ -7,7 +7,6 @@ import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import pkg from "../package.json";
 import links from "../config/links.json";
-import { useNetworkGuard } from "../hooks/useNetworkGuard";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
@@ -17,14 +16,6 @@ export default function UI_Comp() {
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
-
-  // Enable network guard to prevent network switching
-  const { isEnforcing, isCorrectNetwork } = useNetworkGuard({
-    enabled: isConnected,
-    onWrongNetwork: () => {
-      console.warn("⚠️ User attempted to switch network - forcing back to correct network");
-    }
-  });
 
   useEffect(() => {
     
@@ -55,12 +46,6 @@ export default function UI_Comp() {
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         {isConnected && (
           <div className={UI_Comp__css.info}>
-            {isEnforcing && (
-              <p style={{color: "#fa0", marginBottom: "10px"}}>🔄 Switching to correct network...</p>
-            )}
-            {!isCorrectNetwork && !isEnforcing && (
-              <p style={{color: "#f00", marginBottom: "10px"}}>⚠️ Wrong network detected</p>
-            )}
             {balance ? (
               <span>
                 <FaUser size={70} />

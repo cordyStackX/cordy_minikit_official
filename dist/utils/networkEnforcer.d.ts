@@ -1,4 +1,4 @@
-interface NetworkConfig {
+export interface NetworkConfig {
     chainId: number;
     chainName: string;
     nativeCurrency: {
@@ -24,6 +24,26 @@ export declare function getNetworkByChainId(chainId: number): NetworkConfig | nu
  */
 export declare function isNetworkSupported(chainId: number): boolean;
 /**
+ * Add a custom network to the supported networks list
+ * Useful for adding networks that aren't included by default
+ */
+export declare function addCustomNetwork(key: string, network: NetworkConfig): void;
+/**
+ * Add multiple custom networks at once
+ */
+export declare function addCustomNetworks(networks: Record<string, NetworkConfig>): void;
+/**
+ * Helper to create a network configuration
+ */
+export declare function createNetworkConfig(params: {
+    chainId: number;
+    chainName: string;
+    symbol: string;
+    symbolName?: string;
+    rpcUrl: string;
+    explorerUrl?: string;
+}): NetworkConfig;
+/**
  * Force switch to the required network
  * Throws error if user rejects
  */
@@ -32,5 +52,4 @@ export declare function enforceNetwork(requiredChainId: number, networkConfig: N
  * Monitor network changes and enforce the correct network
  */
 export declare function setupNetworkGuard(requiredChainId: number, networkConfig: NetworkConfig, onWrongNetwork?: () => void): () => void;
-export {};
 //# sourceMappingURL=networkEnforcer.d.ts.map

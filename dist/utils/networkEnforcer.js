@@ -70,6 +70,17 @@ export const NETWORKS = {
         rpcUrls: ["https://rpc.test.btcs.network"],
         blockExplorerUrls: ["https://scan.test.btcs.network"],
     },
+    CORE_TESTNET2: {
+        chainId: 1114,
+        chainName: "Core Blockchain Testnet2",
+        nativeCurrency: {
+            name: "tCore2",
+            symbol: "tCORE2",
+            decimals: 18,
+        },
+        rpcUrls: ["https://rpc.test2.btcs.network"],
+        blockExplorerUrls: [" https://scan.test2.btcs.network"],
+    },
     // Polygon Networks
     POLYGON_MAINNET: {
         chainId: 137,
@@ -225,6 +236,41 @@ export function getNetworkByChainId(chainId) {
  */
 export function isNetworkSupported(chainId) {
     return getNetworkByChainId(chainId) !== null;
+}
+/**
+ * Add a custom network to the supported networks list
+ * Useful for adding networks that aren't included by default
+ */
+export function addCustomNetwork(key, network) {
+    if (NETWORKS[key]) {
+        console.warn(`⚠️ Network "${key}" already exists and will be overwritten`);
+    }
+    NETWORKS[key] = network;
+    console.log(`✅ Added custom network: ${network.chainName} (Chain ID: ${network.chainId})`);
+}
+/**
+ * Add multiple custom networks at once
+ */
+export function addCustomNetworks(networks) {
+    Object.entries(networks).forEach(([key, network]) => {
+        addCustomNetwork(key, network);
+    });
+}
+/**
+ * Helper to create a network configuration
+ */
+export function createNetworkConfig(params) {
+    return {
+        chainId: params.chainId,
+        chainName: params.chainName,
+        nativeCurrency: {
+            name: params.symbolName || params.symbol,
+            symbol: params.symbol,
+            decimals: 18,
+        },
+        rpcUrls: [params.rpcUrl],
+        blockExplorerUrls: params.explorerUrl ? [params.explorerUrl] : undefined,
+    };
 }
 /**
  * Force switch to the required network
