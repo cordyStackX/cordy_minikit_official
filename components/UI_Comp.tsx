@@ -1,5 +1,4 @@
 "use client";
-import Image__src from "../config/Image.json";
 import { UI_Comp__css } from "../css";
 import { WalletButton, getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
@@ -7,7 +6,7 @@ import { useAccount, useDisconnect} from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 
-export default function UI_Comp() {
+export default function UI_Comp(_props: { title?: string }) {
   const { closeModal } = useWalletModal();
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
@@ -16,11 +15,20 @@ export default function UI_Comp() {
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
 
+  const title = _props.title || "Cordy Minikit";
+
   useEffect(() => {
     
     Get_Balance();
 
   }, [balance]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setBalance("");
+      setSymbol("");
+    }
+  }, [isConnected]);
 
   const Get_Balance = async () => {
 
@@ -61,6 +69,8 @@ export default function UI_Comp() {
         )}
         
         <button onClick={() => {
+          setBalance("");
+          setSymbol("");
           closeModal();
           disconnect();
         }}>DisConnect</button>
@@ -77,7 +87,7 @@ export default function UI_Comp() {
     <div className={UI_Comp__css.container}>
       <div className={UI_Comp__css.connector}>
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-        <h2>Cordy MiniKit</h2>
+        <h2>{title}</h2>
 
         <div>
             <h3>{loading ? "Loading..." : ""}</h3>

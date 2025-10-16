@@ -22,7 +22,7 @@
 
 .connector {
     width: min(400px, 100dvw);
-    height: 400px;
+    height: 480px;
     background-color: var(--background_wagmi_34535);
     position: fixed;
     box-shadow: 0 0 1rem 0.3rem var(--meduim_dark_wagmi_34535);

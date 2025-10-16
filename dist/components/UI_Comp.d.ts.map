@@ -1,1 +1,1 @@
-{"version":3,"file":"UI_Comp.d.ts","sourceRoot":"","sources":["../../components/UI_Comp.tsx"],"names":[],"mappings":"AASA,MAAM,CAAC,OAAO,UAAU,OAAO,4CAwF9B"}
+{"version":3,"file":"UI_Comp.d.ts","sourceRoot":"","sources":["../../components/UI_Comp.tsx"],"names":[],"mappings":"AAQA,MAAM,CAAC,OAAO,UAAU,OAAO,CAAC,MAAM,EAAE;IAAE,KAAK,CAAC,EAAE,MAAM,CAAA;CAAE,2CAmGzD"}
