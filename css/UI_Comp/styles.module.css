@@ -40,14 +40,14 @@
 
 .connector {
     width: min(400px, 100dvw);
-    height: 480px;
+    height: 500px;
     background-color: var(--background_wagmi_34535);
     position: fixed;
     box-shadow: 0 0 1rem 0.3rem var(--meduim_dark_wagmi_34535);
     flex-flow: column;
     overflow: hidden;
     animation: fadeIn 0.5s ease forwards;
-    border-radius: 20px;
+    border-radius: 15px;
 }
 .connector div {
     flex-flow: column;
@@ -63,11 +63,11 @@
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: scale(0.9);
+        transform: translateY(10%);
     }
     to {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0);
     }
 }
 .connector img {
@@ -120,6 +120,8 @@
 @media (max-width: 800px) {
     .connector {
         bottom: 0;
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
     }
 }
 
