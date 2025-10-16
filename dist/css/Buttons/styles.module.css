@@ -1,23 +1,25 @@
 :root {
-    --foreground_wagmi: #171717;
-    --background_wagmi: #FAFAFA;
-    --invert-cordy-image: invert(1);
-    --invert-cordy-image_1: invert(0);
+    --foreground_wagmi_34535: #171717;
+    --meduim_dark_wagmi_34535: #252525;
+    --background_wagmi_34535: #FAFAFA;
+    --invert-cordy-image_34535: invert(1);
+    --invert-cordy-image_1_34535: invert(0);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --foreground_wagmi: #ededed;
-        --background_wagmi: #121212;
-        --invert-cordy-image: invert(0);
-        --invert-cordy-image_1: invert(1);
+        --foreground_wagmi_34535: #ededed;
+        --meduim_dark_wagmi_34535: #818181;
+        --background_wagmi_34535: #121212;
+        --invert-cordy-image_34535: invert(0);
+        --invert-cordy-image_1_34535: invert(1);
     }
 }
 
 .button__button {
     width: 150px;
     padding: 0.8rem;
-    background-color: var(--foreground_wagmi);
+    background-color: var(--foreground_wagmi_34535);
     color: var(--background_wagmi);
     font-weight: bold;
     cursor: pointer;
@@ -29,7 +31,7 @@
     text-align: center;
 }
 .button__button img {
-    filter: var(--invert-cordy-image_1);
+    filter: var(--invert-cordy-image_1_34535);
 }
 
 .button__button:hover {
