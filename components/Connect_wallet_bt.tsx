@@ -2,7 +2,11 @@
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount } from "wagmi";
 
-export default function ConnectWalletBT({ className }: { className?: string }) {
+interface ConnectWalletBTProps {
+  className?: string;
+}
+
+export default function ConnectWalletBT({ className }: ConnectWalletBTProps) {
   const { openModal } = useWalletModal();
   const { isConnected, address } = useAccount();
 

@@ -1,1 +1,1 @@
-{"version":3,"file":"Connect_wallet_bt.d.ts","sourceRoot":"","sources":["../../components/Connect_wallet_bt.tsx"],"names":[],"mappings":"AAIA,MAAM,CAAC,OAAO,UAAU,eAAe,CAAC,EAAE,SAAS,EAAE,EAAE;IAAE,SAAS,CAAC,EAAE,MAAM,CAAA;CAAE,2CAY5E"}
+{"version":3,"file":"Connect_wallet_bt.d.ts","sourceRoot":"","sources":["../../components/Connect_wallet_bt.tsx"],"names":[],"mappings":"AAIA,UAAU,oBAAoB;IAC5B,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB;AAED,MAAM,CAAC,OAAO,UAAU,eAAe,CAAC,EAAE,SAAS,EAAE,EAAE,oBAAoB,2CAY1E"}

@@ -1,4 +1,6 @@
-export default function ConnectWalletBT({ className }: {
+interface ConnectWalletBTProps {
     className?: string;
-}): import("react/jsx-runtime").JSX.Element;
+}
+export default function ConnectWalletBT({ className }: ConnectWalletBTProps): import("react/jsx-runtime").JSX.Element;
+export {};
 //# sourceMappingURL=Connect_wallet_bt.d.ts.map
