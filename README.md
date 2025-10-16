@@ -339,18 +339,6 @@ const config = getConfig({ myChain: customChainDefinition });
 
 ## 🎨 Customization
 
-### CSS Variables
-
-Override default styles using CSS variables:
-
-```css
-:root {
-  --foreground_wagmi: #ffffff;
-  --background_wagmi: #000000;
-  /* Add more custom variables */
-}
-```
-
 ### Custom Styling
 
 ```tsx
