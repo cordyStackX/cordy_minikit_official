@@ -262,11 +262,10 @@ cordy_minikit/
 
 ---
 
-## 🧭 SOA — System Overview & Architecture
+## 🧭 System Architecture — Cordy Minikit
 
----
 @cordystackx/cordy_minikit is built as a modular Web3 toolkit that sits on top of Wagmi, Viem, Ethers, and Coinbase Wallet SDK, providing developers with prebuilt UI components, controllers, and configuration files for seamless wallet and transaction management.
----
+
 
 ```mermaid
 flowchart TD

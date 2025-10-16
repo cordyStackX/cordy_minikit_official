@@ -1,6 +1,6 @@
 {
     "name": "@cordystackx/cordy_minikit",
-    "version": "1.2.4",
+    "version": "1.2.7",
     "publishConfig": {
         "access": "public",
         "registry": "https://registry.npmjs.org/"
