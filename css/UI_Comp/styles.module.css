@@ -25,7 +25,7 @@
     height: 400px;
     background-color: var(--background_wagmi_34535);
     position: fixed;
-    box-shadow: 0 0 2rem 1rem #000;
+    box-shadow: 0 0 1rem 0.3rem var(--meduim_dark_wagmi_34535);
     flex-flow: column;
     overflow: hidden;
     animation: fadeIn 0.5s ease forwards;
@@ -86,14 +86,18 @@
     font-weight: bolder;
 }
 .closed {
-    padding: 0.5rem;
+    padding: 0.5rem 0.8rem;
     position: absolute;
     top: 0;
     right: 0;
     font-weight: bolder;
     border-radius: 50%;
-    background-color: var(--meduim_dark_wagmi_34535);
+    background-color: transparent;
     cursor: pointer;
+    transition: all 0.5s ease;
+}
+.closed:hover {
+    background-color: var(--meduim_dark_wagmi_34535);
 }
 @media (max-width: 800px) {
     .connector {
