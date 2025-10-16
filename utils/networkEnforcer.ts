@@ -86,6 +86,17 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     rpcUrls: ["https://rpc.test.btcs.network"],
     blockExplorerUrls: ["https://scan.test.btcs.network"],
   },
+  CORE_TESTNET2: {
+    chainId: 1114,
+    chainName: "Core Blockchain Testnet2",
+    nativeCurrency: {
+      name: "tCore2",
+      symbol: "tCORE2",
+      decimals: 18,
+    },
+    rpcUrls: ["https://rpc.test2.btcs.network"],
+    blockExplorerUrls: [" https://scan.test2.btcs.network"],
+  },
   
   // Polygon Networks
   POLYGON_MAINNET: {
