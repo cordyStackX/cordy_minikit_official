@@ -7,6 +7,10 @@ export { default as getConfig } from "./config/walletConfig";
 
 // Hooks
 export { useWalletModal } from "./wagmi__providers";
+export { useNetworkGuard } from "./hooks/useNetworkGuard";
+
+// Utils
+export { detectContractNetwork, enforceNetwork, setupNetworkGuard, NETWORKS } from "./utils/networkEnforcer";
 
 //Components
 export * from "./components";

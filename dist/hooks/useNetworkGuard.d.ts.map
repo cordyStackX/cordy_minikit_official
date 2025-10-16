@@ -1,0 +1,1 @@
+{"version":3,"file":"useNetworkGuard.d.ts","sourceRoot":"","sources":["../../hooks/useNetworkGuard.ts"],"names":[],"mappings":"AAKA,UAAU,sBAAsB;IAC9B,OAAO,CAAC,EAAE,OAAO,CAAC;IAClB,cAAc,CAAC,EAAE,MAAM,IAAI,CAAC;CAC7B;AAED,wBAAgB,eAAe,CAAC,OAAO,GAAE,sBAA2B;;;;EAqDnE"}
