@@ -72,6 +72,10 @@
 .connector button:active {
     transform: scale(0.5);
 }
+.connector button img {
+    padding: 1rem;
+    margin: 0 0.3rem;
+}
 .info span {
     flex-flow: column;
 }
