@@ -25,9 +25,9 @@ export default function UI_Comp() {
 
   const Get_Balance = async () => {
 
-    if (!address || !process.env.NEXT_PUBLIC_TOKENADDRESS) return;
+    if (!address) return;
 
-    const { balance, symbol } = await getTokenBalance(address, process.env.NEXT_PUBLIC_TOKENADDRESS);
+    const { balance, symbol } = await getTokenBalance(address);
 
     setBalance(balance);
     setSymbol(symbol);

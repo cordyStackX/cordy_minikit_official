@@ -1,4 +1,4 @@
-export default function getTokenBalance(address: string, tokenAddress: string, decimals?: number): Promise<{
+export default function getTokenBalance(address: string, decimals?: number): Promise<{
     balance: string;
     symbol: string;
 }>;

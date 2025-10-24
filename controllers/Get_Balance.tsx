@@ -3,12 +3,14 @@ import ERC20_ABI from "../config/ERC20_ABI.json";
 
 export default async function getTokenBalance(
   address: string,
-  tokenAddress: string,
   decimals: number = 18
 ): Promise<{ balance: string; symbol: string }> {
   try {
+
+    if (!process.env.NEXT_PUBLIC_TOKENADDRESS) return { balance: "0", symbol: "" };
+
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_ENDPOINT);
-    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+    const contract = new ethers.Contract(process.env.NEXT_PUBLIC_TOKENADDRESS, ERC20_ABI, provider);
 
     // Fetch balance
     const balance = await contract.balanceOf(address);

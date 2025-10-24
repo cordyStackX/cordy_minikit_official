@@ -4,10 +4,10 @@ import { useConnect } from "wagmi";
 import type { Connector } from "wagmi";
 import Images from "../config/Image.json";
 
-export default function WalletButton({ 
-  onStatusChange 
-}: { 
-  onStatusChange?: (status: { isPending: boolean; error?: string }) => void 
+export default function WalletButton({
+  onStatusChange
+}: {
+  onStatusChange?: (status: { isPending: boolean; error?: string }) => void
 }) {
   const { connectors, connectAsync, status } = useConnect();
   const [pendingConnector, setPendingConnector] = React.useState<Connector | null>(null);
@@ -50,14 +50,14 @@ export default function WalletButton({
   );
 }
 
-function WalletOption({ 
-  connector, 
-  onClick, 
-  isPending 
-}: { 
-  connector: Connector; 
-  onClick: () => void; 
-  isPending: boolean 
+function WalletOption({
+  connector,
+  onClick,
+  isPending
+}: {
+  connector: Connector;
+  onClick: () => void;
+  isPending: boolean
 }) {
   const [installed, setInstalled] = React.useState(true);
 
@@ -85,8 +85,8 @@ function WalletOption({
       {isPending
         ? "Connecting..."
         : !installed
-        ? `${connector.name} (Not Installed)`
-        : connector.name}
+          ? `${connector.name} (Not Installed)`
+          : connector.name}
     </button>
   );
 }
