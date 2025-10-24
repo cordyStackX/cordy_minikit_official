@@ -8,6 +8,7 @@ Unauthorized removal of this notice violates the license terms.
 
 [![npm version](https://img.shields.io/npm/v/@cordystackx/cordy_minikit.svg)](https://www.npmjs.com/package/@cordystackx/cordy_minikit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Socket Badge](https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/1.4.8)](https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/1.4.8)
 
 A lightweight, production-ready Web3 toolkit for building wallet UIs, controllers, and provider wrappers — designed for modern frameworks like **Next.js** and **Vite**.  
 Built with **Wagmi**, **Viem**, **Ethers**, and **TypeScript**.
