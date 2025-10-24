@@ -20,7 +20,7 @@ We take the security of Cordy MiniKit seriously. If you believe you have found a
 
 ### Please DO:
 
-1. **Email us directly** at: security@cordystackx.com (or create a private security advisory on GitHub)
+1. **Email us directly** at: cordovamarcgiestinlouis@gmail.com (or create a private security advisory on GitHub)
 2. **Include the following information:**
    - Type of vulnerability
    - Full paths of source file(s) related to the vulnerability
