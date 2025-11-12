@@ -32,17 +32,17 @@
   "license": "MIT",
   "dependencies": {
     "@coinbase/wallet-sdk": "4.3.7",
-    "@tanstack/react-query": "^5.90.5",
+    "@tanstack/react-query": "^5.90.7",
     "ethers": "^6.15.0",
-    "next": "^16.0.0",
+    "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.5.0",
-    "wagmi": "^2.18.2"
+    "wagmi": "^2.19.3"
   },
   "devDependencies": {
-    "@types/node": "^24.9.1",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2"
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3"
   }
 }
