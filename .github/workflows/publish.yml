@@ -43,4 +43,4 @@ jobs:
       - name: 📦 Publish to GitHub Packages
         run: pnpm publish --registry https://npm.pkg.github.com --no-git-checks
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
