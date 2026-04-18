@@ -5,7 +5,7 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "description": "Cordy Minikit - Open Source Web3 Dev Toolkit (Wallet Connect, Tx, Disconnect, Dashboard)",
+  "description": "Cordy Minikit - Open Source Web3 Dev Toolkit (Wallet Connect, Tx, Disconnect)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
