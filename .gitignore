@@ -1,6 +1,8 @@
 
 /.npmrc
 
+/.npmr
+
 /.env.local
 
 /node_modules
