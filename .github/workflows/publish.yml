@@ -43,4 +43,4 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}" >> ~/.npmrc
 
       - name: 📦 Publish to GitHub Packages
-        run: pnpm publish --registry https://npm.pkg.github.com      
+        run: pnpm publish --registry https://npm.pkg.github.com    
