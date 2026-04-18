@@ -34,9 +34,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install
 
-      - name: 🧱 Build the package
-        run: pnpm run build
-
       - name: 🧪 Verify package contents
         run: ls -R dist
 
