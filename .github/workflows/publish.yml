@@ -35,9 +35,4 @@ jobs:
         run: pnpm install
 
       - name: 🧪 Verify package contents
-        run: ls -R dist
-
-      - name: 📦 Publish to GitHub Packages
-        run: pnpm publish --registry https://npm.pkg.github.com --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}    
+        run: ls -R dist    
