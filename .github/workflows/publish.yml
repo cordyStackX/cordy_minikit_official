@@ -1,41 +1,25 @@
-name: 📦 Build & Publish cordy_minikit
+name: Publish to GitHub Packages
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v*' # Publishes only on version tags (like v1.0.0)
+      - "v*"
 
 jobs:
-  build-and-publish:
+  publish-github:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-
     steps:
-      - name: 🛠️ Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🧰 Setup Node.js (latest LTS)
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          registry-url: 'https://registry.npmjs.org/'
+          node-version: 18
+          registry-url: "https://npm.pkg.github.com"
 
-      - name: ⚡ Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - run: npm install
+      - run: npm run build
 
-      - name: 📦 Install dependencies
-        run: pnpm install
-
-      - name: 🧱 Build the package
-        run: pnpm run build
-
-      - name: 🧪 Verify package contents
-        run: ls -R dist
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
