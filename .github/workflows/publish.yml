@@ -37,7 +37,7 @@ jobs:
       - name: 🧪 Verify package contents
         run: ls -R dist
 
-      - name: 📦 Publish to GitHub Packages
-        run: pnpm publish --registry https://npm.pkg.github.com
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+      - name: 🔐 Configure npm auth for GitHub Packages
+        run: |
+          echo "@cordystackx:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}" >> ~/.npmrc
