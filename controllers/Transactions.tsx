@@ -12,7 +12,12 @@ export default async function CordyStackTrans(address: string, cost: number) {
   }
 
   try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const ethereum = window?.ethereum;
+    if (!ethereum) {
+      console.error("Ethereum provider not found");
+      return false;
+    }
+    const provider = new ethers.BrowserProvider(ethereum);
     const signer = await provider.getSigner();
     const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
 

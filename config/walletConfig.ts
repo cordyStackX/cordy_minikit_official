@@ -22,7 +22,6 @@ export default function getConfig(customChains: Record<string, Chain> = {}): Ret
       walletConnect({ projectId }),
       coinbaseWallet({
         appName: "cordy_minikit",
-        version: "3",
       }),
     ],
     transports,
