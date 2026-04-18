@@ -39,5 +39,8 @@ jobs:
 
       - name: 🔐 Configure npm auth for GitHub Packages
         run: |
-          echo "@cordystackx:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}" >> ~/.npmrc
+          echo "@cordystackx:registry=https://npm.pkg.github.com/" >> "$NPM_CONFIG_USERCONFIG"
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}" >> "$NPM_CONFIG_USERCONFIG"
+
+      - name: 📦 Publish to GitHub Packages
+        run: pnpm publish --registry https://npm.pkg.github.com      
