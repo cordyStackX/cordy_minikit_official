@@ -1,0 +1,4 @@
+allowBuilds:
+  bufferutil: true
+  sharp: true
+  utf-8-validate: true

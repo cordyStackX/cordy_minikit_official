@@ -5,7 +5,7 @@ type WalletContextType = {
 };
 export default function WalletProviders({ children }: {
     children: ReactNode;
-}): import("react/jsx-runtime").JSX.Element;
+}): import("react").JSX.Element;
 export declare function useWalletModal(): WalletContextType;
 export {};
 //# sourceMappingURL=wagmi__providers.d.ts.map
