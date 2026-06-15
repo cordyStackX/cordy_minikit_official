@@ -14,8 +14,8 @@
   "scripts": {
     "build": "tsc && pnpm run copy-css",
     "copy-css": "mkdir -p dist/css/UI_Comp && cp css/UI_Comp/styles.module.css dist/css/UI_Comp/",
-    "npm-release": "npm publish --registry=https://registry.npmjs.org/ --access public",
-    "github-release": "npm publish --registry=https://npm.pkg.github.com/"
+    "npm-release": "pnpm publish --registry=https://registry.npmjs.org/ --access public",
+    "github-release": "pnpm publish --registry=https://npm.pkg.github.com/"
   },
   "keywords": [
     "web3",
