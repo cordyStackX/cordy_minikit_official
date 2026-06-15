@@ -1,6 +1,6 @@
 {
   "name": "@cordystackx/cordy_minikit",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -15,7 +15,7 @@
     "build": "tsc && pnpm run copy-css",
     "copy-css": "mkdir -p dist/css/UI_Comp && cp css/UI_Comp/styles.module.css dist/css/UI_Comp/",
     "npm-release": "npm publish --registry=https://registry.npmjs.org/ --access public",
-    "github-release" : "npm publish --registry=https://npm.pkg.github.com/"
+    "github-release": "npm publish --registry=https://npm.pkg.github.com/"
   },
   "keywords": [
     "web3",
