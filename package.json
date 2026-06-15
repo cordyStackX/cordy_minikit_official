@@ -2,8 +2,7 @@
   "name": "@cordystackx/cordy_minikit",
   "version": "1.5.13",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "description": "Cordy Minikit - Open Source Web3 Dev Toolkit (Wallet Connect, Tx, Disconnect)",
   "main": "dist/index.js",
