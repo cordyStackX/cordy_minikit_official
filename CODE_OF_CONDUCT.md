@@ -35,7 +35,7 @@ This Code of Conduct applies to all project spaces including:
 
 If you experience or witness any unacceptable behavior, please contact me directly:
 
-📧 **Email:** cordovamarcgiestinlouis@gmail.com
+📧 **Email:** cordystackx@gmail.com
 
 I will review and respond to all reports as quickly as possible and take appropriate action.
 

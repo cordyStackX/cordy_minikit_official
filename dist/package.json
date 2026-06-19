@@ -1,9 +1,8 @@
 {
     "name": "@cordystackx/cordy_minikit",
-    "version": "1.5.11",
+    "version": "1.5.16",
     "publishConfig": {
-        "access": "public",
-        "registry": "https://registry.npmjs.org/"
+        "access": "public"
     },
     "description": "Cordy Minikit - Open Source Web3 Dev Toolkit (Wallet Connect, Tx, Disconnect)",
     "main": "dist/index.js",
@@ -14,7 +13,8 @@
     "scripts": {
         "build": "tsc && pnpm run copy-css",
         "copy-css": "mkdir -p dist/css/UI_Comp && cp css/UI_Comp/styles.module.css dist/css/UI_Comp/",
-        "release": "pnpm publish --access public"
+        "npm-release": "pnpm publish --registry=https://registry.npmjs.org/ --access public",
+        "github-release": "pnpm publish --registry=https://npm.pkg.github.com/"
     },
     "keywords": [
         "web3",
@@ -33,12 +33,12 @@
     "dependencies": {
         "@coinbase/wallet-sdk": "4.3.7",
         "@tanstack/react-query": "^5.101.0",
-        "ethers": "^6.16.0",
+        "ethers": "^6.17.0",
         "next": "^16.2.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "react-icons": "^5.6.0",
-        "wagmi": "^3.6.16"
+        "wagmi": "^3.6.17"
     },
     "devDependencies": {
         "@types/node": "^25.9.3",
