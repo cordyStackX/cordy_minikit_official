@@ -80,7 +80,7 @@ function WalletOption({
 
 
   return (
-  <button onClick={onClick}>
+  <button disabled={!installed} onClick={onClick}>
     <img
       src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
       alt={connector.name}
