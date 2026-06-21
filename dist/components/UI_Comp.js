@@ -17,20 +17,19 @@ export default function UI_Comp() {
     const [balance, setBalance] = useState("");
     const [symbol, setSymbol] = useState("");
     useEffect(() => {
-        Get_Balance();
-    }, [balance]);
+        if (isConnected && address) {
+            Get_Balance();
+        }
+    }, [isConnected, address]);
     const Get_Balance = async () => {
         if (!address)
             return;
-        const { balance, symbol } = await getTokenBalance();
+        const { balance, symbol } = await getTokenBalance(address);
         setBalance(balance);
         setSymbol(symbol);
         return;
     };
     if (isConnected) {
-        if (balance === "") {
-            Get_Balance();
-        }
         return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), isConnected && (_jsx("div", { className: UI_Comp__css.info, children: balance ? (_jsxs("div", { children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", chain?.name || "Unknown"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(balance).toFixed(2), " ", symbol] }), _jsx("p", { style: { color: "#ff0" }, children: address })] })) : (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) })), _jsx("button", { onClick: () => {
                             closeModal();
                             disconnect();

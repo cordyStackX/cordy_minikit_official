@@ -18,16 +18,16 @@ export default function UI_Comp() {
   const [symbol, setSymbol] = useState("");
 
   useEffect(() => {
-    
-    Get_Balance();
-
-  }, [balance]);
+    if (isConnected && address) {
+      Get_Balance();
+    }
+  }, [isConnected, address]);
 
   const Get_Balance = async () => {
 
     if (!address) return;
 
-    const { balance, symbol } = await getTokenBalance();
+    const { balance, symbol } = await getTokenBalance(address);
 
     setBalance(balance);
     setSymbol(symbol);
@@ -35,10 +35,6 @@ export default function UI_Comp() {
   };
   
   if (isConnected) {
-  
-  if (balance === "") {
-    Get_Balance();
-  }
   
   return(
     <div className={UI_Comp__css.container}>
