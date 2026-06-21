@@ -47,13 +47,13 @@ export default function UI_Comp() {
         {isConnected && (
           <div className={UI_Comp__css.info}>
             {balance ? (
-              <span>
+              <div>
                 <FaUser size={70} />
                 <p style={{color: "#0f0"}}>Connected</p>
                 <p style={{color: "#2f9"}}>Network: {chain?.name || "Unknown"}</p>
                 <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
                 <p style={{color: "#ff0"}}>{address}</p>
-              </span>
+              </div>
               
             ) : (
                 <span className={UI_Comp__css.blockchain_loader}>
