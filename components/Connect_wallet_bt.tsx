@@ -1,8 +1,8 @@
 "use client";
-
+import { getTokenBalance } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
-import { useAccount, useBalance } from "wagmi";
-import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
+import { useEffect, useState } from "react";
 
 interface ConnectWalletBTProps {
   className?: string;
@@ -13,24 +13,32 @@ export default function ConnectWalletBT({
 }: ConnectWalletBTProps) {
   const { openModal } = useWalletModal();
   const { isConnected, address } = useAccount();
+  const [balance, setBalance] = useState("");
+  const [symbol, setSymbol] = useState("");
 
-  const { data: balance } = useBalance({
-    address,
-  });
+  useEffect(() => {
+    if (isConnected && address) {
+      Get_Balance();
+    }
+  }, [isConnected, address]);
 
-  const formattedBalance = balance
-    ? Number(
-        formatUnits(balance.value, balance.decimals)
-      ).toFixed(4)
-    : "0.0000";
+  const Get_Balance = async () => {
 
+    if (!address) return;
+
+    const { balance, symbol } = await getTokenBalance(address);
+
+    setBalance(balance);
+    setSymbol(symbol);
+    return;
+  };
   return (
     <button
       className={className}
       onClick={openModal}
     >
       {isConnected
-        ? `BAL ${formattedBalance} ${balance?.symbol ?? ""}`
+        ? `BAL ${balance} ${symbol ?? ""}`
         : "Connect Wallet"}
     </button>
   );
