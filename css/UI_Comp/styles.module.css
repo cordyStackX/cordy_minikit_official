@@ -89,7 +89,7 @@
   opacity: 0.5;
 }
 .connector button:active {
-  transform: scale(0.9);
+  transform: scale(0.9888);
 }
 
 .info span {
