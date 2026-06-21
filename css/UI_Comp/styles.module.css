@@ -126,6 +126,19 @@
   }
 }
 
+.blockchain_loader_contain {
+  width: min(400px, 100dvw);
+  height: auto;
+  padding: 3rem 0;
+  background-color: var(--background_wagmi_34535);
+  position: fixed;
+  box-shadow: 0 0 1rem 0.1rem var(--meduim_dark_wagmi_34535);
+  flex-flow: column;
+  overflow: hidden;
+  animation: fadeIn 300ms ease forwards;
+  border-radius: 8px;
+}
+
 .blockchain_loader {
   display: flex;
   align-items: center;

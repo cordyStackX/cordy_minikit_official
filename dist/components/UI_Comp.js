@@ -19,6 +19,9 @@ export default function UI_Comp() {
     useEffect(() => {
         Get_Balance();
     }, [balance]);
+    useEffect(() => {
+        setLoading(false);
+    }, [errorMsg]);
     const Get_Balance = async () => {
         if (!address)
             return;
@@ -36,7 +39,7 @@ export default function UI_Comp() {
                             disconnect();
                         }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
-    return (_jsx("div", { className: UI_Comp__css.container, children: loading ? (_jsxs("div", { className: UI_Comp__css.blockchain_loader, children: [_jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node })] })) : (_jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [_jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
+    return (_jsx("div", { className: UI_Comp__css.container, children: loading ? (_jsxs("div", { className: UI_Comp__css.blockchain_loader_contain, children: [_jsxs("div", { className: UI_Comp__css.blockchain_loader, children: [_jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node })] }), _jsx("h2", { children: "Connecting" })] })) : (_jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [_jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                 setLoading(isPending);
                                 setErrorMsg(error);
                             } }), _jsx("p", { children: errorMsg })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] })) }));
