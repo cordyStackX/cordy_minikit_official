@@ -17,38 +17,27 @@ export default function UI_Comp() {
     const [balance, setBalance] = useState("");
     const [symbol, setSymbol] = useState("");
     useEffect(() => {
-        if (isConnected && address) {
-            Get_Balance();
-        }
-    }, [isConnected, address]);
-    useEffect(() => {
-        setLoading(false);
-    }, [errorMsg]);
+        Get_Balance();
+    }, [balance]);
     const Get_Balance = async () => {
         if (!address)
             return;
-        setLoading(true);
-        try {
-            const { balance, symbol } = await getTokenBalance(address);
-            setBalance(balance);
-            setSymbol(symbol);
-        }
-        catch (err) {
-            setErrorMsg("Failed to load balance");
-            setLoading(false);
-        }
-        finally {
-            setLoading(false);
-        }
+        const { balance, symbol } = await getTokenBalance(address);
+        setBalance(balance);
+        setSymbol(symbol);
+        return;
     };
     if (isConnected) {
+        if (balance === "") {
+            Get_Balance();
+        }
         return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), isConnected && (_jsx("div", { className: UI_Comp__css.info, children: balance ? (_jsxs("span", { children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", chain?.name || "Unknown"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(balance).toFixed(2), " ", symbol] }), _jsx("p", { style: { color: "#ff0" }, children: address })] })) : (_jsx("p", { style: { color: "var(--foreground_wagmi)" }, children: "Loading balance..." })) })), _jsx("button", { onClick: () => {
                             closeModal();
                             disconnect();
                         }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
-    return (_jsx("div", { className: UI_Comp__css.container, children: loading ? (_jsxs("div", { className: UI_Comp__css.blockchain_loader_contain, children: [_jsxs("div", { className: UI_Comp__css.blockchain_loader, children: [_jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node })] }), _jsx("p", { children: errorMsg })] })) : (_jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsx("div", { children: _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
-                            setLoading(isPending);
-                            setErrorMsg(error);
-                        } }) }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] })) }));
+    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading ? (_jsxs("div", { className: UI_Comp__css.blockchain_loader, children: [_jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node }), _jsx("div", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
+                                setLoading(isPending);
+                                setErrorMsg(error);
+                            } }), _jsx("p", { children: errorMsg })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
 }

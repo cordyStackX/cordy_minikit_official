@@ -38,7 +38,7 @@
   transform: translate(-50%, -50%);
 }
 
-.connector, .blockchain_loader_contain {
+.connector {
   width: min(400px, 100dvw);
   height: auto;
   min-height: 400px;
@@ -124,7 +124,7 @@
 }
 
 @media (max-width: 800px) {
-  .connector, .blockchain_loader_contain {
+  .connector {
     bottom: 0;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
