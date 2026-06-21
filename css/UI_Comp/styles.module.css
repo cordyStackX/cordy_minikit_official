@@ -137,6 +137,10 @@
   overflow: hidden;
   animation: fadeIn 300ms ease forwards;
   border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-flow: column;
 }
 
 .blockchain_loader {
