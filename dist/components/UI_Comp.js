@@ -22,7 +22,7 @@ export default function UI_Comp() {
     const Get_Balance = async () => {
         if (!address)
             return;
-        const { balance, symbol } = await getTokenBalance(address);
+        const { balance, symbol } = await getTokenBalance();
         setBalance(balance);
         setSymbol(symbol);
         return;

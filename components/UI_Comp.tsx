@@ -27,7 +27,7 @@ export default function UI_Comp() {
 
     if (!address) return;
 
-    const { balance, symbol } = await getTokenBalance(address);
+    const { balance, symbol } = await getTokenBalance();
 
     setBalance(balance);
     setSymbol(symbol);

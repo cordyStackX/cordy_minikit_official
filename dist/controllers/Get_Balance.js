@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import ERC20_ABI from "../config/ERC20_ABI.json";
-export default async function getTokenBalance(address, decimals = 18) {
+import { useAccount } from "wagmi";
+export default async function getTokenBalance(decimals = 18) {
+    const { address } = useAccount();
     try {
         if (!process.env.NEXT_PUBLIC_TOKENADDRESS)
             return { balance: "0", symbol: "" };
