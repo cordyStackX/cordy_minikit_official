@@ -89,7 +89,7 @@ export default function UI_Comp() {
             <div className={UI_Comp__css.node}></div>
             <div className={UI_Comp__css.node}></div>
           </div>
-          <h2>Connecting</h2>
+          <h3>Connecting</h3>
         </div>
       ) : (
         <div className={UI_Comp__css.connector}>
