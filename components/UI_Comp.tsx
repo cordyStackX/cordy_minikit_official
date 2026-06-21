@@ -78,12 +78,10 @@ export default function UI_Comp() {
   return (
     <div className={UI_Comp__css.container}>
       {loading ? (
-        <div className={UI_Comp__css.connector}>
-          <div className={UI_Comp__css.blockchain_loader}>
-            <div className={UI_Comp__css.node}></div>
-            <div className={UI_Comp__css.node}></div>
-            <div className={UI_Comp__css.node}></div>
-          </div>
+        <div className={UI_Comp__css.blockchain_loader}>
+          <div className={UI_Comp__css.node}></div>
+          <div className={UI_Comp__css.node}></div>
+          <div className={UI_Comp__css.node}></div>
         </div>
       ) : (
         <div className={UI_Comp__css.connector}>
