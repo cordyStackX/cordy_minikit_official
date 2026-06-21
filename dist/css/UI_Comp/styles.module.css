@@ -38,9 +38,10 @@
   transform: translate(-50%, -50%);
 }
 
-.connector {
+.connector, .blockchain_loader_contain {
   width: min(400px, 100dvw);
   height: auto;
+  min-height: 300px;
   padding: 3rem 0;
   background-color: var(--background_wagmi_34535);
   position: fixed;
@@ -119,28 +120,11 @@
 }
 
 @media (max-width: 800px) {
-  .connector {
+  .connector, .blockchain_loader_contain {
     bottom: 0;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
   }
-}
-
-.blockchain_loader_contain {
-  width: min(400px, 100dvw);
-  height: auto;
-  padding: 3rem 0;
-  background-color: var(--background_wagmi_34535);
-  position: fixed;
-  box-shadow: 0 0 1rem 0.1rem var(--meduim_dark_wagmi_34535);
-  flex-flow: column;
-  overflow: hidden;
-  animation: fadeIn 300ms ease forwards;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-flow: column;
 }
 
 .blockchain_loader {
