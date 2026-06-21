@@ -35,6 +35,7 @@ export default function UI_Comp() {
         }
         catch (err) {
             setErrorMsg("Failed to load balance");
+            setLoading(false);
         }
         finally {
             setLoading(false);

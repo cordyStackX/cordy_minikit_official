@@ -41,7 +41,7 @@
 .connector, .blockchain_loader_contain {
   width: min(400px, 100dvw);
   height: auto;
-  min-height: 300px;
+  min-height: 400px;
   padding: 3rem 0;
   background-color: var(--background_wagmi_34535);
   position: fixed;
@@ -94,7 +94,7 @@
   opacity: 0.5;
 }
 .connector button:active {
-  transform: scale(0.92);
+  transform: scale(0.97);
 }
 
 .info span {

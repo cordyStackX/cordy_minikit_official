@@ -38,10 +38,11 @@ export default function UI_Comp() {
       setSymbol(symbol);
     } catch (err) {
       setErrorMsg("Failed to load balance");
+      setLoading(false);
     } finally {
       setLoading(false);
     }
-  }
+  };
   
   if (isConnected) {
   
