@@ -2,6 +2,7 @@ packages:
   - '.'
 
 allowBuilds:
+  '@reown/appkit': false
   bufferutil: true
   sharp: true
   utf-8-validate: true
