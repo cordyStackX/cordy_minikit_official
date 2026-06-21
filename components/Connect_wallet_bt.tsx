@@ -30,7 +30,7 @@ export default function ConnectWalletBT({
       onClick={openModal}
     >
       {isConnected
-        ? `${formattedBalance} ${balance?.symbol ?? ""}`
+        ? `bal ${formattedBalance} ${balance?.symbol ?? ""}`
         : "Connect Wallet"}
     </button>
   );
