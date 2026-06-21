@@ -7,20 +7,20 @@ export default function WalletButton({ onStatusChange }) {
     const { connectors, connectAsync, status } = useConnect();
     const [pendingConnector, setPendingConnector] = React.useState(null);
     const [errorMsg, setErrorMsg] = React.useState(undefined);
-    // Derived isPending (true/false only)
-    const isPending = status === "pending";
+    const [isConnecting, setIsConnecting] = React.useState(false);
     // Notify parent whenever status changes
     useEffect(() => {
         if (onStatusChange) {
             onStatusChange({
-                isPending,
+                isPending: isConnecting,
                 error: errorMsg,
             });
         }
-    }, [isPending, errorMsg, onStatusChange]);
+    }, [isConnecting, errorMsg, onStatusChange]);
     return (_jsx(_Fragment, { children: connectors.map((connector) => (_jsx(WalletOption, { connector: connector, onClick: async () => {
+                setIsConnecting(true);
+                setErrorMsg(undefined);
                 setPendingConnector(connector);
-                setErrorMsg(undefined); // reset old errors
                 try {
                     await connectAsync({ connector });
                 }
@@ -28,9 +28,10 @@ export default function WalletButton({ onStatusChange }) {
                     setErrorMsg(err?.message || "Connection failed");
                 }
                 finally {
+                    setIsConnecting(false);
                     setPendingConnector(null);
                 }
-            }, isPending: pendingConnector?.uid === connector.uid && isPending }, connector.uid))) }));
+            }, isPending: pendingConnector?.uid === connector.uid && isConnecting }, connector.uid))) }));
 }
 function WalletOption({ connector, onClick, isPending }) {
     const [installed, setInstalled] = React.useState(true);

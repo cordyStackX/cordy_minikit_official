@@ -90,7 +90,7 @@ export default function UI_Comp() {
             <div className={UI_Comp__css.node}></div>
             <div className={UI_Comp__css.node}></div>
           </div>
-          <h3>Connecting</h3>
+          <p>{errorMsg}</p>
         </div>
       ) : (
         <div className={UI_Comp__css.connector}>
@@ -104,7 +104,7 @@ export default function UI_Comp() {
                   setErrorMsg(error);
                   }}
               />      
-              <p>{errorMsg}</p>
+              
           </div>
           <a href={links.NPM_Pack_links}>
             Powered By CordyStackX | Version {pkg.version}
