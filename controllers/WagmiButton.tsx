@@ -62,20 +62,24 @@ function WalletOption({
   const [installed, setInstalled] = React.useState(true);
 
   React.useEffect(() => {
-    (async () => {
-      try {
-        const provider = await connector.getProvider();
-        setInstalled(!!provider); // true if wallet found
-      } catch {
-        setInstalled(false);
+  (async () => {
+    try {
+      if (connector.id === "walletConnect") {
+        setInstalled(true);
+        return;
       }
-    })();
-  }, [connector]);
 
-  const disabled = isPending || !installed;
+      const provider = await connector.getProvider();
+      setInstalled(!!provider);
+    } catch {
+      setInstalled(false);
+    }
+  })();
+}, [connector]);
+
 
   return (
-    <button disabled={disabled} onClick={onClick}>
+    <button onClick={onClick}>
       <img
         src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
         alt={connector.name}
