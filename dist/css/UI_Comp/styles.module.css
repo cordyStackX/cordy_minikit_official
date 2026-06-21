@@ -50,6 +50,10 @@
   overflow: hidden;
   animation: fadeIn 300ms ease forwards;
   border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-flow: column;
 }
 .connector div {
   flex-flow: column;
