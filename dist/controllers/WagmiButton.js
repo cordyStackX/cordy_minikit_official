@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { useConnect } from "wagmi";
 import Images from "../config/Image.json";
 export default function WalletButton({ onStatusChange }) {
-    const { connectors, connectAsync, status } = useConnect();
+    const { connectors, connectAsync } = useConnect();
     const [pendingConnector, setPendingConnector] = React.useState(null);
     const [errorMsg, setErrorMsg] = React.useState(undefined);
     const [isConnecting, setIsConnecting] = React.useState(false);
@@ -53,7 +53,7 @@ function WalletOption({ connector, onClick, isPending }) {
             }
         })();
     }, [connector]);
-    return (_jsxs("button", { disabled: !installed, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, title: connector.name, width: 23, height: 18 }), isPending
+    return (_jsxs("button", { disabled: !installed, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || "", alt: connector.name, title: connector.name, width: 23, height: 18 }), isPending
                 ? "Connecting..."
                 : isTrustWallet
                     ? "Trust Wallet"

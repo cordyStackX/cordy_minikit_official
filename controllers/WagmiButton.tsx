@@ -9,7 +9,7 @@ export default function WalletButton({
 }: {
   onStatusChange?: (status: { isPending: boolean; error?: string }) => void
 }) {
-  const { connectors, connectAsync, status } = useConnect();
+  const { connectors, connectAsync } = useConnect();
   const [pendingConnector, setPendingConnector] = React.useState<Connector | null>(null);
   const [errorMsg, setErrorMsg] = React.useState<string | undefined>(undefined);
   const [isConnecting, setIsConnecting] = React.useState(false);
@@ -86,7 +86,7 @@ function WalletOption({
   return (
   <button disabled={!installed} onClick={onClick}>
     <img
-      src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
+      src={(Images as Record<string, string>)[connector.name] || ""}
       alt={connector.name}
       title={connector.name}
       width={23}
