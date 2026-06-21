@@ -13,6 +13,6 @@ export default function ConnectWalletBT({ className, }) {
         ? Number(formatUnits(balance.value, balance.decimals)).toFixed(4)
         : "0.0000";
     return (_jsx("button", { className: className, onClick: openModal, children: isConnected
-            ? `bal ${formattedBalance} ${balance?.symbol ?? ""}`
+            ? `BAL ${formattedBalance} ${balance?.symbol ?? ""}`
             : "Connect Wallet" }));
 }
