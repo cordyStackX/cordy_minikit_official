@@ -37,18 +37,23 @@ function WalletOption({ connector, onClick, isPending }) {
     React.useEffect(() => {
         (async () => {
             try {
+                if (connector.id === "walletConnect") {
+                    setInstalled(true);
+                    return;
+                }
                 const provider = await connector.getProvider();
-                setInstalled(!!provider); // true if wallet found
+                setInstalled(!!provider);
             }
             catch {
                 setInstalled(false);
             }
         })();
     }, [connector]);
-    const disabled = isPending || !installed;
-    return (_jsxs("button", { disabled: disabled, onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 23, height: 18 }), isPending
+    return (_jsxs("button", { onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 23, height: 18 }), isPending
                 ? "Connecting..."
-                : !installed
-                    ? `${connector.name} (Not Installed)`
-                    : connector.name] }));
+                : connector.id === "walletConnect"
+                    ? "WalletConnect"
+                    : !installed
+                        ? `${connector.name} (Not Installed)`
+                        : connector.name] }));
 }
