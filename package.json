@@ -1,6 +1,6 @@
 {
   "name": "@cordystackx/cordy_minikit",
-  "version": "1.5.32",
+  "version": "1.5.33",
   "publishConfig": {
     "access": "public"
   },
