@@ -40,6 +40,8 @@ export default function WalletButton({
               await connectAsync({ connector });
             } catch (err) {
               setErrorMsg((err as Error)?.message || "Connection failed");
+              setIsConnecting(false);
+              setPendingConnector(null);
             } finally {
               setIsConnecting(false);
               setPendingConnector(null);

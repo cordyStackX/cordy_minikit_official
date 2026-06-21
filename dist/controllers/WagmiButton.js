@@ -26,6 +26,8 @@ export default function WalletButton({ onStatusChange }) {
                 }
                 catch (err) {
                     setErrorMsg(err?.message || "Connection failed");
+                    setIsConnecting(false);
+                    setPendingConnector(null);
                 }
                 finally {
                     setIsConnecting(false);
