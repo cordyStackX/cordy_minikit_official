@@ -50,10 +50,10 @@ function WalletOption({ connector, onClick, isPending }) {
             }
         })();
     }, [connector]);
-    return (_jsxs("button", { onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 23, height: 18 }), isPending
+    return (_jsxs("button", { onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, title: connector.name, width: 23, height: 18 }), isPending
                 ? "Connecting..."
                 : isTrustWallet
-                    ? "Trust Wallet (Scan QR)"
+                    ? "Trust Wallet"
                     : connector.name === "WalletConnect"
                         ? "WalletConnect"
                         : !installed

@@ -84,6 +84,7 @@ function WalletOption({
     <img
       src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
       alt={connector.name}
+      title={connector.name}
       width={23}
       height={18}
     />
@@ -91,7 +92,7 @@ function WalletOption({
       isPending
         ? "Connecting..."
         : isTrustWallet
-          ? "Trust Wallet (Scan QR)"
+          ? "Trust Wallet"
           : connector.name === "WalletConnect"
             ? "WalletConnect"
             : !installed
