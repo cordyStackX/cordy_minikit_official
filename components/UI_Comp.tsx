@@ -18,66 +18,67 @@ export default function UI_Comp() {
   const [symbol, setSymbol] = useState("");
 
   useEffect(() => {
-    
+  if (isConnected && address) {
     Get_Balance();
-
-  }, [balance]);
+  }
+}, [isConnected, address]);
 
   useEffect(() => {
     setLoading(false);
   }, [errorMsg])
 
   const Get_Balance = async () => {
-
     if (!address) return;
 
-    const { balance, symbol } = await getTokenBalance(address);
+    setLoading(true);
 
-    setBalance(balance);
-    setSymbol(symbol);
-    return;
-  };
+    try {
+      const { balance, symbol } = await getTokenBalance(address);
+      setBalance(balance);
+      setSymbol(symbol);
+    } catch (err) {
+      setErrorMsg("Failed to load balance");
+    } finally {
+      setLoading(false);
+    }
+  }
   
   if (isConnected) {
   
-  if (balance === "") {
-    Get_Balance();
-  }
-  
-  return(
-    <div className={UI_Comp__css.container}>
-      <div className={UI_Comp__css.connector}>
-        <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-        {isConnected && (
-          <div className={UI_Comp__css.info}>
-            {balance ? (
-              <span>
-                <FaUser size={70} />
-                <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#2f9"}}>Network: {chain?.name || "Unknown"}</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
-                <p style={{color: "#ff0"}}>{address}</p>
-              </span>
+    return(
+      <div className={UI_Comp__css.container}>
+        <div className={UI_Comp__css.connector}>
+          <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
+          {isConnected && (
+            <div className={UI_Comp__css.info}>
+              {balance ? (
+                <span>
+                  <FaUser size={70} />
+                  <p style={{color: "#0f0"}}>Connected</p>
+                  <p style={{color: "#2f9"}}>Network: {chain?.name || "Unknown"}</p>
+                  <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
+                  <p style={{color: "#ff0"}}>{address}</p>
+                </span>
+                
+              ) : (
+                  <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
+              )}
               
-            ) : (
-                <p style={{color: "var(--foreground_wagmi)"}}>Loading balance...</p>
-            )}
-            
-          </div>
-        )}
-        
-        <button onClick={() => {
-          closeModal();
-          disconnect();
-        }}>DisConnect</button>
-        <a href={links.NPM_Pack_links}>
-          Powered By CordyStackX | Version {pkg.version}
-        </a>
+            </div>
+          )}
+          
+          <button onClick={() => {
+            closeModal();
+            disconnect();
+          }}>DisConnect</button>
+          <a href={links.NPM_Pack_links}>
+            Powered By CordyStackX | Version {pkg.version}
+          </a>
 
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className={UI_Comp__css.container}>
