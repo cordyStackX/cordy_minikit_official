@@ -84,11 +84,11 @@ export default function UI_Comp() {
         <div>
             
             {loading ? (
-              <div className={UI_Comp__css.blockchain_loader}>
-                <div className={UI_Comp__css.node}></div>
-                <div className={UI_Comp__css.node}></div>
-                <div className={UI_Comp__css.node}></div>
-              </div>
+              <span className={UI_Comp__css.blockchain_loader}>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+              </span>
             ) : null}
 
             <WalletButton
