@@ -79,18 +79,22 @@ function WalletOption({
 
 
   return (
-    <button onClick={onClick}>
-      <img
-        src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
-        alt={connector.name}
-        width={23}
-        height={18}
-      />
-      {isPending
+  <button onClick={onClick}>
+    <img
+      src={(Images as Record<string, string>)[connector.name] || Images["Coinbased Wallet"]}
+      alt={connector.name}
+      width={23}
+      height={18}
+    />
+    {
+      isPending
         ? "Connecting..."
-        : !installed
-          ? `${connector.name} (Not Installed)`
-          : connector.name}
-    </button>
+        : connector.id === "walletConnect"
+          ? "WalletConnect"
+          : !installed
+            ? `${connector.name} (Not Installed)`
+            : connector.name
+    }
+  </button>
   );
 }

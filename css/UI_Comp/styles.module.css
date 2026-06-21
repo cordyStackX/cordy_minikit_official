@@ -1,19 +1,19 @@
 :root {
-    --foreground_wagmi_34535: #171717;
-    --meduim_dark_wagmi_34535: #818181;
-    --background_wagmi_34535: #FAFAFA;
-    --invert-cordy-image_34535: invert(1);
-    --invert-cordy-image_1_34535: invert(0);
+  --foreground_wagmi_34535: #171717;
+  --meduim_dark_wagmi_34535: #818181;
+  --background_wagmi_34535: #FAFAFA;
+  --invert-cordy-image_34535: invert(1);
+  --invert-cordy-image_1_34535: invert(0);
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --foreground_wagmi_34535: #ededed;
-        --meduim_dark_wagmi_34535: #252525;
-        --background_wagmi_34535: #121212;
-        --invert-cordy-image_34535: invert(0);
-        --invert-cordy-image_1_34535: invert(1);
-    }
+  :root {
+    --foreground_wagmi_34535: #ededed;
+    --meduim_dark_wagmi_34535: #252525;
+    --background_wagmi_34535: #121212;
+    --invert-cordy-image_34535: invert(0);
+    --invert-cordy-image_1_34535: invert(1);
+  }
 }
 
 .container,
@@ -22,106 +22,105 @@
 .info,
 .info span,
 .connector button  {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .container {
-    width: 100dvw;
-    height: 100dvh;
-    backdrop-filter: blur(10px);
-    z-index: 999;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  width: 100dvw;
+  height: 100dvh;
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .connector {
-    width: min(400px, 100dvw);
-    height: 500px;
-    background-color: var(--background_wagmi_34535);
-    position: fixed;
-    box-shadow: 0 0 1rem 0.3rem var(--meduim_dark_wagmi_34535);
-    flex-flow: column;
-    overflow: hidden;
-    animation: fadeIn 0.5s ease forwards;
-    border-radius: 15px;
+  width: min(400px, 100dvw);
+  height: auto;
+  background-color: var(--background_wagmi_34535);
+  position: fixed;
+  box-shadow: 0 0 1rem 0.1rem var(--meduim_dark_wagmi_34535);
+  flex-flow: column;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease forwards;
+  border-radius: 5px;
 }
 .connector div {
-    flex-flow: column;
-    padding: 1rem 0;
-    width: 90%;
+  flex-flow: column;
+  padding: 1rem 0;
+  width: 90%;
 }
 
 .connector div p {
-    color: #f00;
-    text-align: center;
+  color: #f00;
+  text-align: center;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10%);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(10%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .connector img {
     margin: 0 0.3rem;
 }
 .connector button {
-    width: 300px;
-    padding: 1rem;
-    background-color: var(--foreground_wagmi_34535);
-    color: var(--background_wagmi_34535);
-    font-weight: bold;
-    cursor: pointer;
-    border: transparent;
-    transition: all 0.5s ease;
-    margin: 1rem 0;
-    transition: all 0.5s ease-in-out;
+  width: 300px;
+  padding: 1rem;
+  background-color: var(--foreground_wagmi_34535);
+  color: var(--background_wagmi_34535);
+  font-weight: bold;
+  cursor: pointer;
+  border: transparent;
+  transition: all 500ms ease;
+  margin: 1rem 0;
 }
 .connector button:hover {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 .connector button:active {
-    transform: scale(0.5);
+  transform: scale(0.9);
 }
 
 .info span {
-    flex-flow: column;
+  flex-flow: column;
 }
 .info span p {
-    width: 80%;
-    overflow: hidden;    
-    white-space: nowrap;  
-    text-overflow: ellipsis; 
-    margin: 1rem 0;
-    font-weight: bolder;
+  width: 80%;
+  overflow: hidden;    
+  white-space: nowrap;  
+  text-overflow: ellipsis; 
+  margin: 1rem 0;
+  font-weight: bolder;
 }
 .closed {
-    padding: 0.5rem 0.8rem;
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-weight: bolder;
-    border-radius: 50%;
-    background-color: transparent;
-    cursor: pointer;
-    transition: all 0.5s ease;
+  padding: 0.5rem 0.8rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-weight: bolder;
+  border-radius: 50%;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.5s ease;
 }
 .closed:hover {
-    background-color: var(--meduim_dark_wagmi_34535);
+  background-color: var(--meduim_dark_wagmi_34535);
 }
 @media (max-width: 800px) {
-    .connector {
-        bottom: 0;
-        border-bottom-right-radius: 0;
-        border-bottom-left-radius: 0;
-    }
+  .connector {
+    bottom: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
 }
 
