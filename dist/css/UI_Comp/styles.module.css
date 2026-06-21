@@ -135,6 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-flow: row;
   gap: 14px;
   width: 100px;
   height: 60px;
