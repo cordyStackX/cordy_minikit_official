@@ -34,10 +34,11 @@ export default function WalletButton({ onStatusChange }) {
 }
 function WalletOption({ connector, onClick, isPending }) {
     const [installed, setInstalled] = React.useState(true);
+    const isTrustWallet = connector.name === "Trust Wallet";
     React.useEffect(() => {
         (async () => {
             try {
-                if (connector.id === "walletConnect") {
+                if (connector.name === "WalletConnect" || isTrustWallet) {
                     setInstalled(true);
                     return;
                 }
@@ -51,9 +52,11 @@ function WalletOption({ connector, onClick, isPending }) {
     }, [connector]);
     return (_jsxs("button", { onClick: onClick, children: [_jsx("img", { src: Images[connector.name] || Images["Coinbased Wallet"], alt: connector.name, width: 23, height: 18 }), isPending
                 ? "Connecting..."
-                : connector.id === "walletConnect"
-                    ? "WalletConnect"
-                    : !installed
-                        ? `${connector.name} (Not Installed)`
-                        : connector.name] }));
+                : isTrustWallet
+                    ? "Trust Wallet (Scan QR)"
+                    : connector.name === "WalletConnect"
+                        ? "WalletConnect"
+                        : !installed
+                            ? `${connector.name} (Not Installed)`
+                            : connector.name] }));
 }
