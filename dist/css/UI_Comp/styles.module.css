@@ -41,7 +41,7 @@
 .connector {
   width: min(400px, 100dvw);
   height: auto;
-  padding: 0 1.5rem;
+  padding: 1.5rem 0;
   background-color: var(--background_wagmi_34535);
   position: fixed;
   box-shadow: 0 0 1rem 0.1rem var(--meduim_dark_wagmi_34535);
