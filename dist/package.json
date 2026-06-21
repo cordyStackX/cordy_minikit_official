@@ -1,6 +1,6 @@
 {
     "name": "@cordystackx/cordy_minikit",
-    "version": "1.5.30",
+    "version": "1.5.32",
     "publishConfig": {
         "access": "public"
     },
@@ -42,7 +42,7 @@
         "wagmi": "^3.6.17"
     },
     "devDependencies": {
-        "@types/node": "^25.9.3",
+        "@types/node": "^25.9.4",
         "@types/react": "^19.2.17",
         "@types/react-dom": "^19.2.3"
     }

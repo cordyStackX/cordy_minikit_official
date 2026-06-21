@@ -77,24 +77,32 @@ export default function UI_Comp() {
 
   return (
     <div className={UI_Comp__css.container}>
-      <div className={UI_Comp__css.connector}>
-        <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-        <h2>Connect Your Wallet</h2>
-
-        <div>
-            <h3>{loading ? "Loading..." : ""}</h3>
-            <WalletButton
-                onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
-                setLoading(isPending);
-                setErrorMsg(error);
-                }}
-            />      
-            <p>{errorMsg}</p>
+      {loading ? (
+        <div className={UI_Comp__css.blockchain_loader}>
+          <div className={UI_Comp__css.node}></div>
+          <div className={UI_Comp__css.node}></div>
+          <div className={UI_Comp__css.node}></div>
         </div>
-        <a href={links.NPM_Pack_links}>
-          Powered By CordyStackX | Version {pkg.version}
-        </a>
-      </div>
+      ) : (
+        <div className={UI_Comp__css.connector}>
+          <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
+          <h2>Connect Your Wallet</h2>
+
+          <div>
+              <WalletButton
+                  onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
+                  setLoading(isPending);
+                  setErrorMsg(error);
+                  }}
+              />      
+              <p>{errorMsg}</p>
+          </div>
+          <a href={links.NPM_Pack_links}>
+            Powered By CordyStackX | Version {pkg.version}
+          </a>
+        </div>
+      )}
+      
     </div>
   );
 }

@@ -117,11 +117,49 @@
 .closed:hover {
   background-color: var(--meduim_dark_wagmi_34535);
 }
+
 @media (max-width: 800px) {
   .connector {
     bottom: 0;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
+  }
+}
+
+.blockchain_loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  height: 60px;
+}
+
+/* NODES (blocks) */
+.node {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #00ffd5;
+  box-shadow: 0 0 10px #00ffd5, 0 0 20px rgba(0, 255, 213, 0.4);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.node:nth-child(1) { animation-delay: 0s; }
+.node:nth-child(2) { animation-delay: 0.2s; }
+.node:nth-child(3) { animation-delay: 0.4s; }
+
+/* NODE PULSE */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+    box-shadow: 0 0 10px #00ffd5;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+    box-shadow: 0 0 20px #00ffd5, 0 0 40px rgba(0,255,213,0.6);
   }
 }
 
