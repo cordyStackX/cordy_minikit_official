@@ -7,7 +7,6 @@ import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import pkg from "../package.json";
 import links from "../config/links.json";
-import { isConnected as stellarIsConnected, getAddress as stellarGetAddress, getNetworkDetails as stellarGetNetworkDetails } from "@stellar/freighter-api";
 import { Horizon } from "@stellar/stellar-sdk";
 
 const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
@@ -31,31 +30,10 @@ export default function UI_Comp() {
   }, [isConnected, address]);
 
   useEffect(() => {
-    const hydrateStellar = async () => {
-      if (stellarWallet.address || stellarWallet.manuallyDisconnected) {
-        return;
-      }
-
-      try {
-        const connected = await stellarIsConnected();
-        if (!connected.isConnected) return;
-
-        const account = await stellarGetAddress();
-        const networkDetails = await stellarGetNetworkDetails();
-
-        setStellarWallet({
-          address: account.address,
-          network: networkDetails.network || "Stellar",
-          manuallyDisconnected: false,
-        });
-        await loadStellarBalance(account.address);
-      } catch (err) {
-        console.error("Failed to hydrate Stellar wallet state:", err);
-      }
-    };
-
-    void hydrateStellar();
-  }, [stellarWallet.address, setStellarWallet]);
+    if (stellarWallet.address) {
+      void loadStellarBalance(stellarWallet.address);
+    }
+  }, [stellarWallet.address]);
 
   const Get_Balance = async () => {
 
@@ -179,14 +157,14 @@ export default function UI_Comp() {
             />
             <StellarWalletButton
               onConnect={(address) => {
-                setStellarWallet((current) => ({ ...current, address, manuallyDisconnected: false }));
+                setStellarWallet((current) => ({ ...current, address }));
                 void loadStellarBalance(address);
                 closeModal();
               }}
               onStatusChange={({ isPending, error, address, network }) => {
                 setStellarLoading(isPending);
                 setStellarError(error);
-                if (address) setStellarWallet((current) => ({ ...current, address, manuallyDisconnected: false }));
+                if (address) setStellarWallet((current) => ({ ...current, address }));
                 if (network) {
                   setStellarWallet((current) => ({ ...current, network }));
                 }

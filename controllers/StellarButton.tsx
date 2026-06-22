@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { requestAccess, isConnected, getNetworkDetails } from "@stellar/freighter-api";
 
 export default function StellarWalletButton({
@@ -48,24 +48,6 @@ export default function StellarWalletButton({
       setIsPending(false);
     }
   };
-
-  const checkConnection = async () => {
-    try {
-      const connected = await isConnected();
-      if (!connected.isConnected) return;
-
-      const access = await requestAccess();
-      setAddress(access.address);
-      const networkDetails = await getNetworkDetails();
-      setNetwork(networkDetails.network || "Unknown");
-    } catch (err) {
-      console.error("Freighter connection check failed:", err);
-    }
-  };
-
-  useEffect(() => {
-    void checkConnection();
-  }, []);
 
   return (
     <button onClick={connect} disabled={isPending}>

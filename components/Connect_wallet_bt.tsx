@@ -3,7 +3,6 @@ import { getTokenBalance } from "../controllers";
 import { useWalletModal, useStellarWallet } from "../wagmi__providers";
 import { useAccount } from "wagmi";
 import { useEffect, useState } from "react";
-import { isConnected as stellarIsConnected, getAddress as stellarGetAddress } from "@stellar/freighter-api";
 import { Horizon } from "@stellar/stellar-sdk";
 
 const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
@@ -26,27 +25,6 @@ export default function ConnectWalletBT({
       Get_Balance();
     }
   }, [isConnected, address]);
-
-  useEffect(() => {
-    const hydrateStellar = async () => {
-      if (stellarWallet.manuallyDisconnected) {
-        return;
-      }
-
-      try {
-        const connected = await stellarIsConnected();
-        if (!connected.isConnected) return;
-
-        const account = await stellarGetAddress();
-        setStellarWallet((current) => ({ ...current, address: account.address, manuallyDisconnected: false }));
-        void loadStellarBalance(account.address);
-      } catch {
-        return;
-      }
-    };
-
-    void hydrateStellar();
-  }, []);
 
   const Get_Balance = async () => {
 
