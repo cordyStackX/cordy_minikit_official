@@ -1,5 +1,6 @@
 :root {
   --foreground_wagmi_34535: #171717;
+  --foreground_wagmi_11111: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 246, 248, 0.98));
   --meduim_dark_wagmi_34535: #818181;
   --background_wagmi_34535: #FAFAFA;
   --invert-cordy-image_34535: invert(1);
@@ -8,6 +9,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --foreground_wagmi_11111: linear-gradient(180deg, rgba(0, 0, 0, 0.96), rgba(40, 40, 40, 0.98));
     --foreground_wagmi_34535: #ededed;
     --meduim_dark_wagmi_34535: #252525;
     --background_wagmi_34535: #121212;
@@ -44,8 +46,7 @@
   height: auto;
   min-height: 420px;
   padding: 1.25rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 246, 248, 0.98));
+  background: var(--foreground_wagmi_11111);
   position: fixed;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
   flex-flow: column;

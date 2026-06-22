@@ -71,10 +71,10 @@ export default function UI_Comp() {
                                             disconnectStellar();
                                         }, children: "DisConnect" })] }), _jsx("div", { className: UI_Comp__css.right_column, children: (loading || stellarLoading) ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
-    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { className: UI_Comp__css.split_layout, children: [_jsxs("div", { className: UI_Comp__css.left_column, children: [_jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
+    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { className: UI_Comp__css.split_layout, children: [_jsxs("div", { className: UI_Comp__css.left_column, children: [_jsx("h3", { children: "EVM Wallet" }), _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                         setLoading(isPending);
                                         setErrorMsg(error);
-                                    } }), _jsx(StellarWalletButton, { onConnect: (address) => {
+                                    } })] }), _jsxs("div", { className: UI_Comp__css.right_column, children: [_jsx("h3", { children: "Non - EVM" }), _jsx(StellarWalletButton, { onConnect: (address) => {
                                         setStellarWallet((current) => ({ ...current, address }));
                                         void loadStellarBalance(address);
                                         closeModal();
@@ -88,5 +88,5 @@ export default function UI_Comp() {
                                         }
                                         if (address)
                                             void loadStellarBalance(address);
-                                    } }), _jsx("p", { children: errorMsg }), _jsx("p", { children: stellarError })] }), _jsx("div", { className: UI_Comp__css.right_column, children: loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+                                    } }), _jsx("p", { children: errorMsg }), _jsx("p", { children: stellarError })] })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
 }

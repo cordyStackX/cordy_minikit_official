@@ -152,16 +152,27 @@ export default function UI_Comp() {
   return (
     <div className={UI_Comp__css.container}>
       <div className={UI_Comp__css.connector}>
+        {loading || stellarLoading ? (
+          <span className={UI_Comp__css.blockchain_loader}>
+            <span className={UI_Comp__css.node}></span>
+            <span className={UI_Comp__css.node}></span>
+            <span className={UI_Comp__css.node}></span>
+          </span>
+        ) : null}
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
         <h2>Connect Your Wallet</h2>
         <div className={UI_Comp__css.split_layout}>
           <div className={UI_Comp__css.left_column}>
+            <h3>EVM Wallet</h3>
             <WalletButton
               onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
                 setLoading(isPending);
                 setErrorMsg(error);
               }}
             />
+          </div>
+          <div className={UI_Comp__css.right_column}>
+            <h3>Non - EVM</h3>
             <StellarWalletButton
               onConnect={(address) => {
                 setStellarWallet((current) => ({ ...current, address }));
@@ -180,15 +191,6 @@ export default function UI_Comp() {
             />
             <p>{errorMsg}</p>
             <p>{stellarError}</p>
-          </div>
-          <div className={UI_Comp__css.right_column}>
-            {loading || stellarLoading ? (
-              <span className={UI_Comp__css.blockchain_loader}>
-                <span className={UI_Comp__css.node}></span>
-                <span className={UI_Comp__css.node}></span>
-                <span className={UI_Comp__css.node}></span>
-              </span>
-            ) : null}
           </div>
         </div>
         <a href={links.NPM_Pack_links}>
