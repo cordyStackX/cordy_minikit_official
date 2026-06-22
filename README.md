@@ -17,6 +17,14 @@ Built with **Wagmi**, **Viem**, **Ethers**, and **TypeScript**.
 
 ---
 
+## 🖼️ Demo
+
+| Demo 1 | Demo 2 | Demo 3 |
+|---|---|---|
+| ![Demo 1](assets/demo1.png) | ![Demo 2](assets/demo2.png) | ![Demo 3](assets/demo3.png) |
+
+---
+
 ## 🚀 Features
 
 - 🔗 **Wallet Connect/Disconnect** — Simple hooks and buttons for EVM-based wallets

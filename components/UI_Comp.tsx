@@ -109,14 +109,13 @@ export default function UI_Comp() {
             )}
           </div>
         </div>
-        <button onClick={() => {
+        <button style={{ width: "230px" }} onClick={() => {
           closeModal();
           disconnect();
         }}>DisConnect</button>
-        <a href={links.NPM_Pack_links}>
+        <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>
           Powered By CordyStackX | Version {pkg.version}
         </a>
-
       </div>
     </div>
   );
@@ -137,16 +136,24 @@ export default function UI_Comp() {
             </div>
             <div className={UI_Comp__css.right_column}>
               <h3>Status</h3>
-              <div className={UI_Comp__css.status_stack}>
-                <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
-                <p className={UI_Comp__css.address} style={{color: "#ff0"}} title={stellarWallet.address || ""}>{truncateAddress(stellarWallet.address)}</p>
-                {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
-              </div>
+              {stellarWallet.balance ? (
+                <div className={UI_Comp__css.status_stack}>
+                  <p style={{color: "#0f0"}}>Connected</p>
+                  <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
+                  <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
+                  <p className={UI_Comp__css.address} style={{color: "#ff0"}} title={stellarWallet.address || ""}>{truncateAddress(stellarWallet.address)}</p>
+                  {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
+                </div>
+              ) : (
+                <span className={UI_Comp__css.blockchain_loader}>
+                  <span className={UI_Comp__css.node}></span>
+                  <span className={UI_Comp__css.node}></span>
+                  <span className={UI_Comp__css.node}></span>
+                </span>
+              )}
             </div>
           </div>
-          <button onClick={() => {
+          <button style={{ width: "230px" }} onClick={() => {
             disconnectStellar();
           }}>DisConnect</button>
           <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Documentation
+
+* Added demo screenshots (`demo1.png`, `demo2.png`, `demo3.png`) to the README.
+
 ## [1.5.17] - 2026-06-19
 
 ### Changed

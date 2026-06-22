@@ -145,19 +145,19 @@
     margin: 0 0.3rem;
 }
 .connector button {
-  width: min(100%, 340px);
-  padding: 0.5rem 1rem;
+  width: min(100%, 300px);
+  padding: 0.8rem 0 0.8rem 5rem;
   background: linear-gradient(180deg, var(--accent_wagmi_34535), #1fa9a4);
   color: #1a1609;
   font-weight: bold;
   cursor: pointer;
   border: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   transition: all 300ms ease;
   margin: 0.5rem 0 0;
   box-shadow: 0 12px 28px rgba(51, 217, 211, 0.18);
   display: flex;
-  justify-content: center;
+  justify-content: left;
   align-items: center;
 }
 .connector button:hover {
