@@ -16,6 +16,10 @@ export default function UI_Comp() {
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
+  const [stellarAddress, setStellarAddress] = useState<string | null>(null);
+  const [stellarNetwork, setStellarNetwork] = useState<string | undefined>();
+  const [stellarLoading, setStellarLoading] = useState(false);
+  const [stellarError, setStellarError] = useState<string | undefined>();
 
   useEffect(() => {
     if (isConnected && address) {
@@ -73,7 +77,33 @@ export default function UI_Comp() {
       </div>
     </div>
   );
-}
+  }
+
+  if (stellarAddress) {
+    return(
+      <div className={UI_Comp__css.container}>
+        <div className={UI_Comp__css.connector}>
+          <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
+          <div className={UI_Comp__css.info}>
+            <FaUser size={70} />
+            <p style={{color: "#0f0"}}>Connected</p>
+            <p style={{color: "#2f9"}}>Network: {stellarNetwork || "Stellar"}</p>
+            <p style={{color: "#ff0"}}>{stellarAddress}</p>
+            {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
+          </div>
+          <button onClick={() => {
+            closeModal();
+            setStellarAddress(null);
+            setStellarNetwork(undefined);
+            setStellarError(undefined);
+          }}>DisConnect</button>
+          <a href={links.NPM_Pack_links}>
+            Powered By CordyStackX | Version {pkg.version}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={UI_Comp__css.container}>
@@ -83,7 +113,7 @@ export default function UI_Comp() {
 
         <div>
             
-            {loading ? (
+            {loading || stellarLoading ? (
               <span className={UI_Comp__css.blockchain_loader}>
                 <span className={UI_Comp__css.node}></span>
                 <span className={UI_Comp__css.node}></span>
@@ -97,8 +127,16 @@ export default function UI_Comp() {
                 setErrorMsg(error);
                 }}
             />
-            <StellarWalletButton />
+            <StellarWalletButton
+              onStatusChange={({ isPending, error, address, network }) => {
+                setStellarLoading(isPending);
+                setStellarError(error);
+                if (address) setStellarAddress(address);
+                if (network) setStellarNetwork(network);
+              }}
+            />
             <p>{errorMsg}</p>
+            <p>{stellarError}</p>
         </div>
         <a href={links.NPM_Pack_links}>
           Powered By CordyStackX | Version {pkg.version}

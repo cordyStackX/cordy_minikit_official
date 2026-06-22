@@ -16,6 +16,10 @@ export default function UI_Comp() {
     const [errorMsg, setErrorMsg] = useState();
     const [balance, setBalance] = useState("");
     const [symbol, setSymbol] = useState("");
+    const [stellarAddress, setStellarAddress] = useState(null);
+    const [stellarNetwork, setStellarNetwork] = useState();
+    const [stellarLoading, setStellarLoading] = useState(false);
+    const [stellarError, setStellarError] = useState();
     useEffect(() => {
         if (isConnected && address) {
             Get_Balance();
@@ -35,8 +39,23 @@ export default function UI_Comp() {
                             disconnect();
                         }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
-    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
+    if (stellarAddress) {
+        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsxs("div", { className: UI_Comp__css.info, children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", stellarNetwork || "Stellar"] }), _jsx("p", { style: { color: "#ff0" }, children: stellarAddress }), stellarError ? _jsx("p", { style: { color: "#f55" }, children: stellarError }) : null] }), _jsx("button", { onClick: () => {
+                            closeModal();
+                            setStellarAddress(null);
+                            setStellarNetwork(undefined);
+                            setStellarError(undefined);
+                        }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+    }
+    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                 setLoading(isPending);
                                 setErrorMsg(error);
-                            } }), _jsx(StellarWalletButton, {}), _jsx("p", { children: errorMsg })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+                            } }), _jsx(StellarWalletButton, { onStatusChange: ({ isPending, error, address, network }) => {
+                                setStellarLoading(isPending);
+                                setStellarError(error);
+                                if (address)
+                                    setStellarAddress(address);
+                                if (network)
+                                    setStellarNetwork(network);
+                            } }), _jsx("p", { children: errorMsg }), _jsx("p", { children: stellarError })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
 }

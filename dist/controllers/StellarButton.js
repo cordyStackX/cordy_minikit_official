@@ -1,21 +1,59 @@
 "use client";
-import { jsx as _jsx } from "react/jsx-runtime";
-import { useState } from "react";
-import * as Freighter from "@stellar/freighter-api";
-export default function StellarWalletButton({ onConnect, }) {
+import { jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useState } from "react";
+import { requestAccess, isConnected, getNetworkDetails } from "@stellar/freighter-api";
+export default function StellarWalletButton({ onConnect, onStatusChange, }) {
     const [address, setAddress] = useState(null);
+    const [isPending, setIsPending] = useState(false);
+    const [errorMsg, setErrorMsg] = useState();
+    const [network, setNetwork] = useState();
     const connect = async () => {
+        setIsPending(true);
+        setErrorMsg(undefined);
+        onStatusChange?.({ isPending: true });
         try {
-            // 👇 force runtime access (ignore TS mismatch)
-            const publicKey = await Freighter.getPublicKey();
+            const access = await requestAccess();
+            const publicKey = access.address;
             setAddress(publicKey);
+            const networkDetails = await getNetworkDetails();
+            setNetwork(networkDetails.network || "Unknown");
             onConnect?.(publicKey);
+            onStatusChange?.({
+                isPending: false,
+                address: publicKey,
+                network: networkDetails.network || "Unknown",
+            });
         }
         catch (err) {
+            const message = err instanceof Error ? err.message : "Freighter connection failed";
             console.error("Freighter error:", err);
+            setErrorMsg(message);
+            onStatusChange?.({ isPending: false, error: message });
+        }
+        finally {
+            setIsPending(false);
         }
     };
-    return (_jsx("button", { onClick: connect, children: address
-            ? `Connected: ${address.slice(0, 6)}...`
-            : "Connect Freighter" }));
+    const checkConnection = async () => {
+        try {
+            const connected = await isConnected();
+            if (!connected.isConnected)
+                return;
+            const access = await requestAccess();
+            setAddress(access.address);
+            const networkDetails = await getNetworkDetails();
+            setNetwork(networkDetails.network || "Unknown");
+        }
+        catch (err) {
+            console.error("Freighter connection check failed:", err);
+        }
+    };
+    useEffect(() => {
+        void checkConnection();
+    }, []);
+    return (_jsxs("button", { onClick: connect, disabled: isPending, children: [isPending
+                ? "Connecting..."
+                : address
+                    ? `Connected: ${address.slice(0, 6)}...`
+                    : "Freighter", network ? ` • ${network}` : "", errorMsg ? ` • ${errorMsg}` : ""] }));
 }

@@ -52,7 +52,13 @@ Create a `.env.local` file in your project root:
 NEXT_PUBLIC_RPC_ENDPOINT=https://your-rpc-endpoint.com
 NEXT_PUBLIC_TOKENADDRESS=0x...
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+
+# Stellar / Soroban
+NEXT_PUBLIC_STELLAR_RPC=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXISJEYNRDEPF6FNKPIVSXZW56FJFXDQSTO6GODG42DGK235RCWL5HP
 ```
+
+For Stellar, `NEXT_PUBLIC_STELLAR_CONTRACT_ID` is the Soroban equivalent of an EVM token address. The wallet itself is connected through Freighter, and the RPC is the Stellar/Soroban RPC endpoint.
 
 ### 2. Provider Setup
 
