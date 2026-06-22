@@ -2,6 +2,7 @@
     "logo": "https://cordy-stack-x.vercel.app/logo.svg",
     "Coinbase Wallet": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/coinbased.svg",
     "MetaMask": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/metamask.png",
-    "WalletConnect": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/main/assets/WalletConnect.png",
-    "Trust Wallet": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/trust-wallet-icon.png"
+    "WalletConnect": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/5086ee7de9e94e331f9b595e17ec5d022f5b8674/assets/WalletConnect.svg",
+    "Trust Wallet": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/trust-wallet-icon.png",
+    "Freighter": "https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/freighter.jpeg"
 }

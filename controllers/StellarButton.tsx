@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { requestAccess, getNetworkDetails } from "@stellar/freighter-api";
+import img_src from "../config/Image.json";
 
 export default function StellarWalletButton({
   onConnect,
@@ -51,6 +52,13 @@ export default function StellarWalletButton({
 
   return (
     <button onClick={connect} disabled={isPending}>
+      <img
+        src={img_src.Freighter}
+        alt="Freighter"
+        title="Freighter"
+        width={23}
+        height={18}
+      />
       {isPending
         ? "Connecting..."
         : address
