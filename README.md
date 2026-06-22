@@ -55,10 +55,11 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 
 # Stellar / Soroban
 NEXT_PUBLIC_STELLAR_RPC=https://soroban-testnet.stellar.org
-NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXISJEYNRDEPF6FNKPIVSXZW56FJFXDQSTO6GODG42DGK235RCWL5HP
+NEXT_PUBLIC_STELLAR_HORIZON=https://horizon-testnet.stellar.org
+NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXI....
 ```
 
-For Stellar, `NEXT_PUBLIC_STELLAR_CONTRACT_ID` is the Soroban equivalent of an EVM token address. The wallet itself is connected through Freighter, and the RPC is the Stellar/Soroban RPC endpoint.
+For Stellar, `NEXT_PUBLIC_STELLAR_CONTRACT_ID` is the Soroban equivalent of an EVM token address. Use `NEXT_PUBLIC_STELLAR_RPC` for Soroban contract calls and `NEXT_PUBLIC_STELLAR_HORIZON` for native account balance lookups through Horizon.
 
 ### 2. Provider Setup
 

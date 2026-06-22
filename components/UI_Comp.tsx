@@ -10,6 +10,8 @@ import links from "../config/links.json";
 import { Horizon } from "@stellar/stellar-sdk";
 
 const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
+const STELLAR_HORIZON =
+  process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-testnet.stellar.org";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
@@ -48,7 +50,7 @@ export default function UI_Comp() {
 
   const loadStellarBalance = async (accountId: string) => {
     try {
-      const server = new Horizon.Server(STELLAR_RPC);
+      const server = new Horizon.Server(STELLAR_HORIZON);
       const account = await server.loadAccount(accountId);
       const native = account.balances.find((item) => item.asset_type === "native");
       setStellarWallet((current) => ({
