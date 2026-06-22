@@ -68,10 +68,6 @@ export default function UI_Comp() {
     setStellarError(undefined);
     clearStellarWallet();
   };
-
-  const stellarShortAddress = stellarWallet.address
-    ? `${stellarWallet.address.slice(0, 6)}...${stellarWallet.address.slice(-6)}`
-    : "Scan to connect";
   
   if (isConnected) {
   
@@ -119,43 +115,30 @@ export default function UI_Comp() {
       <div className={UI_Comp__css.container}>
         <div className={UI_Comp__css.connector}>
           <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-          <div className={UI_Comp__css.stellar_layout}>
-            <div className={UI_Comp__css.stellar_panel}>
-              <p className={UI_Comp__css.panel_label}>Stellar Wallet</p>
+          <div className={UI_Comp__css.split_layout}>
+            <div className={UI_Comp__css.left_column}>
               <div className={UI_Comp__css.info}>
-                <div className={UI_Comp__css.identity_card}>
-                  <FaUser size={54} />
+                <div>
+                  <FaUser size={70} />
                   <p style={{color: "#0f0"}}>Connected</p>
                   <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
                   <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
-                  <p style={{color: "#ff0"}}>{stellarShortAddress}</p>
+                  <p style={{color: "#ff0"}}>{stellarWallet.address}</p>
                   {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
                 </div>
               </div>
               <button onClick={() => {
                 disconnectStellar();
-              }}>Disconnect</button>
+              }}>DisConnect</button>
             </div>
-
-            <div className={UI_Comp__css.qr_panel}>
-              <p className={UI_Comp__css.panel_label}>QR Code</p>
-              <div className={UI_Comp__css.qr_frame}>
-                <div className={UI_Comp__css.qr_grid} aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className={UI_Comp__css.qr_center}>
-                  <FaUser size={22} />
-                </div>
-              </div>
-              <p className={UI_Comp__css.qr_hint}>Scan or share this Stellar session</p>
+            <div className={UI_Comp__css.right_column}>
+              {(loading || stellarLoading) ? (
+                <span className={UI_Comp__css.blockchain_loader}>
+                  <span className={UI_Comp__css.node}></span>
+                  <span className={UI_Comp__css.node}></span>
+                  <span className={UI_Comp__css.node}></span>
+                </span>
+              ) : null}
             </div>
           </div>
           <a href={links.NPM_Pack_links}>
@@ -173,18 +156,11 @@ export default function UI_Comp() {
         <h2>Connect Your Wallet</h2>
         <div className={UI_Comp__css.split_layout}>
           <div className={UI_Comp__css.left_column}>
-            {loading || stellarLoading ? (
-              <span className={UI_Comp__css.blockchain_loader}>
-                <span className={UI_Comp__css.node}></span>
-                <span className={UI_Comp__css.node}></span>
-                <span className={UI_Comp__css.node}></span>
-              </span>
-            ) : null}
             <WalletButton
-                onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
+              onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
                 setLoading(isPending);
                 setErrorMsg(error);
-                }}
+              }}
             />
             <StellarWalletButton
               onConnect={(address) => {
@@ -205,25 +181,14 @@ export default function UI_Comp() {
             <p>{errorMsg}</p>
             <p>{stellarError}</p>
           </div>
-          <div className={UI_Comp__css.qr_panel}>
-            <p className={UI_Comp__css.panel_label}>Stellar QR</p>
-            <div className={UI_Comp__css.qr_frame}>
-              <div className={UI_Comp__css.qr_grid} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className={UI_Comp__css.qr_center}>
-                <FaUser size={22} />
-              </div>
-            </div>
-            <p className={UI_Comp__css.qr_hint}>Open Freighter, then scan from this side</p>
+          <div className={UI_Comp__css.right_column}>
+            {loading || stellarLoading ? (
+              <span className={UI_Comp__css.blockchain_loader}>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+              </span>
+            ) : null}
           </div>
         </div>
         <a href={links.NPM_Pack_links}>
