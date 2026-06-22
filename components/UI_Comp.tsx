@@ -128,6 +128,10 @@ export default function UI_Comp() {
                 }}
             />
             <StellarWalletButton
+              onConnect={(address) => {
+                setStellarAddress(address);
+                closeModal();
+              }}
               onStatusChange={({ isPending, error, address, network }) => {
                 setStellarLoading(isPending);
                 setStellarError(error);

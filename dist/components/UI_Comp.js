@@ -50,7 +50,10 @@ export default function UI_Comp() {
     return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                 setLoading(isPending);
                                 setErrorMsg(error);
-                            } }), _jsx(StellarWalletButton, { onStatusChange: ({ isPending, error, address, network }) => {
+                            } }), _jsx(StellarWalletButton, { onConnect: (address) => {
+                                setStellarAddress(address);
+                                closeModal();
+                            }, onStatusChange: ({ isPending, error, address, network }) => {
                                 setStellarLoading(isPending);
                                 setStellarError(error);
                                 if (address)
