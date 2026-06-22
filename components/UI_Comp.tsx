@@ -1,6 +1,6 @@
 "use client";
 import { UI_Comp__css } from "../css";
-import { WalletButton, getTokenBalance } from "../controllers";
+import { WalletButton, getTokenBalance, StellarWalletButton } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useDisconnect} from "wagmi";
 import { FaUser } from 'react-icons/fa';
@@ -96,7 +96,8 @@ export default function UI_Comp() {
                 setLoading(isPending);
                 setErrorMsg(error);
                 }}
-            />      
+            />
+            <StellarWalletButton />
             <p>{errorMsg}</p>
         </div>
         <a href={links.NPM_Pack_links}>

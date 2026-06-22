@@ -1,7 +1,7 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { UI_Comp__css } from "../css";
-import { WalletButton, getTokenBalance } from "../controllers";
+import { WalletButton, getTokenBalance, StellarWalletButton } from "../controllers";
 import { useWalletModal } from "../wagmi__providers";
 import { useAccount, useDisconnect } from "wagmi";
 import { FaUser } from 'react-icons/fa';
@@ -38,5 +38,5 @@ export default function UI_Comp() {
     return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
                                 setLoading(isPending);
                                 setErrorMsg(error);
-                            } }), _jsx("p", { children: errorMsg })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+                            } }), _jsx(StellarWalletButton, {}), _jsx("p", { children: errorMsg })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
 }
