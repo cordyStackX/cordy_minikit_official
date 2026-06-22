@@ -68,6 +68,12 @@ export default function UI_Comp() {
     setStellarError(undefined);
     clearStellarWallet();
   };
+
+  const truncateAddress = (value?: string | null, head = 8, tail = 4) => {
+    if (!value) return "";
+    if (value.length <= head + tail + 3) return value;
+    return `${value.slice(0, head)}...${value.slice(-tail)}`;
+  };
   
   if (isConnected) {
   
@@ -75,28 +81,34 @@ export default function UI_Comp() {
     <div className={UI_Comp__css.container}>
       <div className={UI_Comp__css.connector}>
         <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
-        {isConnected && (
-          <div className={UI_Comp__css.info}>
-            {balance ? (
-              <div>
-                <FaUser size={70} />
-                <p style={{color: "#0f0"}}>Connected</p>
-                <p style={{color: "#2f9"}}>Network: {chain?.name || "Unknown"}</p>
-                <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
-                <p style={{color: "#ff0"}}>{address}</p>
-              </div>
-              
-            ) : (
-                <span className={UI_Comp__css.blockchain_loader}>
-                  <span className={UI_Comp__css.node}></span>
-                  <span className={UI_Comp__css.node}></span>
-                  <span className={UI_Comp__css.node}></span>
-                </span>
-            )}
-            
+        <h2>Wallet Status</h2>
+        <div className={UI_Comp__css.split_layout}>
+          <div className={UI_Comp__css.left_column}>
+            <h3>EVM Wallet</h3>
+            <div className={UI_Comp__css.icon_wrap}>
+              <FaUser size={70} />
+            </div>
           </div>
-        )}
-        
+          <div className={UI_Comp__css.right_column}>
+            <h3>Status</h3>
+            {balance ? (
+              <div className={UI_Comp__css.info}>
+                <div className={UI_Comp__css.status_stack}>
+                  <p style={{color: "#0f0"}}>Connected</p>
+                  <p style={{color: "#2f9"}}>Network: {chain?.name || "Unknown"}</p>
+                  <p style={{color: "#0ff"}}>Balance: {Number(balance).toFixed(2)} {symbol}</p>
+                  <p className={UI_Comp__css.address} style={{color: "#ff0"}} title={address || ""}>{truncateAddress(address)}</p>
+                </div>
+              </div>
+            ) : (
+              <span className={UI_Comp__css.blockchain_loader}>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+                <span className={UI_Comp__css.node}></span>
+              </span>
+            )}
+          </div>
+        </div>
         <button onClick={() => {
           closeModal();
           disconnect();
@@ -115,33 +127,29 @@ export default function UI_Comp() {
       <div className={UI_Comp__css.container}>
         <div className={UI_Comp__css.connector}>
           <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
+          <h2>Wallet Status</h2>
           <div className={UI_Comp__css.split_layout}>
-            <div className={UI_Comp__css.left_column}>
-              <div className={UI_Comp__css.info}>
-                <div>
+          <div className={UI_Comp__css.left_column}>
+            <h3>Stellar Wallet</h3>
+              <div className={UI_Comp__css.icon_wrap}>
                   <FaUser size={70} />
-                  <p style={{color: "#0f0"}}>Connected</p>
-                  <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
-                  <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
-                  <p style={{color: "#ff0"}}>{stellarWallet.address}</p>
-                  {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
-                </div>
               </div>
-              <button onClick={() => {
-                disconnectStellar();
-              }}>DisConnect</button>
             </div>
             <div className={UI_Comp__css.right_column}>
-              {(loading || stellarLoading) ? (
-                <span className={UI_Comp__css.blockchain_loader}>
-                  <span className={UI_Comp__css.node}></span>
-                  <span className={UI_Comp__css.node}></span>
-                  <span className={UI_Comp__css.node}></span>
-                </span>
-              ) : null}
+              <h3>Status</h3>
+              <div className={UI_Comp__css.status_stack}>
+                <p style={{color: "#0f0"}}>Connected</p>
+                <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
+                <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
+                <p className={UI_Comp__css.address} style={{color: "#ff0"}} title={stellarWallet.address || ""}>{truncateAddress(stellarWallet.address)}</p>
+                {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
+              </div>
             </div>
           </div>
-          <a href={links.NPM_Pack_links}>
+          <button onClick={() => {
+            disconnectStellar();
+          }}>DisConnect</button>
+          <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>
             Powered By CordyStackX | Version {pkg.version}
           </a>
         </div>
@@ -163,7 +171,7 @@ export default function UI_Comp() {
         <h2>Connect Your Wallet</h2>
         <div className={UI_Comp__css.split_layout}>
           <div className={UI_Comp__css.left_column}>
-            <h3>EVM Wallet</h3>
+            <h3>EVM Wallets</h3>
             <WalletButton
               onStatusChange={({ isPending, error }: { isPending: boolean; error?: string }) => {
                 setLoading(isPending);
@@ -172,7 +180,7 @@ export default function UI_Comp() {
             />
           </div>
           <div className={UI_Comp__css.right_column}>
-            <h3>Non - EVM</h3>
+            <h3>Non - EVM Wallets</h3>
             <StellarWalletButton
               onConnect={(address) => {
                 setStellarWallet((current) => ({ ...current, address }));
@@ -189,11 +197,11 @@ export default function UI_Comp() {
                 if (address) void loadStellarBalance(address);
               }}
             />
-            <p>{errorMsg}</p>
-            <p>{stellarError}</p>
           </div>
         </div>
-        <a href={links.NPM_Pack_links}>
+        <p style={{ color: "#f00" }}>{errorMsg}</p>
+        <p style={{ color: "#f00" }}>{stellarError}</p>
+        <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>
           Powered By CordyStackX | Version {pkg.version}
         </a>
       </div>

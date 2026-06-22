@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { requestAccess, isConnected, getNetworkDetails } from "@stellar/freighter-api";
+import { requestAccess, getNetworkDetails } from "@stellar/freighter-api";
 
 export default function StellarWalletButton({
   onConnect,
