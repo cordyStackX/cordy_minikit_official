@@ -17,7 +17,7 @@ export default function WalletProviders({ children }) {
                 }, children: _jsxs(StellarWalletContext.Provider, { value: {
                         stellarWallet,
                         setStellarWallet,
-                        clearStellarWallet: () => setStellarWallet({ address: null }),
+                        clearStellarWallet: () => setStellarWallet({ address: null, manuallyDisconnected: true }),
                     }, children: [children, open && _jsx(UI_Comp, {}), " "] }) }) }) }));
 }
 export function useWalletModal() {

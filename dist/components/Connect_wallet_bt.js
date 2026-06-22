@@ -20,12 +20,15 @@ export default function ConnectWalletBT({ className, }) {
     }, [isConnected, address]);
     useEffect(() => {
         const hydrateStellar = async () => {
+            if (stellarWallet.manuallyDisconnected) {
+                return;
+            }
             try {
                 const connected = await stellarIsConnected();
                 if (!connected.isConnected)
                     return;
                 const account = await stellarGetAddress();
-                setStellarWallet((current) => ({ ...current, address: account.address }));
+                setStellarWallet((current) => ({ ...current, address: account.address, manuallyDisconnected: false }));
                 void loadStellarBalance(account.address);
             }
             catch {

@@ -7,6 +7,7 @@ type StellarWalletState = {
     address: string | null;
     network?: string;
     balance?: string;
+    manuallyDisconnected?: boolean;
 };
 export default function WalletProviders({ children }: {
     children: ReactNode;

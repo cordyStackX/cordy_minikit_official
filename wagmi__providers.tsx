@@ -14,6 +14,7 @@ type StellarWalletState = {
   address: string | null;
   network?: string;
   balance?: string;
+  manuallyDisconnected?: boolean;
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -42,7 +43,7 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
             value={{
               stellarWallet,
               setStellarWallet,
-              clearStellarWallet: () => setStellarWallet({ address: null }),
+              clearStellarWallet: () => setStellarWallet({ address: null, manuallyDisconnected: true }),
             }}
           >
             {children}

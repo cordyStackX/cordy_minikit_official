@@ -32,7 +32,7 @@ export default function UI_Comp() {
 
   useEffect(() => {
     const hydrateStellar = async () => {
-      if (stellarWallet.address) {
+      if (stellarWallet.address || stellarWallet.manuallyDisconnected) {
         return;
       }
 
@@ -46,6 +46,7 @@ export default function UI_Comp() {
         setStellarWallet({
           address: account.address,
           network: networkDetails.network || "Stellar",
+          manuallyDisconnected: false,
         });
         await loadStellarBalance(account.address);
       } catch (err) {
@@ -178,14 +179,14 @@ export default function UI_Comp() {
             />
             <StellarWalletButton
               onConnect={(address) => {
-                setStellarWallet((current) => ({ ...current, address }));
+                setStellarWallet((current) => ({ ...current, address, manuallyDisconnected: false }));
                 void loadStellarBalance(address);
                 closeModal();
               }}
               onStatusChange={({ isPending, error, address, network }) => {
                 setStellarLoading(isPending);
                 setStellarError(error);
-                if (address) setStellarWallet((current) => ({ ...current, address }));
+                if (address) setStellarWallet((current) => ({ ...current, address, manuallyDisconnected: false }));
                 if (network) {
                   setStellarWallet((current) => ({ ...current, network }));
                 }
