@@ -8,6 +8,11 @@ import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import pkg from "../package.json";
 import links from "../config/links.json";
+import { isConnected as stellarIsConnected, getAddress as stellarGetAddress, getNetworkDetails as stellarGetNetworkDetails } from "@stellar/freighter-api";
+import { Horizon } from "@stellar/stellar-sdk";
+const STELLAR_ADDRESS_KEY = "cordy_minikit:stellar_address";
+const STELLAR_NETWORK_KEY = "cordy_minikit:stellar_network";
+const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
 export default function UI_Comp() {
     const { closeModal } = useWalletModal();
     const { isConnected, address, chain } = useAccount();
@@ -20,11 +25,39 @@ export default function UI_Comp() {
     const [stellarNetwork, setStellarNetwork] = useState();
     const [stellarLoading, setStellarLoading] = useState(false);
     const [stellarError, setStellarError] = useState();
+    const [stellarBalance, setStellarBalance] = useState("0");
     useEffect(() => {
         if (isConnected && address) {
             Get_Balance();
         }
     }, [isConnected, address]);
+    useEffect(() => {
+        const hydrateStellar = async () => {
+            const storedAddress = window.localStorage.getItem(STELLAR_ADDRESS_KEY);
+            const storedNetwork = window.localStorage.getItem(STELLAR_NETWORK_KEY);
+            if (storedAddress) {
+                setStellarAddress(storedAddress);
+                setStellarNetwork(storedNetwork || undefined);
+                return;
+            }
+            try {
+                const connected = await stellarIsConnected();
+                if (!connected.isConnected)
+                    return;
+                const account = await stellarGetAddress();
+                const networkDetails = await stellarGetNetworkDetails();
+                setStellarAddress(account.address);
+                setStellarNetwork(networkDetails.network || "Stellar");
+                window.localStorage.setItem(STELLAR_ADDRESS_KEY, account.address);
+                window.localStorage.setItem(STELLAR_NETWORK_KEY, networkDetails.network || "Stellar");
+                await loadStellarBalance(account.address);
+            }
+            catch (err) {
+                console.error("Failed to hydrate Stellar wallet state:", err);
+            }
+        };
+        void hydrateStellar();
+    }, []);
     const Get_Balance = async () => {
         if (!address)
             return;
@@ -33,6 +66,18 @@ export default function UI_Comp() {
         setSymbol(symbol);
         return;
     };
+    const loadStellarBalance = async (accountId) => {
+        try {
+            const server = new Horizon.Server(STELLAR_RPC);
+            const account = await server.loadAccount(accountId);
+            const native = account.balances.find((item) => item.asset_type === "native");
+            setStellarBalance(native?.balance ?? "0");
+        }
+        catch (err) {
+            console.error("Failed to load Stellar balance:", err);
+            setStellarBalance("0");
+        }
+    };
     if (isConnected) {
         return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), isConnected && (_jsx("div", { className: UI_Comp__css.info, children: balance ? (_jsxs("div", { children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", chain?.name || "Unknown"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(balance).toFixed(2), " ", symbol] }), _jsx("p", { style: { color: "#ff0" }, children: address })] })) : (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) })), _jsx("button", { onClick: () => {
                             closeModal();
@@ -40,11 +85,13 @@ export default function UI_Comp() {
                         }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
     if (stellarAddress) {
-        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsxs("div", { className: UI_Comp__css.info, children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", stellarNetwork || "Stellar"] }), _jsx("p", { style: { color: "#ff0" }, children: stellarAddress }), stellarError ? _jsx("p", { style: { color: "#f55" }, children: stellarError }) : null] }), _jsx("button", { onClick: () => {
+        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsxs("div", { className: UI_Comp__css.info, children: [_jsx(FaUser, { size: 70 }), _jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", stellarNetwork || "Stellar"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(stellarBalance).toFixed(2), " XLM"] }), _jsx("p", { style: { color: "#ff0" }, children: stellarAddress }), stellarError ? _jsx("p", { style: { color: "#f55" }, children: stellarError }) : null] }), _jsx("button", { onClick: () => {
                             closeModal();
                             setStellarAddress(null);
                             setStellarNetwork(undefined);
                             setStellarError(undefined);
+                            window.localStorage.removeItem(STELLAR_ADDRESS_KEY);
+                            window.localStorage.removeItem(STELLAR_NETWORK_KEY);
                         }, children: "DisConnect" }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
     }
     return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { children: [loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
@@ -52,13 +99,21 @@ export default function UI_Comp() {
                                 setErrorMsg(error);
                             } }), _jsx(StellarWalletButton, { onConnect: (address) => {
                                 setStellarAddress(address);
+                                window.localStorage.setItem(STELLAR_ADDRESS_KEY, address);
+                                void loadStellarBalance(address);
                                 closeModal();
                             }, onStatusChange: ({ isPending, error, address, network }) => {
                                 setStellarLoading(isPending);
                                 setStellarError(error);
                                 if (address)
                                     setStellarAddress(address);
-                                if (network)
+                                if (address)
+                                    window.localStorage.setItem(STELLAR_ADDRESS_KEY, address);
+                                if (network) {
                                     setStellarNetwork(network);
+                                    window.localStorage.setItem(STELLAR_NETWORK_KEY, network);
+                                }
+                                if (address)
+                                    void loadStellarBalance(address);
                             } }), _jsx("p", { children: errorMsg }), _jsx("p", { children: stellarError })] }), _jsxs("a", { href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
 }
