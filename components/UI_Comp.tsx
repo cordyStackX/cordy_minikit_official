@@ -1,7 +1,7 @@
 "use client";
 import { UI_Comp__css } from "../css";
 import { WalletButton, getTokenBalance, StellarWalletButton } from "../controllers";
-import { useWalletModal } from "../wagmi__providers";
+import { useWalletModal, useStellarWallet } from "../wagmi__providers";
 import { useAccount, useDisconnect} from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
@@ -10,23 +10,19 @@ import links from "../config/links.json";
 import { isConnected as stellarIsConnected, getAddress as stellarGetAddress, getNetworkDetails as stellarGetNetworkDetails } from "@stellar/freighter-api";
 import { Horizon } from "@stellar/stellar-sdk";
 
-const STELLAR_ADDRESS_KEY = "cordy_minikit:stellar_address";
-const STELLAR_NETWORK_KEY = "cordy_minikit:stellar_network";
 const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
 
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
+  const { stellarWallet, setStellarWallet, clearStellarWallet } = useStellarWallet();
   const { isConnected, address, chain } = useAccount();
   const { disconnect } = useDisconnect();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
-  const [stellarAddress, setStellarAddress] = useState<string | null>(null);
-  const [stellarNetwork, setStellarNetwork] = useState<string | undefined>();
   const [stellarLoading, setStellarLoading] = useState(false);
   const [stellarError, setStellarError] = useState<string | undefined>();
-  const [stellarBalance, setStellarBalance] = useState<string>("0");
 
   useEffect(() => {
     if (isConnected && address) {
@@ -36,12 +32,7 @@ export default function UI_Comp() {
 
   useEffect(() => {
     const hydrateStellar = async () => {
-      const storedAddress = window.localStorage.getItem(STELLAR_ADDRESS_KEY);
-      const storedNetwork = window.localStorage.getItem(STELLAR_NETWORK_KEY);
-
-      if (storedAddress) {
-        setStellarAddress(storedAddress);
-        setStellarNetwork(storedNetwork || undefined);
+      if (stellarWallet.address) {
         return;
       }
 
@@ -52,10 +43,10 @@ export default function UI_Comp() {
         const account = await stellarGetAddress();
         const networkDetails = await stellarGetNetworkDetails();
 
-        setStellarAddress(account.address);
-        setStellarNetwork(networkDetails.network || "Stellar");
-        window.localStorage.setItem(STELLAR_ADDRESS_KEY, account.address);
-        window.localStorage.setItem(STELLAR_NETWORK_KEY, networkDetails.network || "Stellar");
+        setStellarWallet({
+          address: account.address,
+          network: networkDetails.network || "Stellar",
+        });
         await loadStellarBalance(account.address);
       } catch (err) {
         console.error("Failed to hydrate Stellar wallet state:", err);
@@ -63,7 +54,7 @@ export default function UI_Comp() {
     };
 
     void hydrateStellar();
-  }, []);
+  }, [stellarWallet.address, setStellarWallet]);
 
   const Get_Balance = async () => {
 
@@ -81,21 +72,20 @@ export default function UI_Comp() {
       const server = new Horizon.Server(STELLAR_RPC);
       const account = await server.loadAccount(accountId);
       const native = account.balances.find((item) => item.asset_type === "native");
-      setStellarBalance(native?.balance ?? "0");
+      setStellarWallet((current) => ({
+        ...current,
+        balance: native?.balance ?? "0",
+      }));
     } catch (err) {
       console.error("Failed to load Stellar balance:", err);
-      setStellarBalance("0");
+      setStellarWallet((current) => ({ ...current, balance: "0" }));
     }
   };
 
   const disconnectStellar = () => {
     closeModal();
-    setStellarAddress(null);
-    setStellarNetwork(undefined);
     setStellarError(undefined);
-    setStellarBalance("0");
-    window.localStorage.removeItem(STELLAR_ADDRESS_KEY);
-    window.localStorage.removeItem(STELLAR_NETWORK_KEY);
+    clearStellarWallet();
   };
   
   if (isConnected) {
@@ -139,18 +129,20 @@ export default function UI_Comp() {
   );
   }
 
-  if (stellarAddress) {
+  if (stellarWallet.address) {
     return(
       <div className={UI_Comp__css.container}>
         <div className={UI_Comp__css.connector}>
           <p className={UI_Comp__css.closed} onClick={closeModal}>✕</p>
           <div className={UI_Comp__css.info}>
-            <FaUser size={70} />
-            <p style={{color: "#0f0"}}>Connected</p>
-            <p style={{color: "#2f9"}}>Network: {stellarNetwork || "Stellar"}</p>
-            <p style={{color: "#0ff"}}>Balance: {Number(stellarBalance).toFixed(2)} XLM</p>
-            <p style={{color: "#ff0"}}>{stellarAddress}</p>
-            {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
+            <div>
+              <FaUser size={70} />
+              <p style={{color: "#0f0"}}>Connected</p>
+              <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
+              <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
+              <p style={{color: "#ff0"}}>{stellarWallet.address}</p>
+              {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
+            </div>
           </div>
           <button onClick={() => {
             disconnectStellar();
@@ -186,19 +178,16 @@ export default function UI_Comp() {
             />
             <StellarWalletButton
               onConnect={(address) => {
-                setStellarAddress(address);
-                window.localStorage.setItem(STELLAR_ADDRESS_KEY, address);
+                setStellarWallet((current) => ({ ...current, address }));
                 void loadStellarBalance(address);
                 closeModal();
               }}
               onStatusChange={({ isPending, error, address, network }) => {
                 setStellarLoading(isPending);
                 setStellarError(error);
-                if (address) setStellarAddress(address);
-                if (address) window.localStorage.setItem(STELLAR_ADDRESS_KEY, address);
+                if (address) setStellarWallet((current) => ({ ...current, address }));
                 if (network) {
-                  setStellarNetwork(network);
-                  window.localStorage.setItem(STELLAR_NETWORK_KEY, network);
+                  setStellarWallet((current) => ({ ...current, network }));
                 }
                 if (address) void loadStellarBalance(address);
               }}

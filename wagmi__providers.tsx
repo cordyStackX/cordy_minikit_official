@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "./config/walletConfig";
@@ -10,12 +10,24 @@ type WalletContextType = {
   closeModal: () => void;
 };
 
+type StellarWalletState = {
+  address: string | null;
+  network?: string;
+  balance?: string;
+};
+
 const WalletContext = createContext<WalletContextType | null>(null);
+const StellarWalletContext = createContext<{
+  stellarWallet: StellarWalletState;
+  setStellarWallet: Dispatch<SetStateAction<StellarWalletState>>;
+  clearStellarWallet: () => void;
+} | null>(null);
 
 const queryClient = new QueryClient();
 
 export default function WalletProviders({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [stellarWallet, setStellarWallet] = useState<StellarWalletState>({ address: null });
 
   return (
     <WagmiProvider config={config}>
@@ -26,8 +38,16 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
             closeModal: () => setOpen(false),
           }}
         >
-          {children}
-          {open && <UI_Comp />} {/* show modal only when open */}
+          <StellarWalletContext.Provider
+            value={{
+              stellarWallet,
+              setStellarWallet,
+              clearStellarWallet: () => setStellarWallet({ address: null }),
+            }}
+          >
+            {children}
+            {open && <UI_Comp />} {/* show modal only when open */}
+          </StellarWalletContext.Provider>
         </WalletContext.Provider>
       </QueryClientProvider>
     </WagmiProvider>
@@ -36,6 +56,12 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
 
 export function useWalletModal() {
   const ctx = useContext(WalletContext);
+  if (!ctx) throw new Error("Wrap in <WalletProviders>");
+  return ctx;
+}
+
+export function useStellarWallet() {
+  const ctx = useContext(StellarWalletContext);
   if (!ctx) throw new Error("Wrap in <WalletProviders>");
   return ctx;
 }
