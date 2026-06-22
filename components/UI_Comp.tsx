@@ -87,6 +87,16 @@ export default function UI_Comp() {
       setStellarBalance("0");
     }
   };
+
+  const disconnectStellar = () => {
+    closeModal();
+    setStellarAddress(null);
+    setStellarNetwork(undefined);
+    setStellarError(undefined);
+    setStellarBalance("0");
+    window.localStorage.removeItem(STELLAR_ADDRESS_KEY);
+    window.localStorage.removeItem(STELLAR_NETWORK_KEY);
+  };
   
   if (isConnected) {
   
@@ -143,12 +153,7 @@ export default function UI_Comp() {
             {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
           </div>
           <button onClick={() => {
-            closeModal();
-            setStellarAddress(null);
-            setStellarNetwork(undefined);
-            setStellarError(undefined);
-            window.localStorage.removeItem(STELLAR_ADDRESS_KEY);
-            window.localStorage.removeItem(STELLAR_NETWORK_KEY);
+            disconnectStellar();
           }}>DisConnect</button>
           <a href={links.NPM_Pack_links}>
             Powered By CordyStackX | Version {pkg.version}
