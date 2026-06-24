@@ -9,7 +9,14 @@ export { default as getConfig } from "./config/walletConfig";
 export { useWalletModal } from "./wagmi__providers";
 
 //Components
-export * from "./components";
+export { ConnectWalletBT } from "./components";
 
 //Controllers
-export * from "./controllers";
+export {
+  CordyStackTrans,
+  CordyStackTransStellar,
+  useWalletStatus,
+  useDisconnectWallets,
+  WalletButton,
+  StellarWalletButton
+} from "./controllers";

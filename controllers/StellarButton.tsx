@@ -56,7 +56,7 @@ export default function StellarWalletButton({
         src={img_src.Freighter}
         alt="Freighter"
         title="Freighter"
-        width={23}
+        width={18}
         height={18}
       />
       {isPending

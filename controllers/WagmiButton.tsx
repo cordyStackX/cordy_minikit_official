@@ -4,6 +4,8 @@ import { useConnect } from "wagmi";
 import type { Connector } from "wagmi";
 import Images from "../config/Image.json";
 
+const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+
 export default function WalletButton({
   onStatusChange
 }: {
@@ -38,6 +40,9 @@ export default function WalletButton({
 
             try {
               await connectAsync({ connector });
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "evm");
+              }
             } catch (err) {
               setErrorMsg((err as Error)?.message || "Connection failed");
               setIsConnecting(false);

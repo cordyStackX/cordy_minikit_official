@@ -1,29 +1,29 @@
 "use client";
 import { UI_Comp__css } from "../css";
-import { WalletButton, getTokenBalance, StellarWalletButton } from "../controllers";
+import { WalletButton, getTokenBalance, StellarWalletButton, loadStellarBalance, useDisconnectWallets } from "../controllers";
 import { useWalletModal, useStellarWallet } from "../wagmi__providers";
-import { useAccount, useDisconnect} from "wagmi";
+import { useAccount } from "wagmi";
 import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import pkg from "../package.json";
 import links from "../config/links.json";
-import { Horizon } from "@stellar/stellar-sdk";
-
-const STELLAR_RPC = process.env.NEXT_PUBLIC_STELLAR_RPC || "https://soroban-testnet.stellar.org";
-const STELLAR_HORIZON =
-  process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-testnet.stellar.org";
-
+const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";                                                                                                           
+                                                                                                                    
 export default function UI_Comp() {
   const { closeModal } = useWalletModal();
-  const { stellarWallet, setStellarWallet, clearStellarWallet } = useStellarWallet();
+  const { stellarWallet, setStellarWallet } = useStellarWallet();
   const { isConnected, address, chain } = useAccount();
-  const { disconnect } = useDisconnect();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [balance, setBalance] = useState("");
   const [symbol, setSymbol] = useState("");
   const [stellarLoading, setStellarLoading] = useState(false);
   const [stellarError, setStellarError] = useState<string | undefined>();
+  const {                                                                                                          
+    disconnectEVM,                                                                                                 
+    disconnectStellar,                                                                                             
+    // disconnectAll,                                                                                             
+  } = useDisconnectWallets(); 
 
   useEffect(() => {
     if (isConnected && address) {
@@ -48,26 +48,35 @@ export default function UI_Comp() {
     return;
   };
 
-  const loadStellarBalance = async (accountId: string) => {
-    try {
-      const server = new Horizon.Server(STELLAR_HORIZON);
-      const account = await server.loadAccount(accountId);
-      const native = account.balances.find((item) => item.asset_type === "native");
-      setStellarWallet((current) => ({
-        ...current,
-        balance: native?.balance ?? "0",
-      }));
-    } catch (err) {
-      console.error("Failed to load Stellar balance:", err);
-      setStellarWallet((current) => ({ ...current, balance: "0" }));
-    }
-  };
-
-  const disconnectStellar = () => {
-    closeModal();
-    setStellarError(undefined);
-    clearStellarWallet();
-  };
+ const handleLoadStellarBalance = async (accountId: string) => {                                                    
+    setStellarError(undefined);                                                                                      
+                                                                                                                     
+    try {                                                                                                            
+      const result = await loadStellarBalance(accountId);                                                            
+                                                                                                                     
+      setStellarWallet((current) => ({                                                                               
+        ...current,                                                                                                  
+        address: result.address,                                                                                     
+        network: result.network,                                                                                     
+        balance: result.balance,                                                                                     
+      }));                                                                                                           
+                                                                                                                     
+      if (typeof window !== "undefined") {                                                                           
+        window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "stellar");                                           
+      }                                                                                                              
+    } catch (err) {                                                                                                  
+      const message =                                                                                                
+        err instanceof Error ? err.message : "Failed to load Stellar balance";                                       
+                                                                                                                     
+      console.error("Failed to load Stellar balance:", err);                                                         
+      setStellarError(message);                                                                                      
+                                                                                                                     
+      setStellarWallet((current) => ({                                                                               
+        ...current,                                                                                                  
+        balance: "0",                                                                                                
+      }));                                                                                                           
+    }                                                                                                                
+  };   
 
   const truncateAddress = (value?: string | null, head = 8, tail = 4) => {
     if (!value) return "";
@@ -75,6 +84,7 @@ export default function UI_Comp() {
     return `${value.slice(0, head)}...${value.slice(-tail)}`;
   };
   
+  // EVM
   if (isConnected) {
   
   return(
@@ -109,10 +119,15 @@ export default function UI_Comp() {
             )}
           </div>
         </div>
-        <button style={{ width: "230px" }} onClick={() => {
-          closeModal();
-          disconnect();
-        }}>DisConnect</button>
+        <button                                                                                                            
+          style={{ width: "230px" }}                                                                                       
+          onClick={async () => {                                                                                           
+            const success = await disconnectEVM();                                                                         
+            console.log("EVM disconnect:", success);                                                                       
+          }}                                                                                                               
+        >                                                                                                                  
+          DisConnect                                                                                                       
+        </button>
         <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>
           Powered By CordyStackX | Version {pkg.version}
         </a>
@@ -121,6 +136,7 @@ export default function UI_Comp() {
   );
   }
 
+  //Non - EVM
   if (stellarWallet.address) {
     return(
       <div className={UI_Comp__css.container}>
@@ -140,7 +156,7 @@ export default function UI_Comp() {
                 <div className={UI_Comp__css.status_stack}>
                   <p style={{color: "#0f0"}}>Connected</p>
                   <p style={{color: "#2f9"}}>Network: {stellarWallet.network || "Stellar"}</p>
-                  <p style={{color: "#0ff"}}>Balance: {Number(stellarWallet.balance || "0").toFixed(2)} XLM</p>
+                  <p style={{color: "#0ff"}}>Balance: {stellarWallet.balance ?? "0"} XLM</p>
                   <p className={UI_Comp__css.address} style={{color: "#ff0"}} title={stellarWallet.address || ""}>{truncateAddress(stellarWallet.address)}</p>
                   {stellarError ? <p style={{color: "#f55"}}>{stellarError}</p> : null}
                 </div>
@@ -153,9 +169,12 @@ export default function UI_Comp() {
               )}
             </div>
           </div>
-          <button style={{ width: "230px" }} onClick={() => {
-            disconnectStellar();
-          }}>DisConnect</button>
+          <button style={{ width: "230px" }} 
+            onClick={async () => {                                                                                           
+              const success = await disconnectStellar();                                                                         
+              console.log("EVM disconnect:", success);                                                                       
+            }}
+          >DisConnect</button>
           <a style={{ marginTop: "2rem" }} href={links.NPM_Pack_links}>
             Powered By CordyStackX | Version {pkg.version}
           </a>
@@ -191,8 +210,7 @@ export default function UI_Comp() {
             <StellarWalletButton
               onConnect={(address) => {
                 setStellarWallet((current) => ({ ...current, address }));
-                void loadStellarBalance(address);
-                closeModal();
+                void handleLoadStellarBalance(address);
               }}
               onStatusChange={({ isPending, error, address, network }) => {
                 setStellarLoading(isPending);
@@ -201,7 +219,7 @@ export default function UI_Comp() {
                 if (network) {
                   setStellarWallet((current) => ({ ...current, network }));
                 }
-                if (address) void loadStellarBalance(address);
+                if (address) void handleLoadStellarBalance(address);
               }}
             />
           </div>

@@ -3,6 +3,7 @@ import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-run
 import React, { useEffect } from "react";
 import { useConnect } from "wagmi";
 import Images from "../config/Image.json";
+const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 export default function WalletButton({ onStatusChange }) {
     const { connectors, connectAsync } = useConnect();
     const [pendingConnector, setPendingConnector] = React.useState(null);
@@ -23,6 +24,9 @@ export default function WalletButton({ onStatusChange }) {
                 setPendingConnector(connector);
                 try {
                     await connectAsync({ connector });
+                    if (typeof window !== "undefined") {
+                        window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "evm");
+                    }
                 }
                 catch (err) {
                     setErrorMsg(err?.message || "Connection failed");

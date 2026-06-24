@@ -7,10 +7,27 @@ export default async function getTokenBalance(
 ): Promise<{ balance: string; symbol: string }> {
   try {
 
-    if (!process.env.NEXT_PUBLIC_TOKENADDRESS) return { balance: "0", symbol: "" };
+    const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS;
+    const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
 
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_ENDPOINT);
-    const contract = new ethers.Contract(process.env.NEXT_PUBLIC_TOKENADDRESS, ERC20_ABI, provider);
+    if (!tokenAddress) {
+      console.error("NEXT_PUBLIC_TOKENADDRESS is not configured");
+      return { balance: "0", symbol: "" };
+    }
+
+    if (!rpcEndpoint) {
+      console.error("NEXT_PUBLIC_RPC_ENDPOINT is not configured");
+      return { balance: "0", symbol: "" };
+    }
+
+    const provider = new ethers.JsonRpcProvider(rpcEndpoint);
+    const code = await provider.getCode(tokenAddress);
+    if (!code || code === "0x") {
+      console.error(`No contract bytecode found at ${tokenAddress} on ${rpcEndpoint}`);
+      return { balance: "0", symbol: "" };
+    }
+
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
 
     // Fetch balance
     const balance = await contract.balanceOf(address);

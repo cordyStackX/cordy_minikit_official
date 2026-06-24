@@ -2,10 +2,23 @@ import { ethers } from "ethers";
 import ERC20_ABI from "../config/ERC20_ABI.json";
 export default async function getTokenBalance(address, decimals = 18) {
     try {
-        if (!process.env.NEXT_PUBLIC_TOKENADDRESS)
+        const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS;
+        const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+        if (!tokenAddress) {
+            console.error("NEXT_PUBLIC_TOKENADDRESS is not configured");
             return { balance: "0", symbol: "" };
-        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_ENDPOINT);
-        const contract = new ethers.Contract(process.env.NEXT_PUBLIC_TOKENADDRESS, ERC20_ABI, provider);
+        }
+        if (!rpcEndpoint) {
+            console.error("NEXT_PUBLIC_RPC_ENDPOINT is not configured");
+            return { balance: "0", symbol: "" };
+        }
+        const provider = new ethers.JsonRpcProvider(rpcEndpoint);
+        const code = await provider.getCode(tokenAddress);
+        if (!code || code === "0x") {
+            console.error(`No contract bytecode found at ${tokenAddress} on ${rpcEndpoint}`);
+            return { balance: "0", symbol: "" };
+        }
+        const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
         // Fetch balance
         const balance = await contract.balanceOf(address);
         const formattedBalance = ethers.formatUnits(balance, decimals);

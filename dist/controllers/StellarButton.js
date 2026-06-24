@@ -35,7 +35,7 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
             setIsPending(false);
         }
     };
-    return (_jsxs("button", { onClick: connect, disabled: isPending, children: [_jsx("img", { src: img_src.Freighter, alt: "Freighter", title: "Freighter", width: 23, height: 18 }), isPending
+    return (_jsxs("button", { onClick: connect, disabled: isPending, children: [_jsx("img", { src: img_src.Freighter, alt: "Freighter", title: "Freighter", width: 18, height: 18 }), isPending
                 ? "Connecting..."
                 : address
                     ? `Connected: ${address.slice(0, 6)}...`

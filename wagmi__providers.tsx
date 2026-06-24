@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, Dispatch, SetStateAction } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "./config/walletConfig";
@@ -25,10 +25,44 @@ const StellarWalletContext = createContext<{
 } | null>(null);
 
 const queryClient = new QueryClient();
+const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
+const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+
+function readStellarWallet(): StellarWalletState {
+  if (typeof window === "undefined") {
+    return { address: null };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STELLAR_WALLET_STORAGE_KEY);
+    if (!raw) return { address: null };
+
+    const parsed = JSON.parse(raw) as StellarWalletState;
+    return {
+      address: parsed.address ?? null,
+      network: parsed.network,
+      balance: parsed.balance,
+      manuallyDisconnected: parsed.manuallyDisconnected,
+    };
+  } catch {
+    return { address: null };
+  }
+}
 
 export default function WalletProviders({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [stellarWallet, setStellarWallet] = useState<StellarWalletState>({ address: null });
+  const [stellarWallet, setStellarWallet] = useState<StellarWalletState>(() => readStellarWallet());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!stellarWallet.address) {
+      window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(STELLAR_WALLET_STORAGE_KEY, JSON.stringify(stellarWallet));
+  }, [stellarWallet]);
 
   return (
     <WagmiProvider config={config}>
@@ -43,7 +77,13 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
             value={{
               stellarWallet,
               setStellarWallet,
-              clearStellarWallet: () => setStellarWallet({ address: null, manuallyDisconnected: true }),
+              clearStellarWallet: () => {
+                if (typeof window !== "undefined") {
+                  window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
+                  window.localStorage.removeItem(ACTIVE_WALLET_SESSION_KEY);
+                }
+                setStellarWallet({ address: null, manuallyDisconnected: true });
+              },
             }}
           >
             {children}

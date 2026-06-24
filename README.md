@@ -50,6 +50,53 @@ yarn add @cordystackx/cordy_minikit@latest
 
 ---
 
+## 📢 New: Non-EVM Wallet Support                                                                                  
+                                                                                                                     
+  Cordy MiniKit now supports **Non-EVM wallets**, starting with **Stellar / Soroban** integration.                   
+                                                                                                                     
+  You can now connect Stellar wallets through **Freighter**, read Stellar account balances, detect wallet context,   
+and send native Stellar payments using the built-in `CordyStackTransStellar` helper.                                 
+                                                                                                                     
+  Supported wallet contexts now include:                                                                             
+                                                                                                                     
+  - `EVM` — Wagmi / EVM wallet connected                                                                             
+  - `Non-EVM` — Stellar / Non-EVM wallet connected                                                                   
+  - `MULTI` — Both EVM and Non-EVM wallets connected                                                                 
+  - `NONE` — No wallet connected                                                                                     
+                                                                                                                     
+  This makes Cordy MiniKit ready for multi-chain apps that need both EVM and Stellar support.                        
+                                                                                                              
+                                                                                                                     
+Also update your Features section with these bullets:                                                                
+                                                                                                                                                                                                                                  
+  - 🌌 **Non-EVM Wallet Support** — Stellar / Soroban wallet support through Freighter                               
+  - ⭐ **Stellar Balance & Transfers** — Read XLM balances and send native Stellar payments                          
+  - 🧠 **Wallet Context Detection** — Detect `EVM`, `Non_EVM`, `MULTI`, or `NONE`                                                                                                                                                    
+                                                                                                                     
+And add this to API Reference → Hooks:                                                                               
+                                                                                                                                                                                                                                  
+  #### `useWalletStatus()`                                                                                           
+                                                                                                                     
+  ```tsx                                                                                                             
+  const {                                                                                                            
+    context,                                                                                                         
+    evm,                                                                                                             
+    stellar,                                                                                                         
+    refreshBalances,                                                                                                 
+    disconnectEVM,                                                                                                   
+    disconnectStellar,                                                                                               
+    disconnectAll,                                                                                                   
+  } = useWalletStatus();                                                                                             
+  ```                                                                                                         
+                                                                                                                     
+Returns wallet status for both EVM and Non-EVM wallets.                                                              
+                                                                                                                     
+```ts                                                                                                                
+  context: "EVM" | "Non-EVM" | "MULTI" | "NONE"                                                                      
+```                                                                                                                  
+                                                                                                                     
+Useful for detecting whether the connected wallet is Wagmi/EVM, Stellar/Non-EVM, both, or none.                                                                                                           
+
 ## 🛠️ Quick Start
 
 ### 1. Environment Setup
@@ -57,17 +104,18 @@ yarn add @cordystackx/cordy_minikit@latest
 Create a `.env.local` file in your project root:
 
 ```bash
+# Wagmi EVM
 NEXT_PUBLIC_RPC_ENDPOINT=https://your-rpc-endpoint.com
 NEXT_PUBLIC_TOKENADDRESS=0x...
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 
-# Stellar / Soroban
-NEXT_PUBLIC_STELLAR_RPC=https://soroban-testnet.stellar.org
+# Stellar / Soroban Non-EVM
 NEXT_PUBLIC_STELLAR_HORIZON=https://horizon-testnet.stellar.org
-NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXI....
+NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXI.....
+NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015 //Optional
 ```
 
-For Stellar, `NEXT_PUBLIC_STELLAR_CONTRACT_ID` is the Soroban equivalent of an EVM token address. Use `NEXT_PUBLIC_STELLAR_RPC` for Soroban contract calls and `NEXT_PUBLIC_STELLAR_HORIZON` for native account balance lookups through Horizon.
+For Stellar, `NEXT_PUBLIC_STELLAR_CONTRACT_ID` is the Soroban equivalent of an EVM token address. Use `NEXT_PUBLIC_STELLAR_HORIZON` for native account balance lookups through Horizon.
 
 ### 2. Provider Setup
 
@@ -171,7 +219,7 @@ function CustomButton() {
 
 ### 3. Transaction Handler
 
-The `CordyStackTrans` function handles ERC20 and native token transfers:
+The `CordyStackTrans` function handles ERC20 transfers:
 
 ```tsx
 import { CordyStackTrans } from "@cordystackx/cordy_minikit";
@@ -189,6 +237,50 @@ async function handlePayment() {
   }
 }
 ```
+Conditions enforced by the helper:                                                                                 
+                                                                                                                     
+  - Runs only in the browser                                                                                         
+  - Requires an active EVM wallet connection                                                                         
+  - Requires a valid recipient EVM address                                                                           
+  - Requires `amount > 0`                                                                                            
+  - Requires the configured token contract address from `NEXT_PUBLIC_TOKENADDRESS`                                   
+  - Requires the active wallet/network to support the configured token contract                                      
+  - Requires the user to approve/sign the transaction in their wallet                                                
+  - Returns `true` when the transaction is submitted successfully                                                    
+  - Returns `false` when the transaction is rejected, invalid, or fails                                              
+                                                                                                             
+                                                                                                                     
+Optional extra note if your helper supports native transfers too:                                                    
+                                                                                                                     
+```md                                                                                                                
+  > Note: `CordyStackTrans` is intended for ERC20 token transfers. For native Stellar/XLM payments, use              
+`CordyStackTransStellar`.
+```
+
+### 3.1 Stellar Transfer Helper
+
+Use `CordyStackTransStellar` for native Stellar payments through Freighter.
+
+```tsx
+import { CordyStackTransStellar } from "@cordystackx/cordy_minikit";
+
+async function sendXLM() {
+  const success = await CordyStackTransStellar("G...", 10, {
+    memo: "Sample payment",
+  });
+
+  if (success) {
+    console.log("Stellar transfer successful!");
+  }
+}
+```
+
+Conditions enforced by the helper:
+- Runs only in the browser
+- Requires Freighter access
+- Requires a valid destination address
+- Requires `amount > 0`
+- Requires the active Freighter network to match `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE` when that env var is set
 
 ---
 
@@ -227,7 +319,331 @@ export default function Providers({ children }: { children: ReactNode }) {
   );
 }
 ```
+                                                                                                           
+### 5. Disconnect Wallets                                                                                      
+                                                                                                                    
+Custom hook for disconnecting EVM, Stellar, or all connected wallets.                                              
+                                                                                                                    
+```tsx                                                                                                             
+import { useDisconnectWallets } from "@cordystackx/cordy_minikit";                                                 
+                                                                                                                    
+export default function WalletControls() {                                                                         
+  const {                                                                                                          
+    disconnectEVM,                                                                                                 
+    disconnectStellar,                                                                                             
+    disconnectAll,                                                                                                 
+  } = useDisconnectWallets();                                                                                      
+                                                                                                                    
+  return (                                                                                                         
+    <div>                                                                                                          
+      <button onClick={disconnectEVM}>                                                                             
+        Disconnect EVM                                                                                             
+      </button>                                                                                                    
+                                                                                                                    
+      <button onClick={disconnectStellar}>                                                                         
+        Disconnect Stellar                                                                                         
+      </button>                                                                                                    
+                                                                                                                    
+      <button onClick={disconnectAll}>                                                                             
+        Disconnect All                                                                                             
+      </button>                                                                                                    
+    </div>                                                                                                         
+  );                                                                                                               
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+Returns:                                                                                                             
+                                                                                                                    
+```ts                                                                                                                
+{                                                                                                                  
+  disconnectEVM: () => Promise<boolean>;                                                                           
+  disconnectStellar: () => Promise<boolean>;                                                                       
+  disconnectAll: () => Promise<boolean>;                                                                           
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+┌─────────────────────┬────────────────────────────────────────────────────┐                                         
+│ Function            │ Description                                        │                                         
+├─────────────────────┼────────────────────────────────────────────────────┤                                         
+│ disconnectEVM()     │ Disconnects the active Wagmi/EVM wallet            │                                         
+├─────────────────────┼────────────────────────────────────────────────────┤                                         
+│ disconnectStellar() │ Clears the active Stellar/Freighter wallet session │                                         
+├─────────────────────┼────────────────────────────────────────────────────┤                                         
+│ disconnectAll()     │ Disconnects both EVM and Stellar wallet sessions   │                                         
+└─────────────────────┴────────────────────────────────────────────────────┘                                         
+                                                                                                                    
+Each function returns:                                                                                               
+                                                                                                                    
+```ts                                                                                                                
+Promise<boolean>                                                                                                   
+```                                                                                                                  
+                                                                                                                    
+- true — disconnect succeeded                                                                                        
+- false — disconnect failed                                                                                          
+                                                                                                                    
+Example with success handling:                                                                                       
+                                                                                                                    
+```tsx                                                                                                               
+const { disconnectAll } = useDisconnectWallets();                                                                  
+                                                                                                                    
+async function handleDisconnect() {                                                                                
+  const success = await disconnectAll();                                                                           
+                                                                                                                    
+  if (success) {                                                                                                   
+    console.log("Wallets disconnected");                                                                           
+  } else {                                                                                                         
+    console.log("Failed to disconnect wallets");                                                                   
+  }                                                                                                                
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+│ Note: useDisconnectWallets() is a React hook. Call it only at the top level of a client component or another hook. 
+│ Do not call it inside onClick, loops, conditions, or normal functions.  
 
+### 6. WalletStatus                                                                                           
+                                                                                                                     
+  Custom hook for reading wallet status, balances, wallet context, refresh helpers, and disconnect functions for both
+EVM and Non-EVM wallets.                                                                                             
+                                                                                                                     
+  ```tsx                                                                                                             
+  import { useWalletStatus } from "@cordystackx/cordy_minikit";                                                      
+                                                                                                                     
+  export default function WalletInfo() {                                                                             
+    const {                                                                                                          
+      context,                                                                                                       
+      evm,                                                                                                           
+      stellar,                                                                                                       
+      refreshBalances,                                                                                               
+      refreshEvmBalance,                                                                                             
+      refreshStellarBalance,                                                                                         
+      disconnectEVM,                                                                                                 
+      disconnectStellar,                                                                                             
+      disconnectAll,                                                                                                 
+    } = useWalletStatus();                                                                                           
+                                                                                                                     
+    return (                                                                                                         
+      <div>                                                                                                          
+        <p>Wallet Context: {context}</p>                                                                             
+                                                                                                                     
+        {context === "EVM" && (                                                                                      
+          <p>EVM Address: {evm.address}</p>                                                                          
+        )}                                                                                                           
+                                                                                                                     
+        {context === "Non_EVM" && (                                                                                  
+          <p>Stellar Address: {stellar.address}</p>                                                                  
+        )}                                                                                                           
+                                                                                                                     
+        {context === "MULTI" && (                                                                                    
+          <>                                                                                                         
+            <p>EVM Address: {evm.address}</p>                                                                        
+            <p>Stellar Address: {stellar.address}</p>                                                                
+          </>                                                                                                        
+        )}                                                                                                           
+                                                                                                                     
+        <button onClick={refreshBalances}>                                                                           
+          Refresh Balances                                                                                           
+        </button>                                                                                                    
+                                                                                                                     
+        <button onClick={disconnectAll}>                                                                             
+          Disconnect All                                                                                             
+        </button>                                                                                                    
+      </div>                                                                                                         
+    );                                                                                                               
+  }                                                                                                                  
+```                                                                                                                  
+                                                                                                                     
+Returns:                                                                                                             
+                                                                                                                     
+```ts                                                                                                                
+  {                                                                                                                  
+    context: "EVM" | "Non_EVM" | "MULTI" | "NONE";                                                                   
+                                                                                                                     
+    evm: {                                                                                                           
+      isConnected: boolean;                                                                                          
+      address?: string;                                                                                              
+      chain?: unknown;                                                                                               
+      balance: string;                                                                                               
+      symbol: string;                                                                                                
+      error?: string;                                                                                                
+    };                                                                                                               
+                                                                                                                     
+    stellar: {                                                                                                       
+      isConnected: boolean;                                                                                          
+      address?: string;                                                                                              
+      network?: string;                                                                                              
+      balance?: string;                                                                                              
+      error?: string;                                                                                                
+    };                                                                                                               
+                                                                                                                     
+    refreshEvmBalance: () => Promise<boolean>;                                                                       
+    refreshStellarBalance: (accountId?: string) => Promise<boolean>;                                                 
+    refreshBalances: () => Promise<boolean>;                                                                         
+                                                                                                                     
+    disconnectEVM: () => Promise<boolean>;                                                                           
+    disconnectStellar: () => Promise<boolean>;                                                                       
+    disconnectAll: () => Promise<boolean>;                                                                           
+  }                                                                                                                  
+```                                                                                                                  
+                                                                                                                     
+Wallet context values:                                                                                               
+                                                                                                                     
+┌─────────┬────────────────────────────────────────┐                                                                 
+│ Context │ Description                            │                                                                 
+├─────────┼────────────────────────────────────────┤                                                                 
+│ EVM     │ Wagmi / EVM wallet connected           │                                                                 
+├─────────┼────────────────────────────────────────┤                                                                 
+│ Non-EVM │ Stellar / Freighter wallet connected   │                                                                 
+├─────────┼────────────────────────────────────────┤                                                                 
+│ MULTI   │ Both EVM and Stellar wallets connected │                                                                 
+├─────────┼────────────────────────────────────────┤                                                                 
+│ NONE    │ No wallet connected                    │                                                                 
+└─────────┴────────────────────────────────────────┘                                                                 
+                                                                                                                     
+Example: close wallet modal after successful connection:                                                             
+                                                                                                                     
+```tsx                                                                                                               
+  "use client";                                                                                                      
+                                                                                                                     
+  import { useEffect } from "react";                                                                                 
+  import {                                                                                                           
+    useWalletStatus,                                                                                                 
+    useWalletModal,                                                                                                  
+  } from "@cordystackx/cordy_minikit";                                                                               
+                                                                                                                     
+  export default function AutoCloseWalletModal() {                                                                   
+    const { context } = useWalletStatus();                                                                           
+    const { closeModal } = useWalletModal();                                                                         
+                                                                                                                     
+    useEffect(() => {                                                                                                
+      if (context !== "NONE") {                                                                                      
+        closeModal();                                                                                                
+      }                                                                                                              
+    }, [context, closeModal]);                                                                                       
+                                                                                                                     
+    return null;                                                                                                     
+  }                                                                                                                  
+```                                                                                                                  
+                                                                                                                     
+│ Note: useWalletStatus() is a React hook. Call it only at the top level of a client component or another hook.      
+
+### 7 Wallet Connection Components                                                                                   
+                                                                                                                     
+#### `WalletButton`                                                                                                
+                                                                                                                    
+Low-level EVM wallet connector button list powered by Wagmi.                                                       
+                                                                                                                    
+`WalletButton` renders all configured Wagmi connectors and handles EVM wallet connection state internally.         
+                                                                                                                    
+```tsx                                                                                                             
+import { WalletButton } from "@cordystackx/cordy_minikit";                                                         
+                                                                                                                    
+export default function EVMConnect() {                                                                             
+  return (                                                                                                         
+    <WalletButton                                                                                                  
+      onStatusChange={({ isPending, error }) => {                                                                  
+        console.log("Connecting:", isPending);                                                                     
+        console.log("Error:", error);                                                                              
+      }}                                                                                                           
+    />                                                                                                             
+  );                                                                                                               
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+Props:                                                                                                               
+                                                                                                                    
+```ts                                                                                                                
+{                                                                                                                  
+  onStatusChange?: (status: {                                                                                      
+    isPending: boolean;                                                                                            
+    error?: string;                                                                                                
+  }) => void;                                                                                                      
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+Behavior:                                                                                                            
+                                                                                                                    
+- Lists available Wagmi connectors                                                                                   
+- Detects whether injected wallets are installed                                                                     
+- Supports WalletConnect and Trust Wallet display handling                                                           
+- Shows Connecting... while connection is pending                                                                    
+- Stores the active wallet session as evm                                                                            
+- Reports pending/error state through onStatusChange                                                                 
+                                                                                                                    
+│ Note: WalletButton is usually used internally by UI_Comp, but it can also be imported directly for custom wallet   
+│ UIs.                                                                                                               
+                                                                                                                    
+────────────────────────────────────────────────────────────────────────────────                                     
+                                                                                                                    
+#### StellarWalletButton                                                                                             
+                                                                                                                    
+Low-level Stellar / Freighter wallet connector button.                                                               
+                                                                                                                    
+StellarWalletButton connects to Freighter, returns the Stellar public key, and reports the active Stellar network.   
+                                                                                                                    
+```tsx                                                                                                               
+import { StellarWalletButton } from "@cordystackx/cordy_minikit";                                                  
+                                                                                                                    
+export default function StellarConnect() {                                                                         
+  return (                                                                                                         
+    <StellarWalletButton                                                                                           
+      onConnect={(address) => {                                                                                    
+        console.log("Connected Stellar address:", address);                                                        
+      }}                                                                                                           
+      onStatusChange={({ isPending, error, address, network }) => {                                                
+        console.log("Connecting:", isPending);                                                                     
+        console.log("Error:", error);                                                                              
+        console.log("Address:", address);                                                                          
+        console.log("Network:", network);                                                                          
+      }}                                                                                                           
+    />                                                                                                             
+  );                                                                                                               
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+Props:                                                                                                               
+                                                                                                                    
+```ts                                                                                                                
+{                                                                                                                  
+  onConnect?: (address: string) => void;                                                                           
+                                                                                                                    
+  onStatusChange?: (status: {                                                                                      
+    isPending: boolean;                                                                                            
+    error?: string;                                                                                                
+    address?: string;                                                                                              
+    network?: string;                                                                                              
+  }) => void;                                                                                                      
+}                                                                                                                  
+```                                                                                                                  
+                                                                                                                    
+Behavior:                                                                                                            
+                                                                                                                    
+- Requests Freighter wallet access                                                                                   
+- Returns the connected Stellar public key                                                                           
+- Reads active Freighter network details                                                                             
+- Shows connected address preview                                                                                    
+- Reports pending/error/address/network through onStatusChange                                                       
+                                                                                                                    
+Conditions:                                                                                                          
+                                                                                                                    
+- Runs only in the browser                                                                                           
+- Requires Freighter wallet extension/app access                                                                     
+- Requires user approval in Freighter                                                                                
+- For testnet apps, Freighter should be set to the matching testnet network                                          
+```                                                                                                                  
+                                                                                                                    
+Small improvement for `WalletButton`: after successful connect, you may want to notify parent explicitly:          
+                                                                                                                    
+```ts                                                                                                              
+  onStatusChange?.({ isPending: false });                                                                            
+```                                                                                                                  
+                                                                                                                    
+right after:                                                                                                         
+                                                                                                                    
+```ts                                                                                                                
+  await connectAsync({ connector });                                                                                 
+```                                                                                                                  
+                                                                                                                    
+Not required, but cleaner.
 ---
 
 ## 🏗️ Architecture Overview
@@ -260,63 +676,6 @@ cordy_minikit/
 
 ---
 
-## 🧭 System Architecture — Cordy Minikit
-
-@cordystackx/cordy_minikit is built as a modular Web3 toolkit that sits on top of Wagmi, Viem, Ethers, and Coinbase Wallet SDK, providing developers with prebuilt UI components, controllers, and configuration files for seamless wallet and transaction management.
-
-
-```mermaid
-flowchart TD
-    %% Layer 1 - External Dependencies
-    subgraph External_Libraries["🔌 External Libraries"]
-        A1["wagmi (Wallet & Hooks)"]
-        A2["viem (RPC / EVM Utils)"]
-        A3["ethers.js (Tx + ABI Handling)"]
-        A4["Coinbase Wallet SDK (Wallet Provider)"]
-    end
-
-    %% Layer 2 - Core Logic
-    subgraph Core["⚙️ Core Logic Layer"]
-        B1["client__provider.tsx (Wagmi & Viem Client Context)"]
-        B2["controllers/ (Balance, Tx, WagmiButton)"]
-        B3["config/ (ERC20_ABI, walletConfig, links.json)"]
-    end
-
-    %% Layer 3 - UI Components
-    subgraph UI["🧩 UI Components"]
-        C1["Connect_wallet_bt.tsx (Connect/Disconnect Button)"]
-        C2["UI_Comp.tsx (Visual/Interactive UI Elements)"]
-        C3["CSS Modules (Dark/Light Theme Styles)"]
-    end
-
-    %% Layer 4 - Assets & Static Files
-    subgraph Assets["🖼️ Assets"]
-        D1["Wallet Logos (Coinbase, Metamask, WalletConnect)"]
-        D2["Static Config Files (Image.json, etc.)"]
-    end
-
-    %% Layer 5 - Output
-    subgraph Output["📦 Build & Distribution"]
-        E1["dist/ (Compiled JS + .d.ts Types)"]
-        E2["index.ts (Library Entry Point)"]
-        E3["NPM Registry (Public Package)"]
-    end
-
-    %% Connections
-    A1 & A2 & A3 & A4 --> B1
-    B1 --> B2
-    B2 --> B3
-    B2 --> C1
-    C1 --> C2
-    C2 --> C3
-    B3 --> C1
-    C3 --> D1
-    D1 --> E1
-    E1 --> E2
-    E2 --> E3
-
-```
-
 ## 🔧 API Reference
 
 ### Components
@@ -343,6 +702,12 @@ const { openModal, closeModal } = useWalletModal();
 const success = await CordyStackTrans(recipientAddress: string, amount: number);
 ```
 - Returns: `Promise<boolean>` - Transaction success status
+
+#### `CordyStackTransStellar(address, amount, options?)`
+```tsx
+const success = await CordyStackTransStellar(recipientAddress: string, amount: number, options?: { memo?: string; source?: string });
+```
+- Returns: `Promise<boolean>` - Stellar transaction success status
 
 #### `getConfig(customChains?)`
 ```tsx
