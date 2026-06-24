@@ -21,7 +21,7 @@ Built with **Wagmi**, **Viem**, **Ethers**, and **TypeScript**.
 
 | Demo 1 | Demo 2 | Demo 3 |
 |---|---|---|
-| ![Demo 1](assets/demo1.png) | ![Demo 2](assets/demo2.png) | ![Demo 3](assets/demo3.png) |
+| ![Demo 1](https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/demo1.png) | ![Demo 2](https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/demo2.png) | ![Demo 3](https://raw.githubusercontent.com/cordyStackX/cordy_minikit_official/refs/heads/main/assets/demo3.png) |
 
 ---
 
