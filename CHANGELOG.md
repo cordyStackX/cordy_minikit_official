@@ -12,8 +12,7 @@ disconnect controllers.
   - Added **Freighter wallet connection** via `StellarWalletButton`.                                                 
   - Added **native Stellar / XLM transfer helper** via `CordyStackTransStellar`.                                     
   - Added **Stellar balance loading** through Horizon.                                                               
-  - Added **Soroban RPC and Stellar Horizon environment support**:                                                   
-    - `NEXT_PUBLIC_STELLAR_RPC`                                                                                      
+  - Added **Soroban RPC and Stellar Horizon environment support**:                                                                                                                                       
     - `NEXT_PUBLIC_STELLAR_HORIZON`                                                                                  
     - `NEXT_PUBLIC_STELLAR_CONTRACT_ID`                                                                              
     - `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE`                                                                       
