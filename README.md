@@ -598,7 +598,7 @@ export default function StellarConnect() {
     />                                                                                                             
   );                                                                                                               
 }                                                                                                                  
-```                                                                                                                  
+```                                                                                                             
                                                                                                                     
 Props:                                                                                                               
                                                                                                                     
@@ -628,8 +628,7 @@ Conditions:
 - Runs only in the browser                                                                                           
 - Requires Freighter wallet extension/app access                                                                     
 - Requires user approval in Freighter                                                                                
-- For testnet apps, Freighter should be set to the matching testnet network                                          
-```                                                                                                                  
+- For testnet apps, Freighter should be set to the matching testnet network                                                                                                                                                           
                                                                                                                     
 Small improvement for `WalletButton`: after successful connect, you may want to notify parent explicitly:          
                                                                                                                     
@@ -642,8 +641,9 @@ right after:
 ```ts                                                                                                                
   await connectAsync({ connector });                                                                                 
 ```                                                                                                                  
-                                                                                                                    
-Not required, but cleaner.
+                                                                                                          
+`Not required, but cleaner.`
+
 ---
 
 ## 🏗️ Architecture Overview
