@@ -526,7 +526,7 @@ Example: close wallet modal after successful connection:
                                                                                                                      
 │ Note: useWalletStatus() is a React hook. Call it only at the top level of a client component or another hook.      
 
-### 7 Wallet Connection Components                                                                                   
+### 7. Wallet Connection Components                                                                                   
                                                                                                                      
 #### `WalletButton`                                                                                                
                                                                                                                     
