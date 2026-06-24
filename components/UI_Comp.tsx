@@ -119,8 +119,7 @@ export default function UI_Comp() {
             )}
           </div>
         </div>
-        <button                                                                                                            
-          style={{ width: "230px" }}                                                                                       
+        <button                                                                                                                                                                                        
           onClick={async () => {                                                                                           
             const success = await disconnectEVM();                                                                         
             console.log("EVM disconnect:", success);                                                                       
@@ -169,7 +168,7 @@ export default function UI_Comp() {
               )}
             </div>
           </div>
-          <button style={{ width: "230px" }} 
+          <button
             onClick={async () => {                                                                                           
               const success = await disconnectStellar();                                                                         
               console.log("EVM disconnect:", success);                                                                       
