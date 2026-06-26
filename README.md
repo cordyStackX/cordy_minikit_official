@@ -35,7 +35,9 @@ Built with **Wagmi**, **Viem**, **Ethers**, and **TypeScript**.
 - 📦 **Tree-shakable & Typed** — Optimized bundle size with full TypeScript definitions
 - 🧩 **Framework-Agnostic** — Works seamlessly with Next.js, Vite, and more
 - 🌐 **Multi-Chain Support** — Custom chain configuration support
-
+- 🌌 **Non-EVM Wallet Support** — Stellar / Soroban wallet support through Freighter                               
+- ⭐ **Stellar Balance & Transfers** — Read XLM balances and send native Stellar payments                          
+- 🧠 **Wallet Context Detection** — Detect `EVM`, `Non-EVM`, `MULTI`, or `NONE` 
 ---
 
 ## 📦 Installation
@@ -64,38 +66,7 @@ and send native Stellar payments using the built-in `CordyStackTransStellar` hel
   - `MULTI` — Both EVM and Non-EVM wallets connected                                                                 
   - `NONE` — No wallet connected                                                                                     
                                                                                                                      
-  This makes Cordy MiniKit ready for multi-chain apps that need both EVM and Stellar support.                        
-                                                                                                              
-                                                                                                                     
-Also update your Features section with these bullets:                                                                
-                                                                                                                                                                                                                                  
-  - 🌌 **Non-EVM Wallet Support** — Stellar / Soroban wallet support through Freighter                               
-  - ⭐ **Stellar Balance & Transfers** — Read XLM balances and send native Stellar payments                          
-  - 🧠 **Wallet Context Detection** — Detect `EVM`, `Non_EVM`, `MULTI`, or `NONE`                                                                                                                                                    
-                                                                                                                     
-And add this to API Reference → Hooks:                                                                               
-                                                                                                                                                                                                                                  
-  #### `useWalletStatus()`                                                                                           
-                                                                                                                     
-  ```tsx                                                                                                             
-  const {                                                                                                            
-    context,                                                                                                         
-    evm,                                                                                                             
-    stellar,                                                                                                         
-    refreshBalances,                                                                                                 
-    disconnectEVM,                                                                                                   
-    disconnectStellar,                                                                                               
-    disconnectAll,                                                                                                   
-  } = useWalletStatus();                                                                                             
-  ```                                                                                                         
-                                                                                                                     
-Returns wallet status for both EVM and Non-EVM wallets.                                                              
-                                                                                                                     
-```ts                                                                                                                
-  context: "EVM" | "Non-EVM" | "MULTI" | "NONE"                                                                      
-```                                                                                                                  
-                                                                                                                     
-Useful for detecting whether the connected wallet is Wagmi/EVM, Stellar/Non-EVM, both, or none.                                                                                                           
+  This makes Cordy MiniKit ready for multi-chain apps that need both EVM and Stellar support.                                                                                                        
 
 ## 🛠️ Quick Start
 
@@ -429,7 +400,7 @@ EVM and Non-EVM wallets.
           <p>EVM Address: {evm.address}</p>                                                                          
         )}                                                                                                           
                                                                                                                      
-        {context === "Non_EVM" && (                                                                                  
+        {context === "Non-EVM" && (                                                                                  
           <p>Stellar Address: {stellar.address}</p>                                                                  
         )}                                                                                                           
                                                                                                                      
@@ -456,7 +427,7 @@ Returns:
                                                                                                                      
 ```ts                                                                                                                
   {                                                                                                                  
-    context: "EVM" | "Non_EVM" | "MULTI" | "NONE";                                                                   
+    context: "EVM" | "Non-EVM" | "MULTI" | "NONE";                                                                   
                                                                                                                      
     evm: {                                                                                                           
       isConnected: boolean;                                                                                          
@@ -714,6 +685,28 @@ const success = await CordyStackTransStellar(recipientAddress: string, amount: n
 const config = getConfig({ myChain: customChainDefinition });
 ```
 - Returns: Wagmi configuration with custom chains
+
+  #### `useWalletStatus()`                                                                                           
+                                                                                                                     
+  ```tsx                                                                                                             
+  const {                                                                                                            
+    context,                                                                                                         
+    evm,                                                                                                             
+    stellar,                                                                                                         
+    refreshBalances,                                                                                                 
+    disconnectEVM,                                                                                                   
+    disconnectStellar,                                                                                               
+    disconnectAll,                                                                                                   
+  } = useWalletStatus();                                                                                             
+  ```                                                                                                         
+                                                                                                                     
+Returns wallet status for both EVM and Non-EVM wallets.                                                              
+                                                                                                                     
+```ts                                                                                                                
+  context: "EVM" | "Non-EVM" | "MULTI" | "NONE"                                                                      
+```                                                                                                                  
+                                                                                                                     
+Useful for detecting whether the connected wallet is Wagmi/EVM, Stellar/Non-EVM, both, or none.   
 
 ---
 

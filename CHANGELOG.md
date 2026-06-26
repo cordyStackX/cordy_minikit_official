@@ -1,3 +1,10 @@
+## [2.0.6] - 2026-06-26
+
+  ### Changed
+
+  - Improved `WalletButton` mobile wallet support by keeping mobile-capable connectors available without requiring a desktop injected provider.
+  - Improved `StellarWalletButton` Freighter handling for mobile users with provider availability checks and clearer fallback messaging.
+
 ## [2.0.0] - 2026-06-24                                                                                            
                                                                                                                      
   ### 🎉 Major Release                                                                                               
