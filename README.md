@@ -333,15 +333,15 @@ Returns:
 }                                                                                                                  
 ```                                                                                                                  
                                                                                                                     
-┌─────────────────────┬────────────────────────────────────────────────────┐                                         
-│ Function            │ Description                                        │                                         
-├─────────────────────┼────────────────────────────────────────────────────┤                                         
-│ disconnectEVM()     │ Disconnects the active Wagmi/EVM wallet            │                                         
-├─────────────────────┼────────────────────────────────────────────────────┤                                         
-│ disconnectStellar() │ Clears the active Stellar/Freighter wallet session │                                         
-├─────────────────────┼────────────────────────────────────────────────────┤                                         
-│ disconnectAll()     │ Disconnects both EVM and Stellar wallet sessions   │                                         
-└─────────────────────┴────────────────────────────────────────────────────┘                                         
+┌─────────────────────┬────────────────────────────────────────────────────┐
+│ Function            │ Description                                        │
+├─────────────────────┼────────────────────────────────────────────────────┤
+│ disconnectEVM()     │ Disconnects the active Wagmi/EVM wallet            │
+├─────────────────────┼────────────────────────────────────────────────────┤
+│ disconnectStellar() │ Clears the active Stellar/Freighter wallet session │
+├─────────────────────┼────────────────────────────────────────────────────┤
+│ disconnectAll()     │ Disconnects both EVM and Stellar wallet sessions   │
+└─────────────────────┴────────────────────────────────────────────────────┘
                                                                                                                     
 Each function returns:                                                                                               
                                                                                                                     
