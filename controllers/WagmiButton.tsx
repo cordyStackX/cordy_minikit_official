@@ -5,6 +5,12 @@ import type { Connector } from "wagmi";
 import Images from "../config/Image.json";
 
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+const ALWAYS_AVAILABLE_CONNECTOR_NAMES = new Set([
+  "WalletConnect",
+  "MetaMask",
+  "Coinbase Wallet",
+  "Trust Wallet",
+]);
 
 export default function WalletButton({
   onStatusChange
@@ -74,7 +80,11 @@ function WalletOption({
   React.useEffect(() => {
   (async () => {
     try {
-      if (connector.name === "WalletConnect" || isTrustWallet) {
+      if (
+        connector.type !== "injected" ||
+        ALWAYS_AVAILABLE_CONNECTOR_NAMES.has(connector.name) ||
+        isTrustWallet
+      ) {
         setInstalled(true);
         return;
       }

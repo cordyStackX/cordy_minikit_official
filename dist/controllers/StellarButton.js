@@ -1,8 +1,14 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { requestAccess, getNetworkDetails } from "@stellar/freighter-api";
+import { requestAccess, getNetworkDetails, isConnected, } from "@stellar/freighter-api";
 import img_src from "../config/Image.json";
+const FREIGHTER_DOWNLOAD_URL = "https://www.freighter.app/";
+function isMobileDevice() {
+    if (typeof navigator === "undefined")
+        return false;
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
 export default function StellarWalletButton({ onConnect, onStatusChange, }) {
     const [address, setAddress] = useState(null);
     const [isPending, setIsPending] = useState(false);
@@ -13,10 +19,28 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
         setErrorMsg(undefined);
         onStatusChange?.({ isPending: true });
         try {
+            const connection = await isConnected();
+            if (!connection.isConnected) {
+                const message = isMobileDevice()
+                    ? "Open this page in Freighter mobile or install Freighter to connect."
+                    : "Freighter is not installed.";
+                if (isMobileDevice() && typeof window !== "undefined") {
+                    window.open(FREIGHTER_DOWNLOAD_URL, "_blank", "noopener,noreferrer");
+                }
+                setErrorMsg(message);
+                onStatusChange?.({ isPending: false, error: message });
+                return;
+            }
             const access = await requestAccess();
+            if (access.error) {
+                throw new Error(access.error.message);
+            }
             const publicKey = access.address;
             setAddress(publicKey);
             const networkDetails = await getNetworkDetails();
+            if (networkDetails.error) {
+                throw new Error(networkDetails.error.message);
+            }
             setNetwork(networkDetails.network || "Unknown");
             onConnect?.(publicKey);
             onStatusChange?.({
@@ -39,5 +63,5 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
                 ? "Connecting..."
                 : address
                     ? `Connected: ${address.slice(0, 6)}...`
-                    : "Freighter", network ? ` • ${network}` : "", errorMsg ? ` • ${errorMsg}` : ""] }));
+                    : "Freighter"] }));
 }
