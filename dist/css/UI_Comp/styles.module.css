@@ -1,11 +1,12 @@
 :root {
   --foreground_wagmi_34535: #171717;
-  --foreground_wagmi_11111: linear-gradient(180deg, rgba(23, 23, 23, 0.98), rgba(18, 18, 18, 0.96));
+  --foreground_wagmi_11111: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 239, 228, 0.96));
   --meduim_dark_wagmi_34535: #818181;
   --background_wagmi_34535: #f3efe4;
-  --panel_wagmi_34535: rgba(255, 255, 255, 0.04);
-  --panel-border_wagmi_34535: rgba(255, 255, 255, 0.08);
+  --panel_wagmi_34535: rgba(0, 0, 0, 0.03);
+  --panel-border_wagmi_34535: rgba(0, 0, 0, 0.08);
   --accent_wagmi_34535: #33d9d3;
+  --text-secondary_wagmi_34535: #6b6250;
   --invert-cordy-image_34535: invert(1);
   --invert-cordy-image_1_34535: invert(0);
 }
@@ -19,6 +20,7 @@
     --panel_wagmi_34535: rgba(255, 255, 255, 0.03);
     --panel-border_wagmi_34535: rgba(51, 217, 211, 0.12);
     --accent_wagmi_34535: #33d9d3;
+    --text-secondary_wagmi_34535: #d8cfb5;
     --invert-cordy-image_34535: invert(0);
     --invert-cordy-image_1_34535: invert(1);
   }
@@ -127,7 +129,7 @@
 }
 
 .connector div p {
-  color: #d8cfb5;
+  color: var(--text-secondary_wagmi_34535);
   text-align: center;
 }
 
