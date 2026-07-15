@@ -1,6 +1,6 @@
 {
     "name": "@cordystackx/cordy_minikit",
-    "version": "2.0.9",
+    "version": "2.0.10",
     "publishConfig": {
         "access": "public"
     },
@@ -52,7 +52,8 @@
     "devDependencies": {
         "@types/node": "^25.9.4",
         "@types/react": "^19.2.17",
-        "@types/react-dom": "^19.2.3"
+        "@types/react-dom": "^19.2.3",
+        "typescript": "^7.0.2"
     },
     "peerDependencies": {
         "next": ">=13",
