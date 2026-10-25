@@ -6,3 +6,5 @@
 /.env.local
 
 /node_modules
+
+/demo

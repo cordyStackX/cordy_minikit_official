@@ -1,13 +1,14 @@
 "use client";
-import { createContext, useContext, useEffect, useState, ReactNode, Dispatch, SetStateAction } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode, Dispatch, SetStateAction } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "./config/walletConfig";
 import { UI_Comp } from "./components";
 
 type WalletContextType = {
-  openModal: () => void;
+  openModal: (options?: { jwtSession?: boolean }) => void;
   closeModal: () => void;
+  jwtSession: boolean;
 };
 
 type StellarWalletState = {
@@ -51,7 +52,27 @@ function readStellarWallet(): StellarWalletState {
 
 export default function WalletProviders({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [jwtSession, setJwtSession] = useState(false);
   const [stellarWallet, setStellarWallet] = useState<StellarWalletState>(() => readStellarWallet());
+  const openWalletModal = useCallback((options?: { jwtSession?: boolean }) => {
+    setJwtSession(options?.jwtSession ?? false);
+    setOpen(true);
+  }, []);
+  const closeWalletModal = useCallback(() => {
+    setOpen(false);
+    setJwtSession(false);
+  }, []);
+
+  useEffect(() => {
+    const handleStellarDisconnect = () => {
+      window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
+      window.localStorage.removeItem(ACTIVE_WALLET_SESSION_KEY);
+      setStellarWallet({ address: null, manuallyDisconnected: true });
+    };
+
+    window.addEventListener("cordy:disconnect-stellar-wallet", handleStellarDisconnect);
+    return () => window.removeEventListener("cordy:disconnect-stellar-wallet", handleStellarDisconnect);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -69,8 +90,9 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <WalletContext.Provider
           value={{
-            openModal: () => setOpen(true),
-            closeModal: () => setOpen(false),
+            openModal: openWalletModal,
+            closeModal: closeWalletModal,
+            jwtSession,
           }}
         >
           <StellarWalletContext.Provider

@@ -1,7 +1,10 @@
 import { ReactNode, Dispatch, SetStateAction } from "react";
 type WalletContextType = {
-    openModal: () => void;
+    openModal: (options?: {
+        jwtSession?: boolean;
+    }) => void;
     closeModal: () => void;
+    jwtSession: boolean;
 };
 type StellarWalletState = {
     address: string | null;

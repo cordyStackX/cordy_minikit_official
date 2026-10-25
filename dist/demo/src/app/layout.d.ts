@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import "./globals.css";
+export declare const metadata: Metadata;
+export default function RootLayout({ children }: LayoutProps<"/">): import("react").JSX.Element;
+//# sourceMappingURL=layout.d.ts.map

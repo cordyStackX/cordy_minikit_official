@@ -1,6 +1,6 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "./config/walletConfig";
@@ -32,7 +32,25 @@ function readStellarWallet() {
 }
 export default function WalletProviders({ children }) {
     const [open, setOpen] = useState(false);
+    const [jwtSession, setJwtSession] = useState(false);
     const [stellarWallet, setStellarWallet] = useState(() => readStellarWallet());
+    const openWalletModal = useCallback((options) => {
+        setJwtSession(options?.jwtSession ?? false);
+        setOpen(true);
+    }, []);
+    const closeWalletModal = useCallback(() => {
+        setOpen(false);
+        setJwtSession(false);
+    }, []);
+    useEffect(() => {
+        const handleStellarDisconnect = () => {
+            window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
+            window.localStorage.removeItem(ACTIVE_WALLET_SESSION_KEY);
+            setStellarWallet({ address: null, manuallyDisconnected: true });
+        };
+        window.addEventListener("cordy:disconnect-stellar-wallet", handleStellarDisconnect);
+        return () => window.removeEventListener("cordy:disconnect-stellar-wallet", handleStellarDisconnect);
+    }, []);
     useEffect(() => {
         if (typeof window === "undefined")
             return;
@@ -43,8 +61,9 @@ export default function WalletProviders({ children }) {
         window.localStorage.setItem(STELLAR_WALLET_STORAGE_KEY, JSON.stringify(stellarWallet));
     }, [stellarWallet]);
     return (_jsx(WagmiProvider, { config: config, children: _jsx(QueryClientProvider, { client: queryClient, children: _jsx(WalletContext.Provider, { value: {
-                    openModal: () => setOpen(true),
-                    closeModal: () => setOpen(false),
+                    openModal: openWalletModal,
+                    closeModal: closeWalletModal,
+                    jwtSession,
                 }, children: _jsxs(StellarWalletContext.Provider, { value: {
                         stellarWallet,
                         setStellarWallet,

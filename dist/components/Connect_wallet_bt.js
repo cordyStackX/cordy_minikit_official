@@ -1,69 +1,85 @@
 "use client";
 import { jsx as _jsx } from "react/jsx-runtime";
-import { getTokenBalance, loadStellarBalance } from "../controllers";
-import { useWalletModal, useStellarWallet } from "../wagmi__providers";
-import { useAccount } from "wagmi";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
+import { getTokenBalance, loadStellarBalance } from "../controllers";
+import { useStellarWallet, useWalletModal } from "../wagmi__providers";
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_BALANCE_REFRESH_EVENT = "cordy:stellar-balance-updated";
-export default function ConnectWalletBT({ className, }) {
-    const { openModal } = useWalletModal();
+export default function ConnectWalletBT({ className, jwt_session = false, navigate, }) {
+    const router = useRouter();
+    const { openModal, closeModal } = useWalletModal();
     const { stellarWallet, setStellarWallet } = useStellarWallet();
     const { isConnected, address } = useAccount();
     const [balance, setBalance] = useState("");
     const [symbol, setSymbol] = useState("");
+    const walletConnected = Boolean((isConnected && address) || stellarWallet.address);
+    if (jwt_session !== Boolean(navigate)) {
+        throw new Error('ConnectWalletBT: provide both "jwt_session={true}" and a "navigate" path, or neither.');
+    }
+    if (jwt_session &&
+        navigate &&
+        (!navigate.startsWith("/") || navigate.startsWith("//") || navigate.includes("\\"))) {
+        throw new Error('ConnectWalletBT: "navigate" must be a safe internal path starting with "/".');
+    }
     useEffect(() => {
-        if (isConnected && address) {
-            void Get_Balance();
+        if (jwt_session && navigate && walletConnected) {
+            closeModal();
+            router.replace(navigate);
         }
-    }, [isConnected, address]);
-    const Get_Balance = async () => {
-        if (!address)
+    }, [closeModal, jwt_session, navigate, router, walletConnected]);
+    useEffect(() => {
+        if (jwt_session || !isConnected || !address)
             return;
-        const { balance, symbol } = await getTokenBalance(address);
-        setBalance(balance);
-        setSymbol(symbol);
-    };
-    const handleLoadStellarBalance = async (accountId) => {
-        try {
-            const result = await loadStellarBalance(accountId);
+        void getTokenBalance(address).then(({ balance: nextBalance, symbol: nextSymbol }) => {
+            setBalance(nextBalance);
+            setSymbol(nextSymbol);
+        });
+    }, [address, isConnected, jwt_session]);
+    useEffect(() => {
+        if (!stellarWallet.address || jwt_session)
+            return;
+        let active = true;
+        void loadStellarBalance(stellarWallet.address)
+            .then((result) => {
+            if (!active)
+                return;
             setStellarWallet((current) => ({
                 ...current,
                 address: result.address,
                 network: result.network,
                 balance: result.balance,
             }));
-            if (typeof window !== "undefined") {
-                window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "stellar");
-            }
-        }
-        catch (err) {
-            console.error("Failed to load Stellar balance:", err);
-            setStellarWallet((current) => ({
-                ...current,
-                balance: "0",
-            }));
-        }
-    };
+        })
+            .catch((error) => {
+            console.error("Failed to load Stellar balance:", error);
+            if (active)
+                setStellarWallet((current) => ({ ...current, balance: "0" }));
+        });
+        return () => { active = false; };
+    }, [jwt_session, setStellarWallet, stellarWallet.address]);
     useEffect(() => {
-        if (stellarWallet.address) {
-            void handleLoadStellarBalance(stellarWallet.address);
-        }
-    }, [stellarWallet.address]);
-    useEffect(() => {
+        if (jwt_session || !stellarWallet.address)
+            return;
         const handler = () => {
-            if (stellarWallet.address) {
-                void handleLoadStellarBalance(stellarWallet.address);
-            }
+            void loadStellarBalance(stellarWallet.address).then((result) => {
+                setStellarWallet((current) => ({
+                    ...current,
+                    address: result.address,
+                    network: result.network,
+                    balance: result.balance,
+                }));
+            });
         };
         window.addEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
-        return () => {
-            window.removeEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
-        };
-    }, [stellarWallet.address]);
-    return (_jsx("button", { className: className, onClick: openModal, children: isConnected
-            ? `BAL ${balance} ${symbol ?? ""}`
-            : stellarWallet.address
-                ? `BAL ${stellarWallet.balance ?? "0"} XLM`
-                : "Connect Wallet" }));
+        return () => window.removeEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
+    }, [jwt_session, setStellarWallet, stellarWallet.address]);
+    return (_jsx("button", { className: className, onClick: () => openModal({ jwtSession: jwt_session }), "data-jwt-session": jwt_session ? "enabled" : undefined, type: "button", children: jwt_session
+            ? walletConnected ? "Connected" : "Connect Wallet"
+            : isConnected
+                ? `BAL ${balance} ${symbol}`
+                : stellarWallet.address
+                    ? `BAL ${stellarWallet.balance ?? "0"} XLM`
+                    : "Connect Wallet" }));
 }

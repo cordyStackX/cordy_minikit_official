@@ -168,6 +168,86 @@ export default function Header() {
 
 ---
 
+### Wallet-authenticated JWT sessions (opt-in)
+
+`ConnectWalletBT` accepts `jwt_session`. When enabled, it checks your app's session endpoint on mount and exposes the result through `data-session-authenticated` (`true` or `false`). The wallet button does not mint a JWT in the browser.
+
+```tsx
+<ConnectWalletBT className="your-custom-class" jwt_session={true} />
+```
+
+The app must provide server routes that verify the SIWE or Stellar wallet proof, issue an HttpOnly session cookie, report its validity, and clear it on logout. Cordy Minikit does not create these app routes automatically.
+
+Use the server entry point only after your server has verified wallet ownership:
+
+```ts
+import { cordy } from "@cordystackx/cordy_minikit/server";
+
+const token = cordy.jwt_sign({
+  subject: verifiedWalletAddress,
+  secret: process.env.CORDY_JWT_SECRET!,
+  expiresInSeconds: 60 * 60,
+});
+// Set token in a Secure, HttpOnly, SameSite cookie from your server response.
+```
+
+`jwt_sign` signs an HS256 token; it does not verify SIWE/SEP-10 proofs. Never call it with an address that your server has not authenticated. Keep the secret on the server and use a random secret of at least 32 characters.
+
+On the client, the defaults are `GET /api/auth/session` and `POST /api/auth/logout`. Both requests include cookies. The session route should return 2xx for a valid session and 401/403 otherwise; logout should clear the cookie. Override the paths when needed:
+
+```ts
+import { cordy } from "@cordystackx/cordy_minikit/client";
+
+const session = await cordy.jwt_confirm({ endpoint: "/api/session" });
+await cordy.jwt_disconnect({ endpoint: "/api/logout" });
+```
+
+`jwt_confirm` checks your app's endpoint; it does not decode or trust a JWT in browser storage. `jwt_disconnect` calls your logout endpoint, disconnects active EVM connectors, clears the Minikit Stellar wallet selection, and returns `{ success, walletDisconnected, status?, error? }`. Your handler should clear or revoke the session cookie and return a successful response. Stellar disconnect clears the app's selected wallet; the browser extension may retain its own permission grant.
+
+---
+
+### Unified wallet transfer
+
+Additional asset JSON is optional. When no asset is specified, EVM transfers use `NEXT_PUBLIC_TOKENADDRESS` and Stellar transfers use native XLM. To add other tokens, import the EVM and Stellar JSON files in your app's shared `Providers` component and pass their entries to `ProvidersClientWrapper`. `cordy.transfer(amount, recipient, { asset: "SYMBOL", memo? })` selects a configured token by chain or Stellar network, checks its balance, requests the wallet signature, and returns a normalized transaction result.
+
+```tsx
+// app/providers.tsx
+"use client";
+import botChainAssets from "@/config/bot_chain_assets.json";
+import stellarAssets from "@/config/stellar_assets.json";
+
+const assets = {
+  evm: botChainAssets.evm,
+  stellar: stellarAssets.stellar,
+};
+
+// Pass `assets` to ProvidersClientWrapper in your shared Providers component.
+```
+
+```ts
+// Defaults use NEXT_PUBLIC_TOKENADDRESS on EVM or native XLM on Stellar.
+const defaultResult = await cordy.transfer("25", "0x...");
+
+// Select a token added to the matching JSON file.
+const result = await cordy.transfer("25", "G...", {
+  asset: "USDC",
+  memo: "rent payment",
+});
+if (result.success) console.log(result.network, result.transactionHash);
+else console.error(result.error);
+
+// The same symbol can have entries for multiple networks in wallet-assets.json.
+await cordy.transfer("3.5", "G...", { asset: "XLM" });
+await cordy.transfer("25", "0x...", { asset: "USDC" });
+```
+
+- EVM JSON format: `{ "evm": [{ "symbol": "USDC", "chainId": 8453, "contractAddress": "0x...", "decimals": 6 }] }`. Stellar JSON format: `{ "stellar": [{ "symbol": "USDC", "type": "credit", "code": "USDC", "issuer": "G...", "networkPassphrase": "Test SDF Network ; September 2015" }, { "symbol": "XLM", "type": "native" }] }`. `decimals` and `networkPassphrase` can be omitted when unambiguous. Either file may be omitted or contain an empty list.
+- The Stellar account must have a trustline for issued assets. `memo` is optional and supports up to 28 UTF-8 bytes.
+- EVM sends the configured ERC-20 through the active Wagmi connector (including WalletConnect); any supplied memo is ignored for EVM transfers.
+- Configure the Stellar Horizon/network and EVM token/wallet settings as described in the environment section. The returned shape is `{ success, network?, transactionHash?, error? }`.
+
+---
+
 ### 2. Wallet Modal Hook
 
 Use the `useWalletModal` hook to trigger the wallet modal programmatically:
@@ -653,9 +733,9 @@ cordy_minikit/
 
 #### `ConnectWalletBT`
 ```tsx
-<ConnectWalletBT className?: string />
+<ConnectWalletBT className?: string; jwt_session?: boolean />
 ```
-- Props: `className` (optional) - Custom CSS class
+- Props: `className` (optional) - Custom CSS class; `jwt_session` (optional) - Check the app's HttpOnly session endpoint on mount
 
 
 ### Hooks

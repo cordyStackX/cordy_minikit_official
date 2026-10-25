@@ -1,16 +1,20 @@
 "use client";
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { UI_Comp__css } from "../css";
 import { WalletButton, getTokenBalance, StellarWalletButton, loadStellarBalance, useDisconnectWallets } from "../controllers";
 import { useWalletModal, useStellarWallet } from "../wagmi__providers";
 import { useAccount } from "wagmi";
-import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import pkg from "../package.json";
 import links from "../config/links.json";
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+const walletRoutes = [
+    { id: "browser-evm", title: "EVM · Browser", subtitle: "Use MetaMask, Coinbase Wallet, or another extension", icon: "E", hint: "Browser" },
+    { id: "walletconnect", title: "WalletConnect · Mobile", subtitle: "Connect with a wallet on your phone using a QR code", icon: "W", hint: "QR code" },
+    { id: "stellar", title: "Stellar · Non-EVM", subtitle: "Connect a Stellar account with Freighter", icon: "✦", hint: "Freighter" },
+];
 export default function UI_Comp() {
-    const { closeModal } = useWalletModal();
+    const { closeModal, jwtSession } = useWalletModal();
     const { stellarWallet, setStellarWallet } = useStellarWallet();
     const { isConnected, address, chain } = useAccount();
     const [loading, setLoading] = useState(false);
@@ -19,49 +23,35 @@ export default function UI_Comp() {
     const [symbol, setSymbol] = useState("");
     const [stellarLoading, setStellarLoading] = useState(false);
     const [stellarError, setStellarError] = useState();
-    const { disconnectEVM, disconnectStellar,
-    // disconnectAll,                                                                                             
-     } = useDisconnectWallets();
+    const [selectedRoute, setSelectedRoute] = useState(null);
+    const { disconnectEVM, disconnectStellar } = useDisconnectWallets();
     useEffect(() => {
-        if (isConnected && address) {
-            Get_Balance();
-        }
-    }, [isConnected, address]);
+        if (!jwtSession && isConnected && address)
+            void Get_Balance();
+    }, [isConnected, address, jwtSession]);
     useEffect(() => {
-        if (stellarWallet.address) {
+        if (!jwtSession && stellarWallet.address)
             void loadStellarBalance(stellarWallet.address);
-        }
-    }, [stellarWallet.address]);
+    }, [stellarWallet.address, jwtSession]);
     const Get_Balance = async () => {
         if (!address)
             return;
-        const { balance, symbol } = await getTokenBalance(address);
-        setBalance(balance);
-        setSymbol(symbol);
-        return;
+        const result = await getTokenBalance(address);
+        setBalance(result.balance);
+        setSymbol(result.symbol);
     };
     const handleLoadStellarBalance = async (accountId) => {
         setStellarError(undefined);
         try {
             const result = await loadStellarBalance(accountId);
-            setStellarWallet((current) => ({
-                ...current,
-                address: result.address,
-                network: result.network,
-                balance: result.balance,
-            }));
-            if (typeof window !== "undefined") {
-                window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "stellar");
-            }
+            setStellarWallet((current) => ({ ...current, address: result.address, network: result.network, balance: result.balance }));
+            window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "stellar");
         }
         catch (err) {
             const message = err instanceof Error ? err.message : "Failed to load Stellar balance";
             console.error("Failed to load Stellar balance:", err);
             setStellarError(message);
-            setStellarWallet((current) => ({
-                ...current,
-                balance: "0",
-            }));
+            setStellarWallet((current) => ({ ...current, balance: "0" }));
         }
     };
     const truncateAddress = (value, head = 8, tail = 4) => {
@@ -71,35 +61,33 @@ export default function UI_Comp() {
             return value;
         return `${value.slice(0, head)}...${value.slice(-tail)}`;
     };
-    // EVM
-    if (isConnected) {
-        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Wallet Status" }), _jsxs("div", { className: UI_Comp__css.split_layout, children: [_jsxs("div", { className: UI_Comp__css.left_column, children: [_jsx("h3", { children: "EVM Wallet" }), _jsx("div", { className: UI_Comp__css.icon_wrap, children: _jsx(FaUser, { size: 70 }) })] }), _jsxs("div", { className: UI_Comp__css.right_column, children: [_jsx("h3", { children: "Status" }), balance ? (_jsx("div", { className: UI_Comp__css.info, children: _jsxs("div", { className: UI_Comp__css.status_stack, children: [_jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", chain?.name || "Unknown"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", Number(balance).toFixed(2), " ", symbol] }), _jsx("p", { className: UI_Comp__css.address, style: { color: "#ff0" }, title: address || "", children: truncateAddress(address) })] }) })) : (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] }))] })] }), _jsx("button", { onClick: async () => {
-                            const success = await disconnectEVM();
-                            console.log("EVM disconnect:", success);
-                        }, children: "DisConnect" }), _jsxs("a", { style: { marginTop: "2rem" }, href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+    const footer = _jsxs("a", { className: UI_Comp__css.footer_link, href: links.NPM_Pack_links, target: "_blank", rel: "noreferrer", children: ["Cordy Minikit ", _jsx("span", { "aria-hidden": "true", children: "\u00B7" }), " v", pkg.version] });
+    if (isConnected || stellarWallet.address) {
+        const isStellar = !isConnected && Boolean(stellarWallet.address);
+        const connectedAddress = isStellar ? stellarWallet.address : address;
+        const connectedNetwork = isStellar ? stellarWallet.network || "Stellar" : chain?.name || "Network unavailable";
+        const connectedBalance = isStellar
+            ? stellarWallet.balance ? `${stellarWallet.balance} XLM` : "Loading balance…"
+            : balance ? `${Number(balance).toFixed(4)} ${symbol}` : "Loading balance…";
+        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("section", { className: UI_Comp__css.connector, role: "dialog", "aria-modal": "true", "aria-labelledby": "wallet-modal-title", children: [_jsxs("header", { className: UI_Comp__css.modal_header, children: [_jsx("div", { className: UI_Comp__css.brand_mark, "aria-hidden": "true", children: "C" }), _jsxs("div", { children: [_jsx("p", { className: UI_Comp__css.eyebrow, children: "CORDY MINIKIT" }), _jsx("h2", { id: "wallet-modal-title", children: "Wallet connected" })] }), _jsx("button", { className: UI_Comp__css.close_button, type: "button", onClick: closeModal, "aria-label": "Close wallet dialog", children: "\u00D7" })] }), _jsxs("div", { className: UI_Comp__css.connected_card, children: [_jsxs("div", { className: UI_Comp__css.connected_heading, children: [_jsx("span", { className: UI_Comp__css.connected_dot }), " ", isStellar ? "Stellar wallet" : "EVM wallet", _jsx("span", { className: UI_Comp__css.network_badge, children: connectedNetwork })] }), !jwtSession && _jsxs(_Fragment, { children: [_jsx("div", { className: UI_Comp__css.balance_value, children: connectedBalance }), _jsx("p", { className: UI_Comp__css.muted, children: isStellar ? "Native balance" : "Token balance" })] }), _jsxs("div", { className: UI_Comp__css.address_row, children: [_jsx("span", { children: "Address" }), _jsx("code", { title: connectedAddress || "", children: truncateAddress(connectedAddress, 12, 8) })] }), isStellar && stellarError && _jsx("p", { className: UI_Comp__css.error_message, role: "alert", children: stellarError })] }), _jsx("button", { className: UI_Comp__css.disconnect_button, type: "button", onClick: async () => { if (isStellar)
+                            await disconnectStellar();
+                        else
+                            await disconnectEVM(); }, children: "Disconnect wallet" }), footer] }) }));
     }
-    //Non - EVM
-    if (stellarWallet.address) {
-        return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [_jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Wallet Status" }), _jsxs("div", { className: UI_Comp__css.split_layout, children: [_jsxs("div", { className: UI_Comp__css.left_column, children: [_jsx("h3", { children: "Stellar Wallet" }), _jsx("div", { className: UI_Comp__css.icon_wrap, children: _jsx(FaUser, { size: 70 }) })] }), _jsxs("div", { className: UI_Comp__css.right_column, children: [_jsx("h3", { children: "Status" }), stellarWallet.balance ? (_jsxs("div", { className: UI_Comp__css.status_stack, children: [_jsx("p", { style: { color: "#0f0" }, children: "Connected" }), _jsxs("p", { style: { color: "#2f9" }, children: ["Network: ", stellarWallet.network || "Stellar"] }), _jsxs("p", { style: { color: "#0ff" }, children: ["Balance: ", stellarWallet.balance ?? "0", " XLM"] }), _jsx("p", { className: UI_Comp__css.address, style: { color: "#ff0" }, title: stellarWallet.address || "", children: truncateAddress(stellarWallet.address) }), stellarError ? _jsx("p", { style: { color: "#f55" }, children: stellarError }) : null] })) : (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] }))] })] }), _jsx("button", { onClick: async () => {
-                            const success = await disconnectStellar();
-                            console.log("EVM disconnect:", success);
-                        }, children: "DisConnect" }), _jsxs("a", { style: { marginTop: "2rem" }, href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
-    }
-    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("div", { className: UI_Comp__css.connector, children: [loading || stellarLoading ? (_jsxs("span", { className: UI_Comp__css.blockchain_loader, children: [_jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node }), _jsx("span", { className: UI_Comp__css.node })] })) : null, _jsx("p", { className: UI_Comp__css.closed, onClick: closeModal, children: "\u2715" }), _jsx("h2", { children: "Connect Your Wallet" }), _jsxs("div", { className: UI_Comp__css.split_layout, children: [_jsxs("div", { className: UI_Comp__css.left_column, children: [_jsx("h3", { children: "EVM Wallets" }), _jsx(WalletButton, { onStatusChange: ({ isPending, error }) => {
-                                        setLoading(isPending);
-                                        setErrorMsg(error);
-                                    } })] }), _jsxs("div", { className: UI_Comp__css.right_column, children: [_jsx("h3", { children: "Non - EVM Wallets" }), _jsx(StellarWalletButton, { onConnect: (address) => {
-                                        setStellarWallet((current) => ({ ...current, address }));
-                                        void handleLoadStellarBalance(address);
-                                    }, onStatusChange: ({ isPending, error, address, network }) => {
-                                        setStellarLoading(isPending);
-                                        setStellarError(error);
-                                        if (address)
-                                            setStellarWallet((current) => ({ ...current, address }));
-                                        if (network) {
-                                            setStellarWallet((current) => ({ ...current, network }));
-                                        }
-                                        if (address)
-                                            void handleLoadStellarBalance(address);
-                                    } })] })] }), _jsx("p", { style: { color: "#f00" }, children: errorMsg }), _jsx("p", { style: { color: "#f00" }, children: stellarError }), _jsxs("a", { style: { marginTop: "2rem" }, href: links.NPM_Pack_links, children: ["Powered By CordyStackX | Version ", pkg.version] })] }) }));
+    const selectedWalletRoute = walletRoutes.find((route) => route.id === selectedRoute);
+    return (_jsx("div", { className: UI_Comp__css.container, children: _jsxs("section", { className: UI_Comp__css.connector, role: "dialog", "aria-modal": "true", "aria-labelledby": "wallet-modal-title", "aria-describedby": "wallet-modal-description", children: [_jsxs("header", { className: UI_Comp__css.modal_header, children: [_jsx("div", { className: UI_Comp__css.brand_mark, "aria-hidden": "true", children: "C" }), _jsxs("div", { children: [_jsxs("p", { className: UI_Comp__css.eyebrow, children: ["CORDY MINIKIT ", _jsx("span", { children: "\u00B7" }), " WALLET ACCESS"] }), _jsx("h2", { id: "wallet-modal-title", children: selectedWalletRoute?.title || "Choose a wallet" })] }), _jsx("button", { className: UI_Comp__css.close_button, type: "button", onClick: closeModal, "aria-label": "Close wallet dialog", children: "\u00D7" })] }), _jsx("p", { id: "wallet-modal-description", className: UI_Comp__css.modal_description, children: selectedWalletRoute ? selectedWalletRoute.subtitle : "Select how you want to connect." }), (loading || stellarLoading) && _jsxs("div", { className: UI_Comp__css.loading_notice, role: "status", children: [_jsx("span", { className: UI_Comp__css.spinner }), " Waiting for wallet approval\u2026"] }), !selectedRoute ? (_jsx("div", { className: UI_Comp__css.wallet_choices, role: "group", "aria-label": "Wallet connection options", children: walletRoutes.map((route) => (_jsxs("button", { type: "button", className: UI_Comp__css.wallet_choice, onClick: () => { setErrorMsg(undefined); setStellarError(undefined); setSelectedRoute(route.id); }, children: [_jsx("span", { className: `${UI_Comp__css.choice_icon} ${route.id === "stellar" ? UI_Comp__css.stellar_choice_icon : ""}`, "aria-hidden": "true", children: route.icon }), _jsxs("span", { className: UI_Comp__css.choice_copy, children: [_jsx("span", { className: UI_Comp__css.choice_title, children: route.title }), _jsx("span", { className: UI_Comp__css.choice_subtitle, children: route.subtitle })] }), _jsx("span", { className: UI_Comp__css.choice_hint, children: route.hint }), _jsx("svg", { className: UI_Comp__css.choice_chevron, "aria-hidden": "true", viewBox: "0 0 16 16", fill: "none", children: _jsx("path", { d: "m6 3 5 5-5 5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) })] }, route.id))) })) : (_jsxs(_Fragment, { children: [_jsxs("button", { type: "button", className: UI_Comp__css.back_button, onClick: () => { setSelectedRoute(null); setErrorMsg(undefined); setStellarError(undefined); }, children: [_jsx("svg", { "aria-hidden": "true", viewBox: "0 0 16 16", fill: "none", children: _jsx("path", { d: "M10 3 5 8l5 5M5 8h8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }), "All connection options"] }), _jsxs("div", { className: UI_Comp__css.wallet_panel, children: [_jsx("p", { className: UI_Comp__css.panel_label, children: "AVAILABLE WALLETS" }), _jsxs("div", { className: UI_Comp__css.wallet_options, children: [selectedRoute === "browser-evm" && _jsx(WalletButton, { connectorGroup: "browser", onStatusChange: ({ isPending, error }) => { setLoading(isPending); setErrorMsg(error); } }), selectedRoute === "walletconnect" && _jsx(WalletButton, { connectorGroup: "walletconnect", onStatusChange: ({ isPending, error }) => { setLoading(isPending); setErrorMsg(error); } }), selectedRoute === "stellar" && _jsx(StellarWalletButton, { onConnect: (accountId) => {
+                                                setStellarWallet((current) => ({ ...current, address: accountId }));
+                                                if (!jwtSession)
+                                                    void handleLoadStellarBalance(accountId);
+                                            }, onStatusChange: ({ isPending, error, address: accountId, network }) => {
+                                                setStellarLoading(isPending);
+                                                setStellarError(error);
+                                                if (accountId) {
+                                                    setStellarWallet((current) => ({ ...current, address: accountId }));
+                                                    if (!jwtSession)
+                                                        void handleLoadStellarBalance(accountId);
+                                                }
+                                                if (network)
+                                                    setStellarWallet((current) => ({ ...current, network }));
+                                            } })] }), _jsx("p", { className: UI_Comp__css.panel_note, children: selectedRoute === "walletconnect" ? "Scan the QR code with your mobile wallet to continue." : selectedRoute === "stellar" ? "Freighter will ask you to approve access to your Stellar account." : "Choose an installed browser wallet to continue." })] })] })), (errorMsg || stellarError) && _jsx("div", { className: UI_Comp__css.error_message, role: "alert", children: errorMsg || stellarError }), _jsxs("div", { className: UI_Comp__css.modal_footer, children: [_jsx("span", { children: "Connecting only shares your public wallet address." }), footer] })] }) }));
 }
