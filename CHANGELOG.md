@@ -1,3 +1,14 @@
+## [3.0.3] - 2026-10-27
+
+### Security
+
+- Override vulnerable transitive `uuid` versions with patched `11.1.1`.
+- Override vulnerable transitive `zod` versions with patched `4.6.6`.
+
+### Changed
+
+- Update Coinbase Wallet SDK to `4.4.0`, Stellar SDK to `17.4.0`, and Node.js types to `26.6.5`.
+
 ## [3.0.2] - 2026-10-27
 
 ### Removed
