@@ -1,4 +1,4 @@
-## [3.0.2] - Unreleased
+## [3.0.2] - 2026-10-27
 
 ### Removed
 
@@ -8,7 +8,7 @@
 
 - Read public WalletConnect, EVM, and Stellar runtime settings from the JSON passed to `ProvidersClientWrapper` instead of `NEXT_PUBLIC_*` variables.
 
-## [3.0.1] - Unreleased
+## [3.0.1] - 2026-10-27
 
 ### Removed
 
