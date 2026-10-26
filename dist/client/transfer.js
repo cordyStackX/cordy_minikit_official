@@ -1,8 +1,10 @@
 "use client";
 import { Asset, BASE_FEE, Horizon, Memo, Networks, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
 import { getNetworkDetails, requestAccess, signTransaction as freighterSignTransaction } from "@stellar/freighter-api";
-import { BrowserProvider, Contract, isAddress, parseUnits } from "ethers";
-import { config } from "../config/walletConfig";
+import { BrowserProvider, Contract, formatEther, isAddress, JsonRpcProvider, parseUnits } from "ethers";
+import { getActiveWagmiConfig } from "../config/walletConfig";
+import { readTokenBalance } from "../controllers/Get_Balance";
+import loadStellarBalance from "../controllers/loadStellarBalance";
 import tokenAbi from "../config/ERC20_ABI.json";
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
@@ -10,11 +12,13 @@ const stellarRpc = process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-t
 const stellarNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
 let configuredAssets;
 export function configureCordyAssets({ assets }) {
-    if (!assets || (assets.evm !== undefined && !Array.isArray(assets.evm)) ||
+    if (!assets || (assets.networks !== undefined && !Array.isArray(assets.networks)) ||
+        (assets.evm !== undefined && !Array.isArray(assets.evm)) ||
         (assets.stellar !== undefined && !Array.isArray(assets.stellar))) {
-        throw new Error('Cordy Minikit: "evm" and "stellar" assets must be arrays when provided.');
+        throw new Error('Cordy Minikit: "networks", "evm", and "stellar" must be arrays when provided.');
     }
     configuredAssets = {
+        networks: (assets.networks ?? []).map((network) => ({ ...network, nativeCurrency: { ...network.nativeCurrency } })),
         evm: (assets.evm ?? []).map((asset) => ({ ...asset })),
         stellar: (assets.stellar ?? []).map((asset) => ({ ...asset })),
     };
@@ -26,6 +30,36 @@ function normalizedAmount(amount) {
     }
     return value;
 }
+function resolveEvmAsset(requestedSymbol, chainId, networkName) {
+    if (!requestedSymbol)
+        return undefined;
+    const sameSymbol = (configuredAssets?.evm ?? []).filter((asset) => asset.symbol.toLowerCase() === requestedSymbol.toLowerCase());
+    const matchingNetwork = sameSymbol.find((asset) => asset.chainId === chainId);
+    if (sameSymbol.length > 0 && !matchingNetwork) {
+        const chainIds = [...new Set(sameSymbol.map((asset) => asset.chainId))].join(", ");
+        throw new Error(`${requestedSymbol} is configured for chain ID ${chainIds}, but the connected wallet is on ${networkName} (chain ID ${chainId}). Switch networks or add an asset entry for this chain.`);
+    }
+    return matchingNetwork;
+}
+async function getEvmReadProvider(walletProvider, chainId, networkName, assetRpcUrl) {
+    const rpcUrl = assetRpcUrl || configuredAssets?.networks?.find((network) => network.chainId === chainId)?.rpcUrl || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+    if (!rpcUrl)
+        return walletProvider;
+    const rpcProvider = new JsonRpcProvider(rpcUrl);
+    let rpcNetwork;
+    try {
+        rpcNetwork = await rpcProvider.getNetwork();
+    }
+    catch {
+        if (!assetRpcUrl && !configuredAssets?.networks?.some((network) => network.rpcUrl === rpcUrl))
+            return walletProvider;
+        throw new Error(`Could not reach the configured EVM RPC endpoint for ${networkName}. Check its URL and availability.`);
+    }
+    if (Number(rpcNetwork.chainId) !== chainId) {
+        throw new Error(`The configured EVM RPC is on chain ID ${rpcNetwork.chainId}, but the wallet is on ${networkName} (chain ID ${chainId}). Use an RPC for the connected network.`);
+    }
+    return rpcProvider;
+}
 function getActiveWallet() {
     if (typeof window === "undefined")
         throw new Error("Transfers must be started in the browser.");
@@ -34,8 +68,9 @@ function getActiveWallet() {
         return "stellar";
     if (selected === "evm")
         return "evm";
-    const current = config.state.current;
-    if (current && config.state.connections.has(current))
+    const walletConfig = getActiveWagmiConfig();
+    const current = walletConfig.state.current;
+    if (current && walletConfig.state.connections.has(current))
         return "evm";
     try {
         const stored = JSON.parse(window.localStorage.getItem(STELLAR_WALLET_STORAGE_KEY) || "null");
@@ -50,17 +85,16 @@ function getActiveWallet() {
 async function transferEvm(amount, recipient, requestedSymbol) {
     if (!isAddress(recipient))
         throw new Error("Recipient must be a valid EVM address.");
-    const current = config.state.current;
-    const connection = current ? config.state.connections.get(current) : undefined;
+    const walletConfig = getActiveWagmiConfig();
+    const current = walletConfig.state.current;
+    const connection = current ? walletConfig.state.connections.get(current) : undefined;
     if (!connection)
         throw new Error("No EVM wallet is currently connected.");
     const rawProvider = await connection.connector.getProvider();
     const provider = new BrowserProvider(rawProvider);
     const chain = await provider.getNetwork();
     const chainId = Number(chain.chainId);
-    const tokenConfig = requestedSymbol
-        ? configuredAssets?.evm?.find((asset) => asset.symbol.toLowerCase() === requestedSymbol.toLowerCase() && asset.chainId === chainId)
-        : undefined;
+    const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
     const fallbackAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
     const contractAddress = tokenConfig?.contractAddress || fallbackAddress;
     if (!contractAddress) {
@@ -68,23 +102,114 @@ async function transferEvm(amount, recipient, requestedSymbol) {
     }
     if (!isAddress(contractAddress))
         throw new Error("The configured EVM token contract address is invalid.");
+    const readProvider = await getEvmReadProvider(provider, chainId, chain.name, tokenConfig?.rpcUrl);
     const signer = await provider.getSigner(connection.accounts[0]);
     const from = await signer.getAddress();
-    const token = new Contract(contractAddress, tokenAbi, signer);
-    const onchainSymbol = tokenConfig?.symbol || String(await token.symbol());
-    if (requestedSymbol && onchainSymbol.toLowerCase() !== requestedSymbol.toLowerCase()) {
-        throw new Error(`The fallback token symbol is ${onchainSymbol}, not ${requestedSymbol}. Add ${requestedSymbol} to the asset JSON.`);
+    const balance = await readTokenBalance(from, {
+        tokenAddress: contractAddress,
+        rpcUrl: tokenConfig?.rpcUrl || configuredAssets?.networks?.find((network) => network.chainId === chainId)?.rpcUrl,
+        provider: readProvider,
+        fallbackProvider: provider,
+        expectedChainId: chainId,
+        networkName: chain.name,
+        symbol: tokenConfig?.symbol,
+        decimals: tokenConfig?.decimals,
+    });
+    if (requestedSymbol && balance.symbol.toLowerCase() !== requestedSymbol.toLowerCase()) {
+        throw new Error(`The configured token is ${balance.symbol}, not ${requestedSymbol}. Add ${requestedSymbol} to the asset JSON.`);
     }
-    const decimals = tokenConfig?.decimals ?? Number(await token.decimals());
-    const value = parseUnits(amount, decimals);
-    const balance = BigInt(await token.balanceOf(from));
-    if (balance < value)
-        throw new Error(`Insufficient ${onchainSymbol} balance for this transfer.`);
-    const transaction = await token.transfer(recipient, value);
+    const value = parseUnits(amount, balance.decimals);
+    if (BigInt(balance.rawBalance) < value)
+        throw new Error(`Insufficient ${balance.symbol} balance for this transfer.`);
+    const writeToken = new Contract(contractAddress, tokenAbi, signer);
+    const transaction = await writeToken.transfer(recipient, value);
     const receipt = await transaction.wait();
     if (!receipt || receipt.status !== 1)
         throw new Error("EVM transfer did not complete successfully.");
-    return { success: true, asset: onchainSymbol, network: "evm", transactionHash: receipt.hash || transaction.hash };
+    return { success: true, asset: balance.symbol, network: "evm", transactionHash: receipt.hash || transaction.hash };
+}
+async function readEvmBalance(requestedSymbol) {
+    const walletConfig = getActiveWagmiConfig();
+    const current = walletConfig.state.current;
+    const connection = current ? walletConfig.state.connections.get(current) : undefined;
+    if (!connection)
+        throw new Error("No EVM wallet is currently connected.");
+    const rawProvider = await connection.connector.getProvider();
+    const provider = new BrowserProvider(rawProvider);
+    const chain = await provider.getNetwork();
+    const chainId = Number(chain.chainId);
+    const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
+    const readProvider = await getEvmReadProvider(provider, chainId, chain.name, tokenConfig?.rpcUrl);
+    const walletAddress = connection.accounts[0];
+    if (!walletAddress)
+        throw new Error("No EVM wallet account is currently connected.");
+    if (tokenConfig?.type === "native") {
+        return {
+            success: true,
+            network: chain.name,
+            balance: formatEther(await readProvider.getBalance(walletAddress)),
+            asset: tokenConfig.symbol,
+        };
+    }
+    const contractAddress = tokenConfig?.contractAddress || process.env.NEXT_PUBLIC_TOKENADDRESS || "";
+    if (!contractAddress) {
+        throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON or set NEXT_PUBLIC_TOKENADDRESS.`);
+    }
+    if (!isAddress(contractAddress))
+        throw new Error("The configured EVM token contract address is invalid.");
+    const balance = await readTokenBalance(walletAddress, {
+        tokenAddress: contractAddress,
+        rpcUrl: tokenConfig?.rpcUrl || configuredAssets?.networks?.find((network) => network.chainId === chainId)?.rpcUrl,
+        provider: readProvider,
+        fallbackProvider: provider,
+        expectedChainId: chainId,
+        networkName: chain.name,
+        symbol: tokenConfig?.symbol,
+        decimals: tokenConfig?.decimals,
+    });
+    if (requestedSymbol && balance.symbol.toLowerCase() !== requestedSymbol.toLowerCase()) {
+        throw new Error(`The configured token is ${balance.symbol}, not ${requestedSymbol}. Add ${requestedSymbol} to the asset JSON.`);
+    }
+    return {
+        success: true,
+        network: chain.name,
+        balance: balance.balance,
+        asset: balance.symbol,
+    };
+}
+async function readStellarBalance(requestedSymbol) {
+    const symbol = requestedSymbol || "XLM";
+    const access = await requestAccess();
+    const address = access.address;
+    if (!address)
+        throw new Error("Could not access the connected Stellar wallet.");
+    const balance = await loadStellarBalance(address, {
+        assetSymbol: symbol,
+        assets: configuredAssets?.stellar,
+        horizonUrl: stellarRpc,
+        networkPassphrase: stellarNetwork,
+    });
+    return {
+        success: true,
+        network: balance.network,
+        balance: balance.balance,
+        asset: balance.asset,
+    };
+}
+/** Read the full-precision balance for the active wallet and selected asset. */
+export async function cordy_balance(options = {}) {
+    try {
+        const activeWallet = getActiveWallet();
+        return activeWallet === "stellar"
+            ? await readStellarBalance(options.asset)
+            : await readEvmBalance(options.asset);
+    }
+    catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Could not read wallet balance.",
+        };
+    }
 }
 async function transferStellar(amount, recipient, requestedSymbol, memo) {
     if (!StrKey.isValidEd25519PublicKey(recipient))

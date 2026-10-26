@@ -30,7 +30,7 @@ function readStellarWallet() {
         return { address: null };
     }
 }
-export default function WalletProviders({ children }) {
+export default function WalletProviders({ children, config: walletConfig = config }) {
     const [open, setOpen] = useState(false);
     const [jwtSession, setJwtSession] = useState(false);
     const [stellarWallet, setStellarWallet] = useState(() => readStellarWallet());
@@ -60,7 +60,7 @@ export default function WalletProviders({ children }) {
         }
         window.localStorage.setItem(STELLAR_WALLET_STORAGE_KEY, JSON.stringify(stellarWallet));
     }, [stellarWallet]);
-    return (_jsx(WagmiProvider, { config: config, children: _jsx(QueryClientProvider, { client: queryClient, children: _jsx(WalletContext.Provider, { value: {
+    return (_jsx(WagmiProvider, { config: walletConfig, children: _jsx(QueryClientProvider, { client: queryClient, children: _jsx(WalletContext.Provider, { value: {
                     openModal: openWalletModal,
                     closeModal: closeWalletModal,
                     jwtSession,

@@ -3,6 +3,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import { requestAccess, getNetworkDetails, isConnected, } from "@stellar/freighter-api";
 import img_src from "../config/Image.json";
+import { isStellarEnvironmentConfigured } from "./loadStellarBalance";
 const FREIGHTER_DOWNLOAD_URL = "https://www.freighter.app/";
 function isMobileDevice() {
     if (typeof navigator === "undefined")
@@ -19,6 +20,9 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
         setErrorMsg(undefined);
         onStatusChange?.({ isPending: true });
         try {
+            if (!isStellarEnvironmentConfigured()) {
+                throw new Error("Stellar environment is not configured. Set NEXT_PUBLIC_STELLAR_HORIZON, NEXT_PUBLIC_STELLAR_CONTRACT_ID, and NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE.");
+            }
             const connection = await isConnected();
             if (!connection.isConnected) {
                 const message = isMobileDevice()

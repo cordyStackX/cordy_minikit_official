@@ -1,8 +1,21 @@
 export type EvmAssetConfig = {
     symbol: string;
     chainId: number;
-    contractAddress: string;
+    type?: "native" | "erc20";
+    contractAddress?: string;
     decimals?: number;
+    rpcUrl?: string;
+};
+export type EvmNetworkConfig = {
+    chainId: number;
+    name: string;
+    nativeCurrency: {
+        name: string;
+        symbol: string;
+        decimals: number;
+    };
+    rpcUrl: string;
+    blockExplorerUrl?: string;
 };
 export type StellarAssetConfig = {
     symbol: string;
@@ -17,6 +30,7 @@ export type StellarAssetConfig = {
 };
 /** JSON registry supplied by the application developer. */
 export type CordyAssetsConfig = {
+    networks?: EvmNetworkConfig[];
     evm?: EvmAssetConfig[];
     stellar?: StellarAssetConfig[];
 };
@@ -32,9 +46,22 @@ export type CordyTransferResult = {
     transactionHash?: string;
     error?: string;
 };
+export type CordyBalanceOptions = {
+    /** Asset symbol from the configured JSON registry. Defaults to the EVM env token or Stellar XLM. */
+    asset?: string;
+};
+export type CordyBalanceResult = {
+    success: boolean;
+    network?: string;
+    balance?: string;
+    asset?: string;
+    error?: string;
+};
 export declare function configureCordyAssets({ assets }: {
     assets: CordyAssetsConfig;
 }): void;
+/** Read the full-precision balance for the active wallet and selected asset. */
+export declare function cordy_balance(options?: CordyBalanceOptions): Promise<CordyBalanceResult>;
 /** Configure a caller-owned JSON asset registry before requesting transfers. */
 export declare function cordy_configure(options: {
     assets: CordyAssetsConfig;

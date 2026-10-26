@@ -4,6 +4,7 @@ import { useConnect } from "wagmi";
 import type { Connector } from "wagmi";
 import Images from "../config/Image.json";
 import { UI_Comp__css } from "../css";
+import { isEvmEnvironmentConfigured } from "../config/walletConfig";
 
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const ALWAYS_AVAILABLE_CONNECTOR_NAMES = new Set([
@@ -46,6 +47,9 @@ export default function WalletButton({
             setErrorMsg(undefined);
             setPendingConnector(connector);
             try {
+              if (!isEvmEnvironmentConfigured()) {
+                throw new Error("EVM environment is not configured. Set NEXT_PUBLIC_RPC_ENDPOINT, NEXT_PUBLIC_CHAIN_ID, and NEXT_PUBLIC_TOKENADDRESS.");
+              }
               await connectAsync({ connector });
               if (typeof window !== "undefined") window.localStorage.setItem(ACTIVE_WALLET_SESSION_KEY, "evm");
             } catch (err) {

@@ -7,6 +7,7 @@ import {
   isConnected,
 } from "@stellar/freighter-api";
 import img_src from "../config/Image.json";
+import { isStellarEnvironmentConfigured } from "./loadStellarBalance";
 
 const FREIGHTER_DOWNLOAD_URL = "https://www.freighter.app/";
 
@@ -39,6 +40,9 @@ export default function StellarWalletButton({
     onStatusChange?.({ isPending: true });
 
     try {
+      if (!isStellarEnvironmentConfigured()) {
+        throw new Error("Stellar environment is not configured. Set NEXT_PUBLIC_STELLAR_HORIZON, NEXT_PUBLIC_STELLAR_CONTRACT_ID, and NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE.");
+      }
       const connection = await isConnected();
 
       if (!connection.isConnected) {

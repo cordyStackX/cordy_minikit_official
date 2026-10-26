@@ -1,7 +1,7 @@
 "use client";
-import { configureCordyAssets, cordy_transfer } from "./transfer";
+import { configureCordyAssets, cordy_balance, cordy_transfer } from "./transfer";
 /** Ask the app server whether the current browser session is authenticated. */
-export async function jwt_confirm(options = {}) {
+export async function jwt_verify(options = {}) {
     const response = await fetch(options.endpoint ?? "/api/auth/session", {
         method: "GET",
         credentials: "include",
@@ -20,6 +20,8 @@ export async function jwt_confirm(options = {}) {
     }
     return { authenticated: true };
 }
+/** @deprecated Use jwt_verify instead. */
+export const jwt_confirm = jwt_verify;
 /** Ask the app server to revoke and clear the current HttpOnly session cookie. */
 export async function jwt_disconnect(options = {}) {
     let status;
@@ -45,7 +47,8 @@ export async function jwt_disconnect(options = {}) {
     if (typeof window !== "undefined") {
         try {
             const { disconnect } = await import("wagmi/actions");
-            const { config } = await import("../config/walletConfig");
+            const { getActiveWagmiConfig } = await import("../config/walletConfig");
+            const config = getActiveWagmiConfig();
             const connections = Array.from(config.state.connections.values());
             for (const connection of connections) {
                 await disconnect(config, { connector: connection.connector });
@@ -71,7 +74,9 @@ export async function jwt_disconnect(options = {}) {
 }
 export const cordy = {
     configure: configureCordyAssets,
+    jwt_verify,
     jwt_confirm,
     jwt_disconnect,
+    balance: cordy_balance,
     transfer: cordy_transfer,
 };

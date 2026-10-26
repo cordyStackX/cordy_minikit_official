@@ -17,6 +17,26 @@ const walletRoutes: { id: WalletRoute; title: string; subtitle: string; icon: st
   { id: "stellar", title: "Stellar · Non-EVM", subtitle: "Connect a Stellar account with Freighter", icon: "✦", hint: "Freighter" },
 ];
 
+function CordyLogo() {
+  return (
+    <svg viewBox="0 0 512 512" role="img" aria-label="Cordy Minikit">
+      <defs>
+        <linearGradient id="cordy-logo-gradient" x1="140" y1="140" x2="350" y2="380" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#F2F4F8" />
+          <stop offset="1" stopColor="#AEBBD6" />
+        </linearGradient>
+        <linearGradient id="cordy-star-gradient" x1="307" y1="218" x2="383" y2="294" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#4F8CFF" />
+          <stop offset="1" stopColor="#5CE1E6" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="112" fill="#111214" />
+      <path d="M355.6 172.4 A130 130 0 1 0 355.6 339.6 A105 105 0 1 1 355.6 172.4 Z" fill="url(#cordy-logo-gradient)" />
+      <path d="M345 218 Q345 256 383 256 Q345 256 345 294 Q345 256 307 256 Q345 256 345 218 Z" fill="url(#cordy-star-gradient)" />
+    </svg>
+  );
+}
+
 export default function UI_Comp() {
   const { closeModal, jwtSession } = useWalletModal();
   const { stellarWallet, setStellarWallet } = useStellarWallet();
@@ -81,7 +101,7 @@ export default function UI_Comp() {
       <div className={UI_Comp__css.container}>
         <section className={UI_Comp__css.connector} role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title">
           <header className={UI_Comp__css.modal_header}>
-            <div className={UI_Comp__css.brand_mark} aria-hidden="true">C</div>
+            <div className={UI_Comp__css.brand_mark}><CordyLogo /></div>
             <div><p className={UI_Comp__css.eyebrow}>CORDY MINIKIT</p><h2 id="wallet-modal-title">Wallet connected</h2></div>
             <button className={UI_Comp__css.close_button} type="button" onClick={closeModal} aria-label="Close wallet dialog">×</button>
           </header>
@@ -107,7 +127,7 @@ export default function UI_Comp() {
     <div className={UI_Comp__css.container}>
       <section className={UI_Comp__css.connector} role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title" aria-describedby="wallet-modal-description">
         <header className={UI_Comp__css.modal_header}>
-          <div className={UI_Comp__css.brand_mark} aria-hidden="true">C</div>
+          <div className={UI_Comp__css.brand_mark}><CordyLogo /></div>
           <div><p className={UI_Comp__css.eyebrow}>CORDY MINIKIT <span>·</span> WALLET ACCESS</p><h2 id="wallet-modal-title">{selectedWalletRoute?.title || "Choose a wallet"}</h2></div>
           <button className={UI_Comp__css.close_button} type="button" onClick={closeModal} aria-label="Close wallet dialog">×</button>
         </header>

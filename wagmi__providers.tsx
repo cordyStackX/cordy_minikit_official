@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode, Dispatch, SetStateAction } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider, type Config } from "wagmi";
 import { config } from "./config/walletConfig";
 import { UI_Comp } from "./components";
 
@@ -50,7 +50,7 @@ function readStellarWallet(): StellarWalletState {
   }
 }
 
-export default function WalletProviders({ children }: { children: ReactNode }) {
+export default function WalletProviders({ children, config: walletConfig = config }: { children: ReactNode; config?: Config }) {
   const [open, setOpen] = useState(false);
   const [jwtSession, setJwtSession] = useState(false);
   const [stellarWallet, setStellarWallet] = useState<StellarWalletState>(() => readStellarWallet());
@@ -86,7 +86,7 @@ export default function WalletProviders({ children }: { children: ReactNode }) {
   }, [stellarWallet]);
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={walletConfig}>
       <QueryClientProvider client={queryClient}>
         <WalletContext.Provider
           value={{
