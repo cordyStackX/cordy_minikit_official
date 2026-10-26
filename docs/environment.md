@@ -28,7 +28,7 @@ import type { CordyAssetsConfig } from "@cordystackx/cordy_minikit";
     }
   ],
   "evm": [
-    { "symbol": "ETH", "type": "native", "chainId": 1, "decimals": 18 },
+    { "symbol": "ETH", "type": "native", "decimals": 18 },
     { "symbol": "USDC", "contractAddress": "0xTokenContract", "chainId": 1, "decimals": 6 }
   ],
   "stellarNetwork": {
