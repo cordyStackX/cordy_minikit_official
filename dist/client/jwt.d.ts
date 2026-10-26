@@ -1,4 +1,4 @@
-import { configureCordyAssets, cordy_balance, cordy_transfer } from "./transfer";
+import { configureCordyAssets, cordy_balance, cordy_bridge, cordy_swap, cordy_transfer } from "./transfer";
 export type JwtSessionResult = {
     authenticated: boolean;
     [key: string]: unknown;
@@ -26,5 +26,7 @@ export declare const cordy: {
     jwt_disconnect: typeof jwt_disconnect;
     balance: typeof cordy_balance;
     transfer: typeof cordy_transfer;
+    swap: typeof cordy_swap;
+    bridge: typeof cordy_bridge;
 };
 //# sourceMappingURL=jwt.d.ts.map

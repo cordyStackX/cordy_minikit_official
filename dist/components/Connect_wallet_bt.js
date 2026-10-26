@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { getTokenBalance, loadStellarBalance } from "../controllers";
 import { useStellarWallet, useWalletModal } from "../wagmi__providers";
-const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+// const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_BALANCE_REFRESH_EVENT = "cordy:stellar-balance-updated";
 export default function ConnectWalletBT({ className, jwt_session = false, navigate, }) {
     const router = useRouter();

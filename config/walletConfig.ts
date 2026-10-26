@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi';
-import { mainnet, base } from 'wagmi/chains';
+import { mainnet, base, sepolia } from 'wagmi/chains';
 import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import type { Chain } from 'wagmi/chains';
 import { defineChain } from 'viem';
@@ -34,7 +34,7 @@ const configuredChain = defineChain({
 });
 
 export default function getConfig(customChains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
-  const uniqueChains = [...Object.values(customChains), configuredChain, mainnet, base]
+  const uniqueChains = [...Object.values(customChains), configuredChain, mainnet, base, sepolia]
     .filter((chain, index, chains) =>
       chains.findIndex((candidate) => candidate.id === chain.id) === index,
     );

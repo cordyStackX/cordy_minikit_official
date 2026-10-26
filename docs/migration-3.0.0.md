@@ -66,6 +66,6 @@ Missing configuration prevents wallet connection and returns an explicit configu
 
 The configured EVM RPC and connected wallet must use the same chain ID. If the application is configured for BOT Chain `677`, the wallet must also be on `677`. The RPC URL cannot change the wallet's active network.
 
-## Future APIs
+## Experimental bridge test route
 
-`cordy.swap()` and `cordy.bridge()` are planned for a later release. Do not add production calls to them until a future version publishes their options and result contracts.
+`cordy.bridge()` is experimental in 3.0.0 and is provided for testnet evaluation only. It supports test USDT between BOT Chain Testnet and Ethereum Sepolia. It is not production-ready and does not support production networks or Stellar. See [the bridge API reference](./api.md#cordybridgeamount-from-to-recipient).

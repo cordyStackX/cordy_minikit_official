@@ -59,15 +59,15 @@ The current 3.0.0 API is:
 - `cordy.jwt_disconnect()`
 - `cordy.transfer()`
 - `cordy.balance()`
+- `cordy.swap(amount, from, to)`
 
 `cordy.jwt_confirm()` remains available as a deprecated compatibility alias for `cordy.jwt_verify()`. Legacy controller helpers remain available for compatibility, but new integrations should use the `cordy.*` API.
 
 ## Planned APIs
 
-The following APIs are planned for a later release and are not available in 3.0.0:
+**Experimental in 3.0.0:** `cordy.bridge()` currently supports test USDT between BOT Chain Testnet and Ethereum Sepolia only. See the [bridge API example](./docs/api.md#cordybridgeamount-from-to-recipient).
 
-- `cordy.swap()`
-- `cordy.bridge()`
+`cordy.swap(amount, from, to)` is available for configured EVM and Stellar assets. EVM networks need a Uniswap V2-compatible `swapRouterAddress`; native EVM swaps also need `wrappedNativeTokenAddress`. Stellar swaps use Horizon strict-send path payments and require a live liquidity path. Both use 1% minimum-output tolerance.
 
 ## Links
 

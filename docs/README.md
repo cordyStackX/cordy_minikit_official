@@ -21,12 +21,10 @@ The package does not create wallet accounts, switch a user's network, or create 
 | `cordy.transfer()` | Current | Transfer a configured EVM or Stellar asset. |
 | `cordy.balance()` | Current | Read the active wallet's native or configured asset balance. |
 
-## Planned API
+## Current API
 
-The following APIs are reserved for a future release. They are documented as planned only and must not be called in 3.0.0:
-
-- `cordy.swap()` — planned token swapping support.
-- `cordy.bridge()` — planned cross-network bridging support.
+- `cordy.swap()` — swaps configured EVM and Stellar assets.
+- `cordy.bridge()` — **experimental** test USDT bridging between BOT Chain Testnet and Ethereum Sepolia only.
 
 ## Documentation
 

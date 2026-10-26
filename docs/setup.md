@@ -93,7 +93,6 @@ The active wallet is selected by the last successful connection:
   "evm": [
     {
       "symbol": "USDT",
-      "chainId": 677,
       "contractAddress": "0xTokenContract",
       "decimals": 6,
       "rpcUrl": "https://rpc.example"
@@ -101,7 +100,6 @@ The active wallet is selected by the last successful connection:
     {
       "symbol": "BOT",
       "type": "native",
-      "chainId": 677,
       "decimals": 18
     }
   ],
@@ -117,4 +115,4 @@ The active wallet is selected by the last successful connection:
 }
 ```
 
-Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.
+An omitted asset `chainId` defaults to `NEXT_PUBLIC_CHAIN_ID`. Use an explicit `chainId` for registries that contain assets on multiple chains. Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.

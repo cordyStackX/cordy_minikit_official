@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi';
-import { mainnet, base } from 'wagmi/chains';
+import { mainnet, base, sepolia } from 'wagmi/chains';
 import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import { defineChain } from 'viem';
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
@@ -29,7 +29,7 @@ const configuredChain = defineChain({
     },
 });
 export default function getConfig(customChains = {}) {
-    const uniqueChains = [...Object.values(customChains), configuredChain, mainnet, base]
+    const uniqueChains = [...Object.values(customChains), configuredChain, mainnet, base, sepolia]
         .filter((chain, index, chains) => chains.findIndex((candidate) => candidate.id === chain.id) === index);
     const [firstChain, ...otherChains] = uniqueChains;
     if (!firstChain)

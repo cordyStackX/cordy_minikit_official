@@ -58,12 +58,11 @@ Pass application-owned assets to `ProvidersClientWrapper`:
   "evm": [
     {
       "symbol": "USDT",
-      "chainId": 677,
       "contractAddress": "0xTokenContract",
       "decimals": 6,
       "rpcUrl": "https://rpc.example"
     },
-    { "symbol": "BOT", "type": "native", "chainId": 677, "decimals": 18 }
+    { "symbol": "BOT", "type": "native", "decimals": 18 }
   ],
   "stellar": [
     { "symbol": "XLM", "type": "native" },
@@ -72,7 +71,7 @@ Pass application-owned assets to `ProvidersClientWrapper`:
 }
 ```
 
-An EVM asset's `chainId` must match the connected wallet. A Stellar credit asset must match the account's issuer and trustline.
+If an EVM asset omits `chainId`, the Minikit associates it with `NEXT_PUBLIC_CHAIN_ID`. Add an explicit `chainId` only when the registry contains assets for multiple chains. The token contract address must belong to the selected chain. A Stellar credit asset must match the account's issuer and trustline.
 
 ## Security
 

@@ -6,7 +6,7 @@ Import the client API:
 import { cordy } from "@cordystackx/cordy_minikit";
 ```
 
-All four methods return promises. Check `success` before using `balance`, `asset`, or `transactionHash`.
+All methods return promises. Check `success` before using `balance`, `asset`, or `transactionHash`.
 
 ## `cordy.jwt_verify(options?)`
 
@@ -79,6 +79,19 @@ The recipient must match the active network:
 
 Amounts must be positive decimal values. The configured ERC-20 decimals determine token precision. Stellar amounts support up to seven decimal places, and Stellar text memos are limited to 28 UTF-8 bytes.
 
+## `cordy.swap(amount, from, to)`
+
+Swaps two assets from the configured registry using the connected wallet:
+
+```ts
+const result = await cordy.swap("10", "USDT", "BOT"); // EVM example
+const stellarResult = await cordy.swap("10", "USDC", "XLM"); // Stellar example
+```
+
+Both assets must exist in the configured list for the wallet's current network. A missing asset returns `{ success: false, error }`. The result includes the input, estimated output, network, and transaction hash.
+
+For EVM, the corresponding `networks` JSON entry must provide a Uniswap V2-compatible `swapRouterAddress`. If either asset is the chain's native currency, configure `wrappedNativeTokenAddress` as well. The router quote uses 1% slippage tolerance and prompts for token approval when needed. Stellar swaps use Horizon strict-send paths and set a 1% minimum-output tolerance. Stellar asset swaps need a valid available order-book path; the example uses `XLM`, not `XML`.
+
 ## Deprecated compatibility API
 
 `jwt_confirm()` is deprecated in 3.0.0. It remains an alias of `jwt_verify()` for compatibility:
@@ -89,6 +102,16 @@ const session = await cordy.jwt_confirm({ endpoint: "/api/session" });
 
 Use `cordy.jwt_verify()` in new code.
 
-## Planned APIs
+## `cordy.bridge(amount, from, to, recipient)` — Experimental
 
-`cordy.swap()` and `cordy.bridge()` are planned APIs for a future release. No callable implementation or stable options contract is included in 3.0.0.
+`cordy.bridge()` is experimental in the current 3.0.0 release. It is provided for testnet evaluation and is not production-ready. The initial route supports test USDT between BOT Chain Testnet (`internal`) and Ethereum Sepolia (`external`) only:
+
+```ts
+const result = await cordy.bridge("12", "internal", "external", "0xRecipient");
+// Reverse direction: connect the source wallet to Sepolia first.
+const reverse = await cordy.bridge("5", "external", "internal", "0xRecipient");
+```
+
+The wallet must be connected to the selected source network. This call can prompt for a USDT approval followed by a bridge deposit. `success: true` means the source deposit was confirmed; delivery to the destination is asynchronous and handled by the bridge validators. The result includes `transactionHash` and, when an approval was needed, `approvalTransactionHash`. BOT Chain Testnet bridge-out requires more than 10 USDT. Testnet tokens have no real-world value.
+
+For this test route, set the app's `NEXT_PUBLIC_CHAIN_ID=968`, BOT Chain Testnet RPC, and test USDT token address. Sepolia is included in the Minikit's Wagmi chain list so wallets can switch to it. The SDK currently hardcodes the published testnet bridge route and does not bridge Stellar, mainnet assets, or other networks.

@@ -1,5 +1,5 @@
 "use client";
-import { configureCordyAssets, cordy_balance, cordy_transfer } from "./transfer";
+import { configureCordyAssets, cordy_balance, cordy_bridge, cordy_swap, cordy_transfer } from "./transfer";
 /** Ask the app server whether the current browser session is authenticated. */
 export async function jwt_verify(options = {}) {
     const response = await fetch(options.endpoint ?? "/api/auth/session", {
@@ -79,4 +79,6 @@ export const cordy = {
     jwt_disconnect,
     balance: cordy_balance,
     transfer: cordy_transfer,
+    swap: cordy_swap,
+    bridge: cordy_bridge,
 };
