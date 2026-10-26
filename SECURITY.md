@@ -1,12 +1,16 @@
 # Security Policy
 
+This policy applies to Cordy Minikit 3.0.0 and later. See the [3.0.0 security and environment guidance](./docs/environment.md) before reporting configuration-related issues.
+
 ## Supported Versions
 
 We release patches for security vulnerabilities. Currently supported versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
+| 3.0.x   | :white_check_mark: |
+| 2.x.x   | :x:                |
+| 1.x.x   | :x:                |
 | < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
@@ -60,6 +64,10 @@ SERVER_PRIVATE_KEY=0x...
 NEXT_PUBLIC_PRIVATE_KEY=0x...  # NEVER DO THIS!
 ```
 
+All `NEXT_PUBLIC_*` variables are delivered to browser code and must be treated as public. RPC URLs, chain IDs, explorer URLs, and token contract addresses are safe configuration values; secrets are not.
+
+For the required 3.0.0 EVM and Stellar variables, see the [environment configuration guide](./docs/environment.md).
+
 ### Network Endpoints
 
 - Use authenticated RPC endpoints for production
@@ -81,6 +89,14 @@ NEXT_PUBLIC_PRIVATE_KEY=0x...  # NEVER DO THIS!
 - Verify network IDs before transactions
 - Implement connection timeouts
 - Clear sensitive data on disconnect
+
+### Session and JWT helpers
+
+- Keep JWT secrets server-only and never use a `NEXT_PUBLIC_*` prefix for them.
+- Authenticate wallet ownership on the server before calling `jwt_sign()`.
+- `jwt_sign()` creates a signed token; it does not verify SIWE, SEP-10, or any wallet signature.
+- Treat `cordy.jwt_verify()` as a browser request to your session endpoint, not as proof that a wallet owns an address.
+- Ensure logout endpoints revoke or clear the server session cookie.
 
 ## Known Security Considerations
 
@@ -119,12 +135,13 @@ When we receive a security bug report, we will:
 
 ## Security Updates
 
-Security updates will be released as patch versions (e.g., 1.0.x) and announced:
+Security updates will be released as patch versions (e.g., 3.0.x) and announced:
 
 - In the GitHub Release notes
 - In the CHANGELOG.md
 - Via security advisory on GitHub
 - On our website: https://cordy-stack-x.vercel.app/
+- In the [3.0.0 documentation](./docs/README.md)
 
 ## Acknowledgments
 

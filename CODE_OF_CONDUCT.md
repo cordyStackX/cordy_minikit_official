@@ -1,5 +1,7 @@
 # Code of Conduct
 
+This Code of Conduct applies to the Cordy Minikit 3.0.0 project, its source code, documentation, package discussions, and issue or pull request activity.
+
 ## Our Commitment
 
 As the maintainer of Cordy MiniKit, I am committed to providing a friendly, safe, and welcoming environment for all contributors, regardless of experience level, gender identity and expression, sexual orientation, disability, personal appearance, body size, race, ethnicity, age, religion, nationality, or other similar characteristics.
@@ -28,7 +30,7 @@ Please avoid:
 This Code of Conduct applies to all project spaces including:
 
 * GitHub repository (issues, pull requests, discussions)
-* Project documentation
+* Project documentation, including the [3.0.0 documentation](./docs/README.md)
 * Any communication related to this project
 
 ## Reporting
@@ -51,5 +53,5 @@ As the project maintainer, I reserve the right to:
 **Thank you for helping make Cordy MiniKit a welcoming project for everyone!** 🙏
 
 **Version:** 1.0  
-**Last Updated:** October 2025  
-**Effective Date:** October 2025
+**Last Updated:** October 2026
+**Effective Date:** October 2026
