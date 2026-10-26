@@ -20,25 +20,26 @@ Configure the caller-owned EVM and Stellar asset registry before calling balance
 
 You can also configure it directly with `cordy.configure({ assets })`. The `assets` value follows the [`CordyAssetsConfig`](./environment.md#asset-registry) shape.
 
-## `cordy.jwt_verify(options?)`
+## `cordy.cons_verify()`
 
-Checks the application session endpoint using credentials and returns the endpoint's JSON plus `authenticated: true` for a successful response. HTTP 401/403 returns `{ authenticated: false }`.
-
-```ts
-const session = await cordy.jwt_verify({ endpoint: "/api/session" });
-```
-
-The endpoint should validate the application's HttpOnly session cookie. This function does not decode or trust a JWT in browser storage.
-
-## `cordy.jwt_disconnect(options?)`
-
-Calls the application's logout endpoint, disconnects active EVM connectors, and clears the Minikit Stellar wallet selection.
+Checks the current browser wallet connection without calling an application endpoint. It returns status `200` with the connected wallet details, or status `401` when no wallet is connected:
 
 ```ts
-const result = await cordy.jwt_disconnect({ endpoint: "/api/logout" });
+const result = await cordy.cons_verify();
+if (result.status === 200) console.log(result.network, result.address);
 ```
 
-The result has `success`, `walletDisconnected`, and optional `status`/`error` fields. The server endpoint should revoke or clear the session cookie.
+This checks local connection state only; it does not authenticate wallet ownership to a server. Use a signature challenge and server verification when authorizing protected server actions.
+
+## `cordy.cons_disconnect()`
+
+Disconnects active EVM connectors and clears the Minikit Stellar wallet selection. It makes no endpoint request and needs no session environment variables.
+
+```ts
+const result = await cordy.cons_disconnect();
+```
+
+The result has `success`, `walletDisconnected`, and an optional `error`.
 
 ## `cordy.balance(options?)`
 
@@ -114,7 +115,7 @@ These legacy helpers remain available in 3.0.0 for compatibility and are depreca
 - `CordyStackTrans()` and `CordyStackTransStellar()` → `cordy.transfer()`
 - `getTokenBalance()` → `cordy.balance()`
 
-Use `cordy.jwt_verify()` to check the app session. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
+Use `cordy.cons_verify()` to check browser wallet connection state. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
 
 ## `cordy.bridge(amount, from, to, recipient)` — Experimental
 

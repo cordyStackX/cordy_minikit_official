@@ -1,26 +1,26 @@
 import { configureCordyAssets, cordy_balance, cordy_bridge, cordy_swap, cordy_transfer } from "./transfer";
-export type JwtSessionResult = {
-    authenticated: boolean;
-    [key: string]: unknown;
+export type ConsVerifyResult = {
+    /** Application-level status; no HTTP request is made. */
+    status: 200 | 401;
+    connected: boolean;
+    network?: "evm" | "stellar";
+    address?: string;
 };
-export type JwtSessionRequestOptions = {
-    /** Your app route that checks the HttpOnly session cookie. Defaults to /api/auth/session. */
-    endpoint?: string;
-};
-export type JwtDisconnectResult = {
+/** @deprecated Use JwtVerifyResult; this describes wallet state, not a JWT session. */
+export type ConsSessionResult = ConsVerifyResult;
+export type ConsDisconnectResult = {
     success: boolean;
     walletDisconnected: boolean;
-    status?: number;
     error?: string;
 };
-/** Ask the app server whether the current browser session is authenticated. */
-export declare function jwt_verify(options?: JwtSessionRequestOptions): Promise<JwtSessionResult>;
-/** Ask the app server to revoke and clear the current HttpOnly session cookie. */
-export declare function jwt_disconnect(options?: JwtSessionRequestOptions): Promise<JwtDisconnectResult>;
+/** Check whether this browser currently has a connected EVM or Stellar wallet. */
+export declare function cons_verify(): Promise<ConsVerifyResult>;
+/** Disconnect the connected EVM wallet and clear the Minikit Stellar wallet selection. */
+export declare function cons_disconnect(): Promise<ConsDisconnectResult>;
 export declare const cordy: {
     configure: typeof configureCordyAssets;
-    jwt_verify: typeof jwt_verify;
-    jwt_disconnect: typeof jwt_disconnect;
+    cons_verify: typeof cons_verify;
+    cons_disconnect: typeof cons_disconnect;
     balance: typeof cordy_balance;
     transfer: typeof cordy_transfer;
     swap: typeof cordy_swap;

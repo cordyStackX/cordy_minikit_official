@@ -75,7 +75,7 @@ For applications that need session-aware navigation:
 <ConnectWalletBT jwt_session={true} navigate="/dashboard" />
 ```
 
-When `jwt_session` is enabled, your application must provide the session endpoint used by the login flow. The wallet button itself does not mint or verify a JWT.
+When `jwt_session` is enabled, connecting a wallet navigates to the requested route. Use `cordy.cons_verify()` to check whether a wallet is still connected in the browser; it returns status `200` or `401` and does not call a server endpoint. This connection check is not server-side proof of wallet ownership.
 
 ## Active wallet rules
 

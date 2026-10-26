@@ -48,7 +48,3 @@ import type { CordyAssetsConfig } from "@cordystackx/cordy_minikit";
 Stellar requires `stellarNetwork.horizonUrl`, `stellarNetwork.networkPassphrase`, and at least one `stellar` asset. `contractId` is optional metadata for app-specific Soroban integrations; Horizon balance and payment operations do not need it. A credit asset must match the account's issuer and trustline.
 
 The wallet's selected EVM network must match the selected asset's chain ID. An RPC URL cannot switch the wallet's network. Stellar's configured passphrase must match the connected Freighter network.
-
-## Secrets
-
-JSON config is shipped to the browser and is public. Do not put private keys, signing keys, JWT secrets, or server credentials in it. Keep server-only secrets in the consuming app's server environment, without a `NEXT_PUBLIC_` prefix.

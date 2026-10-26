@@ -1,3 +1,15 @@
+## [3.0.5] - 2026-10-27
+
+### Changed
+
+- `cordy.cons_verify()` now checks the connected EVM or Stellar wallet locally and returns status `200` or `401`, without requiring a session endpoint.
+- `cordy.cons_disconnect()` now disconnects the wallet locally without requiring a logout endpoint or session environment variables.
+- Removed the demo's unused SIWE/SEP-10 session routes.
+
+### Removed
+
+- Modified `jwt_confirm()` and `jwt_disconnect()` alias. Use `cordy.cons_verify()` and `cons_disconnect()` for session checks.
+
 ## [3.0.4] - 2026-10-27
 
 ### Added

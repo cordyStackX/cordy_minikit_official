@@ -1,6 +1,6 @@
-# Cordy Minikit 3.0.0 Documentation
+# Cordy Minikit 3.0.5 Documentation
 
-Cordy Minikit 3.0.0 provides wallet access, session verification, asset transfers, and balance reads for EVM and Stellar/Soroban applications.
+Cordy Minikit 3.0.5 provides wallet access, local wallet connection checks, asset transfers, and balance reads for EVM and Stellar/Soroban applications.
 
 ## Start here
 
@@ -17,8 +17,8 @@ The package does not create wallet accounts, switch a user's network, or create 
 | API | Status | Purpose |
 | --- | --- | --- |
 | `cordy.configure()` | Current | Configure the application-owned asset registry. |
-| `cordy.jwt_verify()` | Current | Verify the application's HttpOnly session through its endpoint. |
-| `cordy.jwt_disconnect()` | Current | Log out through the application endpoint and disconnect Minikit wallet state. |
+| `cordy.cons_verify()` | Current | Check local EVM or Stellar wallet connection state (200 connected, 401 disconnected). |
+| `cordy.cons_disconnect()` | Current | Disconnect connected EVM and Stellar wallets locally; no endpoint required. |
 | `cordy.transfer()` | Current | Transfer a configured EVM or Stellar asset. |
 | `cordy.balance()` | Current | Read the active wallet's native or configured asset balance. |
 | `cordy.swap()` | Current | Swap configured EVM or Stellar assets with optional percentage tolerance; defaults to 1%. |
@@ -35,8 +35,7 @@ The package does not create wallet accounts, switch a user's network, or create 
 - [3.0.0 migration guide](./migration-3.0.0.md)
 - [Client API reference](./api.md)
 - [Provider and wallet UI setup](./setup.md)
-- [Server session endpoint examples](./server-endpoints.md)
 
 ## Compatibility
 
-`jwt_confirm()` was removed in 3.0.2; use `cordy.jwt_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Use `cordy.transfer()` and `cordy.balance()` in new code.
+`jwt_confirm()` was removed in 3.0.2; use `cordy.cons_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Use `cordy.transfer()` and `cordy.balance()` in new code.

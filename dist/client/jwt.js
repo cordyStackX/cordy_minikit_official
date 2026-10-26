@@ -1,79 +1,82 @@
 "use client";
 import { configureCordyAssets, cordy_balance, cordy_bridge, cordy_swap, cordy_transfer } from "./transfer";
-/** Ask the app server whether the current browser session is authenticated. */
-export async function jwt_verify(options = {}) {
-    const response = await fetch(options.endpoint ?? "/api/auth/session", {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-        headers: { Accept: "application/json" },
-    });
-    if (response.status === 401 || response.status === 403) {
-        return { authenticated: false };
-    }
-    if (!response.ok) {
-        throw new Error(`Session check failed (${response.status})`);
-    }
-    const data = await response.json();
-    if (typeof data === "object" && data !== null) {
-        return { ...data, authenticated: true };
-    }
-    return { authenticated: true };
-}
-/** Ask the app server to revoke and clear the current HttpOnly session cookie. */
-export async function jwt_disconnect(options = {}) {
-    let status;
-    let sessionCleared = false;
-    let errorMessage;
+const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
+const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
+function getStellarAddress() {
     try {
-        const response = await fetch(options.endpoint ?? "/api/auth/logout", {
-            method: "POST",
-            credentials: "include",
-            cache: "no-store",
-            headers: { Accept: "application/json" },
-        });
-        status = response.status;
-        // A missing or expired session is already logged out.
-        sessionCleared = response.ok || response.status === 401;
-        if (!sessionCleared)
-            errorMessage = `Session logout failed (${response.status})`;
+        const raw = window.localStorage.getItem(STELLAR_WALLET_STORAGE_KEY);
+        if (!raw)
+            return undefined;
+        const wallet = JSON.parse(raw);
+        if (typeof wallet !== "object" || wallet === null || !("address" in wallet))
+            return undefined;
+        const address = wallet.address;
+        return typeof address === "string" && address.length > 0 ? address : undefined;
+    }
+    catch {
+        return undefined;
+    }
+}
+/** Check whether this browser currently has a connected EVM or Stellar wallet. */
+export async function cons_verify() {
+    if (typeof window === "undefined") {
+        return { status: 401, connected: false };
+    }
+    const stellarAddress = getStellarAddress();
+    const activeWallet = window.localStorage.getItem(ACTIVE_WALLET_SESSION_KEY);
+    if (activeWallet === "stellar" && stellarAddress) {
+        return { status: 200, connected: true, network: "stellar", address: stellarAddress };
+    }
+    try {
+        const { getActiveWagmiConfig } = await import("../config/walletConfig");
+        const state = getActiveWagmiConfig().state;
+        const currentConnection = state.current ? state.connections.get(state.current) : undefined;
+        const connection = currentConnection?.accounts[0]
+            ? currentConnection
+            : Array.from(state.connections.values()).find((item) => item.accounts[0]);
+        const address = connection?.accounts[0];
+        if (address) {
+            return { status: 200, connected: true, network: "evm", address };
+        }
+    }
+    catch {
+        // A missing or unavailable EVM connector does not prevent checking Stellar.
+    }
+    if (stellarAddress) {
+        return { status: 200, connected: true, network: "stellar", address: stellarAddress };
+    }
+    return { status: 401, connected: false };
+}
+/** Disconnect the connected EVM wallet and clear the Minikit Stellar wallet selection. */
+export async function cons_disconnect() {
+    if (typeof window === "undefined") {
+        return { success: false, walletDisconnected: false, error: "Wallet disconnect is only available in the browser." };
+    }
+    try {
+        const { disconnect } = await import("wagmi/actions");
+        const { getActiveWagmiConfig } = await import("../config/walletConfig");
+        const config = getActiveWagmiConfig();
+        const connections = Array.from(config.state.connections.values());
+        for (const connection of connections) {
+            await disconnect(config, { connector: connection.connector });
+        }
+        window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
+        window.localStorage.removeItem(ACTIVE_WALLET_SESSION_KEY);
+        window.dispatchEvent(new Event("cordy:disconnect-stellar-wallet"));
+        return { success: true, walletDisconnected: true };
     }
     catch (error) {
-        errorMessage = error instanceof Error ? error.message : "Session logout request failed";
+        return {
+            success: false,
+            walletDisconnected: false,
+            error: error instanceof Error ? error.message : "Wallet disconnect failed.",
+        };
     }
-    let walletDisconnected = false;
-    if (typeof window !== "undefined") {
-        try {
-            const { disconnect } = await import("wagmi/actions");
-            const { getActiveWagmiConfig } = await import("../config/walletConfig");
-            const config = getActiveWagmiConfig();
-            const connections = Array.from(config.state.connections.values());
-            for (const connection of connections) {
-                await disconnect(config, { connector: connection.connector });
-            }
-            window.localStorage.removeItem("cordy_minikit_stellar_wallet");
-            window.localStorage.removeItem("cordy_minikit_active_wallet_session");
-            window.dispatchEvent(new Event("cordy:disconnect-stellar-wallet"));
-            walletDisconnected = true;
-        }
-        catch (error) {
-            errorMessage ?? (errorMessage = error instanceof Error ? error.message : "Wallet disconnect failed");
-        }
-    }
-    else {
-        errorMessage ?? (errorMessage = "Wallet disconnect is only available in the browser");
-    }
-    return {
-        success: sessionCleared && walletDisconnected,
-        walletDisconnected,
-        status,
-        ...(errorMessage ? { error: errorMessage } : {}),
-    };
 }
 export const cordy = {
     configure: configureCordyAssets,
-    jwt_verify,
-    jwt_disconnect,
+    cons_verify,
+    cons_disconnect,
     balance: cordy_balance,
     transfer: cordy_transfer,
     swap: cordy_swap,

@@ -18,8 +18,8 @@ Before debugging an API result, confirm:
 Use the 3.0.0 client surface:
 
 ```ts
-const session = await cordy.jwt_verify();
-await cordy.jwt_disconnect();
+const wallet = await cordy.cons_verify();
+await cordy.cons_disconnect();
 await cordy.transfer("1", recipient);
 const balance = await cordy.balance();
 ```
@@ -27,16 +27,18 @@ const balance = await cordy.balance();
 Replace:
 
 ```ts
-await cordy.jwt_confirm();
+await cordy.cons_confirm();
 ```
 
 with:
 
 ```ts
-await cordy.jwt_verify();
+await cordy.cons_verify();
 ```
 
-`jwt_confirm()` was deprecated in 3.0.0 and removed in 3.0.2; use `cordy.jwt_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Replace them with `cordy.transfer()` and `cordy.balance()`. The new balance and transfer methods return explicit success/error results.
+`cons_confirm()` was deprecated in 3.0.0 and removed in 3.0.2; use `cordy.cons_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Replace them with `cordy.transfer()` and `cordy.balance()`. The new balance and transfer methods return explicit success/error results.
+
+`cordy.cons_verify()` checks local wallet connection state only; it does not create or validate an authenticated server session. `cordy.cons_disconnect()` disconnects the wallet without an application endpoint.
 
 ## Configuration changes
 
