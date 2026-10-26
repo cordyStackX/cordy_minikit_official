@@ -68,7 +68,7 @@ The current 3.0.0 API is:
 - `cordy.balance()`
 - `cordy.swap(amount, from, to)`
 
-`cordy.jwt_confirm()` remains available as a deprecated compatibility alias for `cordy.jwt_verify()`. Legacy controller helpers remain available for compatibility, but new integrations should use the `cordy.*` API.
+Use `cordy.jwt_verify()` to check the app's session. Legacy controller helpers remain available for compatibility, but new integrations should use the `cordy.*` API.
 
 ## Experimental API
 

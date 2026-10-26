@@ -1,5 +1,9 @@
 ## [3.0.2] - Unreleased
 
+### Removed
+
+- Removed the confusing `jwt_confirm()` alias. Use `cordy.jwt_verify()` for session checks.
+
 ### Changed
 
 - Read public WalletConnect, EVM, and Stellar runtime settings from the JSON passed to `ProvidersClientWrapper` instead of `NEXT_PUBLIC_*` variables.
@@ -29,7 +33,7 @@
 
 ### Deprecated
 
-- Deprecated `jwt_confirm()` in favor of `cordy.jwt_verify()`. It remains as a compatibility alias.
+- Deprecated `jwt_confirm()` in favor of `cordy.jwt_verify()`; the alias is removed in 3.0.2.
 - Deprecated `CordyStackTrans()` and `CordyStackTransStellar()` in favor of `cordy.transfer()`.
 - Deprecated `getTokenBalance()` in favor of `cordy.balance()`.
 

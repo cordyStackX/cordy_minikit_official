@@ -108,17 +108,10 @@ For EVM, the corresponding `networks` JSON entry must provide a Uniswap V2-compa
 
 These legacy helpers remain available in 3.0.0 for compatibility and are deprecated in favor of the unified `cordy.*` API:
 
-- `jwt_confirm()` → `cordy.jwt_verify()`
 - `CordyStackTrans()` and `CordyStackTransStellar()` → `cordy.transfer()`
 - `getTokenBalance()` → `cordy.balance()`
 
-`jwt_confirm()` remains an alias of `jwt_verify()` for compatibility:
-
-```ts
-const session = await cordy.jwt_confirm({ endpoint: "/api/session" });
-```
-
-Use `cordy.jwt_verify()` in new code. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
+Use `cordy.jwt_verify()` to check the app session. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
 
 ## `cordy.bridge(amount, from, to, recipient)` — Experimental
 

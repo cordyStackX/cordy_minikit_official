@@ -39,4 +39,4 @@ The package does not create wallet accounts, switch a user's network, or create 
 
 ## Compatibility
 
-`jwt_confirm()`, `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` are deprecated in 3.0.0 but remain available for compatibility. Use `cordy.jwt_verify()`, `cordy.transfer()`, and `cordy.balance()` in new code.
+`jwt_confirm()` was removed in 3.0.2; use `cordy.jwt_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Use `cordy.transfer()` and `cordy.balance()` in new code.

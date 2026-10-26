@@ -20,8 +20,6 @@ export async function jwt_verify(options = {}) {
     }
     return { authenticated: true };
 }
-/** @deprecated Use jwt_verify instead. */
-export const jwt_confirm = jwt_verify;
 /** Ask the app server to revoke and clear the current HttpOnly session cookie. */
 export async function jwt_disconnect(options = {}) {
     let status;
@@ -75,7 +73,6 @@ export async function jwt_disconnect(options = {}) {
 export const cordy = {
     configure: configureCordyAssets,
     jwt_verify,
-    jwt_confirm,
     jwt_disconnect,
     balance: cordy_balance,
     transfer: cordy_transfer,

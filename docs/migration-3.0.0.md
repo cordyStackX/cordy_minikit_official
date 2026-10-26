@@ -34,7 +34,7 @@ with:
 await cordy.jwt_verify();
 ```
 
-`jwt_confirm()`, `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` are deprecated in 3.0.0 but remain available for compatibility. Replace them with `cordy.jwt_verify()`, `cordy.transfer()`, and `cordy.balance()`. The new balance and transfer methods return explicit success/error results.
+`jwt_confirm()` was deprecated in 3.0.0 and removed in 3.0.2; use `cordy.jwt_verify()`. `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` remain deprecated compatibility helpers. Replace them with `cordy.transfer()` and `cordy.balance()`. The new balance and transfer methods return explicit success/error results.
 
 ## Configuration changes
 
