@@ -55,7 +55,7 @@ export declare function cordy_bridge(amount: number | string, from: CordyBridgeS
 /** Read the full-precision balance for the active wallet and selected asset. */
 export declare function cordy_balance(options?: CordyBalanceOptions): Promise<CordyBalanceResult>;
 /** Swap two configured assets using the active EVM or Stellar wallet. */
-export declare function cordy_swap(amount: number | string, from: string, to: string): Promise<CordySwapResult>;
+export declare function cordy_swap(amount: number | string, from: string, to: string, tolerancePercent?: number): Promise<CordySwapResult>;
 /** Configure a caller-owned JSON asset registry before requesting transfers. */
 export declare function cordy_configure(options: {
     assets: CordyAssetsConfig;

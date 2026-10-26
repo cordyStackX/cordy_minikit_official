@@ -21,12 +21,12 @@ The package does not create wallet accounts, switch a user's network, or create 
 | `cordy.jwt_disconnect()` | Current | Log out through the application endpoint and disconnect Minikit wallet state. |
 | `cordy.transfer()` | Current | Transfer a configured EVM or Stellar asset. |
 | `cordy.balance()` | Current | Read the active wallet's native or configured asset balance. |
-| `cordy.swap()` | Current | Swap configured EVM or Stellar assets. |
+| `cordy.swap()` | Current | Swap configured EVM or Stellar assets with optional percentage tolerance; defaults to 1%. |
 | `cordy.bridge()` | Experimental | Test USDT between BOT Chain Testnet and Ethereum Sepolia. |
 
 ## Current API
 
-- `cordy.swap()` — swaps configured EVM and Stellar assets.
+- `cordy.swap()` — swaps configured EVM and Stellar assets with an optional percentage tolerance; `1` means 1%, and omission defaults to 1%.
 - `cordy.bridge()` — **experimental** test USDT bridging between BOT Chain Testnet and Ethereum Sepolia only.
 
 ## Documentation

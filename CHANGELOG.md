@@ -1,3 +1,17 @@
+## [3.0.4] - 2026-10-27
+
+### Added
+
+- Added the optional `tolerancePercent` argument to `cordy.swap(amount, from, to, tolerancePercent?)`.
+- Added configurable slippage tolerance for both EVM and Stellar swaps. For example, `1` applies a 1% tolerance.
+- Kept the default swap tolerance at 1% when the fourth argument is omitted.
+
+### Changed
+
+- Swap minimum-output calculations now derive from the caller-provided percentage.
+- Reject swap tolerance values below 0% or at/above 100%.
+- Updated the 3.0.0 API documentation and migration guidance with the new swap signature.
+
 ## [3.0.3] - 2026-10-27
 
 ### Security

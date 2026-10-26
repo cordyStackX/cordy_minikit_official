@@ -105,6 +105,14 @@ const ERC20_SWAP_ABI = [
     "function allowance(address owner,address spender) view returns (uint256)",
     "function decimals() view returns (uint8)",
 ];
+const SWAP_BPS_DENOMINATOR = 10000n;
+const DEFAULT_SWAP_TOLERANCE_PERCENT = 1;
+function swapMinimumOutputBps(tolerancePercent = DEFAULT_SWAP_TOLERANCE_PERCENT) {
+    if (!Number.isFinite(tolerancePercent) || tolerancePercent < 0 || tolerancePercent >= 100) {
+        throw new Error("Swap tolerance must be a number from 0% up to, but not including, 100%.");
+    }
+    return BigInt(Math.round((100 - tolerancePercent) * 100));
+}
 function resolveEvmSwapNetworkConfig(chainId) {
     const registered = configuredAssets?.networks?.find((network) => network.chainId === chainId);
     if (registered)
@@ -428,7 +436,7 @@ async function transferStellar(amount, recipient, requestedSymbol, memo) {
         throw new Error("Stellar transfer did not complete successfully.");
     return { success: true, asset: symbol, network: "stellar", transactionHash: receipt.hash };
 }
-async function swapEvm(amount, fromSymbol, toSymbol) {
+async function swapEvm(amount, fromSymbol, toSymbol, tolerancePercent) {
     const walletConfig = getActiveWagmiConfig();
     const current = walletConfig.state.current;
     const connection = current ? walletConfig.state.connections.get(current) : undefined;
@@ -470,7 +478,7 @@ async function swapEvm(amount, fromSymbol, toSymbol) {
     const quotedOut = BigInt(amounts[amounts.length - 1].toString());
     if (quotedOut <= 0n)
         throw new Error(`No swap quote is available for ${fromSymbol} to ${toSymbol} on ${networkName}.`);
-    const minOut = quotedOut * 9900n / 10000n;
+    const minOut = quotedOut * swapMinimumOutputBps(tolerancePercent) / SWAP_BPS_DENOMINATOR;
     const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
     let transaction;
     if (fromNative) {
@@ -511,7 +519,7 @@ async function swapEvm(amount, fromSymbol, toSymbol) {
 function stellarAssetFromConfig(asset) {
     return asset.type === "native" ? Asset.native() : new Asset(asset.code, asset.issuer);
 }
-async function swapStellar(amount, fromSymbol, toSymbol) {
+async function swapStellar(amount, fromSymbol, toSymbol, tolerancePercent) {
     const stellarConfig = requireStellarNetwork();
     if (fromSymbol.toLowerCase() === toSymbol.toLowerCase())
         throw new Error("Choose two different assets to swap.");
@@ -535,7 +543,7 @@ async function swapStellar(amount, fromSymbol, toSymbol) {
     const route = paths.records[0];
     if (!route)
         throw new Error(`No Stellar path is available to swap ${fromSymbol} to ${toSymbol}.`);
-    const minOut = (Number(route.destination_amount) * 0.99).toFixed(7);
+    const minOut = (Number(route.destination_amount) * Number(swapMinimumOutputBps(tolerancePercent)) / Number(SWAP_BPS_DENOMINATOR)).toFixed(7);
     const routeAssets = route.path.map((item) => item.asset_type === "native"
         ? Asset.native()
         : new Asset(item.asset_code, item.asset_issuer));
@@ -567,13 +575,14 @@ async function swapStellar(amount, fromSymbol, toSymbol) {
     };
 }
 /** Swap two configured assets using the active EVM or Stellar wallet. */
-export async function cordy_swap(amount, from, to) {
+export async function cordy_swap(amount, from, to, tolerancePercent = DEFAULT_SWAP_TOLERANCE_PERCENT) {
     try {
+        swapMinimumOutputBps(tolerancePercent);
         const normalized = normalizedAmount(amount);
         const activeWallet = getActiveWallet();
         return activeWallet === "stellar"
-            ? await swapStellar(normalized, from, to)
-            : await swapEvm(normalized, from, to);
+            ? await swapStellar(normalized, from, to, tolerancePercent)
+            : await swapEvm(normalized, from, to, tolerancePercent);
     }
     catch (error) {
         return { success: false, error: error instanceof Error ? error.message : "Could not swap the selected assets." };

@@ -91,14 +91,17 @@ The recipient must match the active network:
 
 Amounts must be positive decimal values. The configured ERC-20 decimals determine token precision. Stellar amounts support up to seven decimal places, and Stellar text memos are limited to 28 UTF-8 bytes.
 
-## `cordy.swap(amount, from, to)`
+## `cordy.swap(amount, from, to, tolerancePercent?)`
 
 Swaps two assets from the configured registry using the connected wallet:
 
 ```ts
 const result = await cordy.swap("10", "USDT", "BOT"); // EVM example
+const saferResult = await cordy.swap("10", "USDT", "BOT", 1); // 1% tolerance
 const stellarResult = await cordy.swap("10", "USDC", "XLM"); // Stellar example
 ```
+
+The optional fourth argument is the slippage tolerance percentage. `1` means **1% tolerance**, so the minimum output is 99% of the current quote. If omitted, the default is 1%. Values must be from 0% up to, but not including, 100%.
 
 Both assets must exist in the configured list for the wallet's current network. A missing asset returns `{ success: false, error }`. The result includes the input, estimated output, network, and transaction hash.
 

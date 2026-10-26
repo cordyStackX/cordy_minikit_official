@@ -4,6 +4,8 @@
 
 3.0.0 adds the unified `cordy.*` client surface, provider-supplied JSON configuration, native EVM balance reads, and explicit Stellar network validation. It does not silently select a testnet when configuration is missing.
 
+`cordy.swap()` accepts an optional fourth argument for slippage tolerance percentage. `1` means 1%; omission keeps the 1% default.
+
 Before debugging an API result, confirm:
 
 1. The consuming app's JSON config includes the selected network and asset.

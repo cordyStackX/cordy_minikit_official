@@ -74,7 +74,7 @@ Use `cordy.jwt_verify()` to check the app's session. Legacy controller helpers r
 
 `cordy.bridge()` is experimental in 3.0.0 and currently supports test USDT between BOT Chain Testnet and Ethereum Sepolia only. See the [bridge API example](./docs/api.md#cordybridgeamount-from-to-recipient).
 
-`cordy.swap(amount, from, to)` is available for configured EVM and Stellar assets. EVM networks need a Uniswap V2-compatible `swapRouterAddress`; native EVM swaps also need `wrappedNativeTokenAddress`. Stellar swaps use Horizon strict-send path payments and require a live liquidity path. Both use 1% minimum-output tolerance.
+`cordy.swap(amount, from, to, tolerancePercent?)` is available for configured EVM and Stellar assets. EVM networks need a Uniswap V2-compatible `swapRouterAddress`; native EVM swaps also need `wrappedNativeTokenAddress`. Stellar swaps use Horizon strict-send path payments and require a live liquidity path. The optional fourth argument is a percentage: `1` means 1% tolerance, and omission defaults to 1%.
 
 ## Links
 
