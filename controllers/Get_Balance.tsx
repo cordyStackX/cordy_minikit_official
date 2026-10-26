@@ -110,7 +110,7 @@ export async function readTokenBalance(
   };
 }
 
-/** Legacy controller API kept for existing `useWalletStatus` and button callers. */
+/** @deprecated Use `cordy.balance({ asset })` for an explicit success or error result. */
 export default async function getTokenBalance(
   address: string,
   decimals?: number,

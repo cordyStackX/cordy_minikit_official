@@ -34,9 +34,7 @@ with:
 await cordy.jwt_verify();
 ```
 
-`jwt_confirm()` still works as a deprecated alias in 3.0.0. Legacy controller helpers such as `CordyStackTrans` and `CordyStackTransStellar` remain exported for compatibility, but new integrations should use `cordy.transfer()`.
-
-The old `getTokenBalance()` controller is also a compatibility helper. It returns `{ balance: "0", symbol: "" }` after logging a read failure, so new code should prefer `cordy.balance()` to receive an explicit `{ success, error }` result.
+`jwt_confirm()`, `CordyStackTrans()`, `CordyStackTransStellar()`, and `getTokenBalance()` are deprecated in 3.0.0 but remain available for compatibility. Replace them with `cordy.jwt_verify()`, `cordy.transfer()`, and `cordy.balance()`. The new balance and transfer methods return explicit success/error results.
 
 ## Environment changes
 

@@ -8,6 +8,18 @@ import { cordy } from "@cordystackx/cordy_minikit";
 
 All methods return promises. Check `success` before using `balance`, `asset`, or `transactionHash`.
 
+## `cordy.configure({ assets })`
+
+Configure the caller-owned EVM and Stellar asset registry before calling balance, transfer, or swap methods. Most apps should pass the registry to `ProvidersClientWrapper`, which configures Cordy for the app:
+
+```tsx
+<ProvidersClientWrapper assets={assets}>
+  {children}
+</ProvidersClientWrapper>
+```
+
+You can also configure it directly with `cordy.configure({ assets })`. The `assets` value follows the [`CordyAssetsConfig`](./environment.md#asset-registry) shape.
+
 ## `cordy.jwt_verify(options?)`
 
 Checks the application session endpoint using credentials and returns the endpoint's JSON plus `authenticated: true` for a successful response. HTTP 401/403 returns `{ authenticated: false }`.
@@ -92,15 +104,21 @@ Both assets must exist in the configured list for the wallet's current network. 
 
 For EVM, the corresponding `networks` JSON entry must provide a Uniswap V2-compatible `swapRouterAddress`. If either asset is the chain's native currency, configure `wrappedNativeTokenAddress` as well. The router quote uses 1% slippage tolerance and prompts for token approval when needed. Stellar swaps use Horizon strict-send paths and set a 1% minimum-output tolerance. Stellar asset swaps need a valid available order-book path; the example uses `XLM`, not `XML`.
 
-## Deprecated compatibility API
+## Deprecated compatibility APIs
 
-`jwt_confirm()` is deprecated in 3.0.0. It remains an alias of `jwt_verify()` for compatibility:
+These legacy helpers remain available in 3.0.0 for compatibility and are deprecated in favor of the unified `cordy.*` API:
+
+- `jwt_confirm()` → `cordy.jwt_verify()`
+- `CordyStackTrans()` and `CordyStackTransStellar()` → `cordy.transfer()`
+- `getTokenBalance()` → `cordy.balance()`
+
+`jwt_confirm()` remains an alias of `jwt_verify()` for compatibility:
 
 ```ts
 const session = await cordy.jwt_confirm({ endpoint: "/api/session" });
 ```
 
-Use `cordy.jwt_verify()` in new code.
+Use `cordy.jwt_verify()` in new code. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
 
 ## `cordy.bridge(amount, from, to, recipient)` — Experimental
 

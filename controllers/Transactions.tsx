@@ -14,6 +14,7 @@ type CordyStackStellarTransOptions = {
   source?: string;
 };
 
+/** @deprecated Use `cordy.transfer(amount, recipient, { asset })` instead. */
 export default async function CordyStackTrans(address: string, cost: number) {
   if (!address) {
     console.error("Address Not Found");
@@ -69,6 +70,7 @@ export default async function CordyStackTrans(address: string, cost: number) {
   }
 };
 
+/** @deprecated Use `cordy.transfer(amount, recipient, { asset: "XLM", memo })` instead. */
 export async function CordyStackTransStellar(
   address: string,
   cost: number,

@@ -1,3 +1,34 @@
+## [3.0.1] - Unreleased
+
+### Removed
+
+- Remove the deprecated `AirDrop_Faucet` helper from the package source and public exports.
+
+## [3.0.0] - 2026-10-27
+
+### Added
+
+- Added the unified `cordy.*` API: `configure`, `jwt_verify`, `jwt_disconnect`, `balance`, `transfer`, and `swap`.
+- Added `cordy.transfer()` for configured EVM ERC-20 and Stellar assets, including optional Stellar memos.
+- Added `cordy.balance()` for native EVM balances, configured EVM tokens, and Stellar assets.
+- Added `cordy.swap()` for configured EVM and Stellar asset pairs.
+- Added experimental `cordy.bridge(amount, from, to, recipient)` for test USDT between BOT Chain Testnet and Ethereum Sepolia.
+- Added the `jwt_session` and `navigate` options to the wallet connection button.
+- Added JSON asset configuration through `ProvidersClientWrapper` and `cordy.configure()`.
+- Added BOT Chain Testnet ↔ Sepolia bridge examples to the demo and Sepolia to the default EVM wallet chain list.
+
+### Deprecated
+
+- Deprecated `jwt_confirm()` in favor of `cordy.jwt_verify()`. It remains as a compatibility alias.
+- Deprecated `CordyStackTrans()` and `CordyStackTransStellar()` in favor of `cordy.transfer()`.
+- Deprecated `getTokenBalance()` in favor of `cordy.balance()`.
+
+### Notes
+
+- `cordy.bridge()` is experimental and intended for testnet evaluation only. It is not production-ready and does not support mainnet or Stellar bridging.
+- Bridge deposits may require a separate USDT approval transaction, and destination delivery is asynchronous.
+- Deprecated APIs remain available for compatibility in 3.0.0. The unused `AirDrop_Faucet` helper is scheduled for removal in 3.0.1.
+
 ## [2.0.6] - 2026-06-26
 
   ### Changed

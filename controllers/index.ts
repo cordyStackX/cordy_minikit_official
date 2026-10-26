@@ -6,8 +6,6 @@ export { CordyStackTransStellar } from "./Transactions";
 
 export { default as getTokenBalance } from "./Get_Balance";
 
-export { default as AirDropFuacet } from "./AirDrop_Faucet";
-
 export { default as Get_Account_Info } from "./Get_Account_Info";
 
 export { default as StellarWalletButton } from "./StellarButton";

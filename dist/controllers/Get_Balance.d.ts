@@ -19,7 +19,7 @@ export type TokenBalanceResult = {
 };
 /** Shared ERC-20 balance reader used by wallet status and the Cordy API. */
 export declare function readTokenBalance(address: string, options?: TokenBalanceOptions): Promise<TokenBalanceResult>;
-/** Legacy controller API kept for existing `useWalletStatus` and button callers. */
+/** @deprecated Use `cordy.balance({ asset })` for an explicit success or error result. */
 export default function getTokenBalance(address: string, decimals?: number): Promise<{
     balance: string;
     symbol: string;

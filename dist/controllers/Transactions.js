@@ -7,6 +7,7 @@ const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
 const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || "";
 const stellarRpc = process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-testnet.stellar.org";
 const stellarNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
+/** @deprecated Use `cordy.transfer(amount, recipient, { asset })` instead. */
 export default async function CordyStackTrans(address, cost) {
     if (!address) {
         console.error("Address Not Found");
@@ -54,6 +55,7 @@ export default async function CordyStackTrans(address, cost) {
     }
 }
 ;
+/** @deprecated Use `cordy.transfer(amount, recipient, { asset: "XLM", memo })` instead. */
 export async function CordyStackTransStellar(address, cost, options = {}) {
     if (!address) {
         console.error("Address Not Found");
