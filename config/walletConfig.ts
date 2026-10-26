@@ -2,39 +2,13 @@ import { http, createConfig } from 'wagmi';
 import { mainnet, base, sepolia } from 'wagmi/chains';
 import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import type { Chain } from 'wagmi/chains';
-import { defineChain } from 'viem';
+import { isEvmConfigReady } from '../client/runtimeConfig';
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
-const hasConfiguredEvmEnvironment = Boolean(
-  process.env.NEXT_PUBLIC_RPC_ENDPOINT &&
-  process.env.NEXT_PUBLIC_CHAIN_ID &&
-  process.env.NEXT_PUBLIC_TOKENADDRESS,
-);
-const configuredChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || mainnet.id);
-if (!Number.isSafeInteger(configuredChainId) || configuredChainId <= 0) {
-  throw new Error('NEXT_PUBLIC_CHAIN_ID must be a positive integer.');
-}
-const configuredRpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT
-  || mainnet.rpcUrls.default.http[0];
-const configuredChain = defineChain({
-  id: configuredChainId,
-  name: process.env.NEXT_PUBLIC_CHAIN_NAME || mainnet.name,
-  nativeCurrency: process.env.NEXT_PUBLIC_CHAIN_ID
-    ? { name: 'Configured native token', symbol: 'NATIVE', decimals: 18 }
-    : mainnet.nativeCurrency,
-  rpcUrls: {
-    default: { http: [configuredRpcEndpoint] },
-  },
-  blockExplorers: {
-    default: {
-      name: process.env.NEXT_PUBLIC_CHAIN_NAME ? `${process.env.NEXT_PUBLIC_CHAIN_NAME} Explorer` : mainnet.blockExplorers.default.name,
-      url: process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL || mainnet.blockExplorers.default.url,
-    },
-  },
-});
-
-export default function getConfig(customChains: Record<string, Chain> = {}): ReturnType<typeof createConfig> {
-  const uniqueChains = [...Object.values(customChains), configuredChain, mainnet, base, sepolia]
+export default function getConfig(
+  customChains: Record<string, Chain> = {},
+  options: { walletConnectProjectId?: string } = {},
+): ReturnType<typeof createConfig> {
+  const uniqueChains = [...Object.values(customChains), mainnet, base, sepolia]
     .filter((chain, index, chains) =>
       chains.findIndex((candidate) => candidate.id === chain.id) === index,
     );
@@ -53,7 +27,7 @@ export default function getConfig(customChains: Record<string, Chain> = {}): Ret
     chains: allChains,
     connectors: [
       metaMask(),
-      walletConnect({ projectId }),
+      ...(options.walletConnectProjectId ? [walletConnect({ projectId: options.walletConnectProjectId })] : []),
       coinbaseWallet({
         appName: "cordy_minikit",
       }),
@@ -78,5 +52,5 @@ export function getActiveWagmiConfig(): ReturnType<typeof createConfig> {
 }
 
 export function isEvmEnvironmentConfigured(): boolean {
-  return hasConfiguredEvmEnvironment;
+  return isEvmConfigReady();
 }

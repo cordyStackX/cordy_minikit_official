@@ -1,69 +1,41 @@
-# Environment configuration
+# Public runtime configuration
 
-Environment variables are read by the consuming application. Create `.env.local` in that application, not inside the installed package.
+The Minikit reads browser-visible network and asset settings from the JSON object passed to `ProvidersClientWrapper`. Keep these values together in an app-owned JSON file and import it in the provider. The Minikit no longer reads `NEXT_PUBLIC_*` variables for wallet, network, or asset configuration.
 
-Restart the development server after changing `.env.local`. Next.js exposes `NEXT_PUBLIC_*` values to browser bundles at build/dev-server startup; changing the file while the server is running does not update an already-built client bundle.
+```tsx
+import assets from "./assets.json";
+import type { CordyAssetsConfig } from "@cordystackx/cordy_minikit";
 
-## EVM
-
-When using a custom EVM network, configure all required values:
-
-```env
-NEXT_PUBLIC_RPC_ENDPOINT=https://your-rpc.example
-NEXT_PUBLIC_CHAIN_ID=677
-NEXT_PUBLIC_CHAIN_NAME=BOT Chain
-NEXT_PUBLIC_BLOCK_EXPLORER_URL=https://scan.example
-NEXT_PUBLIC_TOKENADDRESS=0xYourDefaultErc20Contract
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+<ProvidersClientWrapper assets={assets as CordyAssetsConfig}>
+  {children}
+</ProvidersClientWrapper>
 ```
 
-`NEXT_PUBLIC_RPC_ENDPOINT`, `NEXT_PUBLIC_CHAIN_ID`, and `NEXT_PUBLIC_TOKENADDRESS` are required for EVM wallet connection and the default ERC-20 balance. `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is required for WalletConnect. `NEXT_PUBLIC_CHAIN_NAME` and `NEXT_PUBLIC_BLOCK_EXPLORER_URL` are optional display metadata.
-
-The RPC endpoint and connected wallet must report the same chain ID. An endpoint does not switch the user's wallet network. If the wallet is on another network, switch it in the wallet or add a matching asset entry.
-
-For Ethereum Mainnet:
-
-```env
-NEXT_PUBLIC_RPC_ENDPOINT=https://ethereum.publicnode.com
-NEXT_PUBLIC_CHAIN_ID=1
-NEXT_PUBLIC_CHAIN_NAME=Ethereum Mainnet
-NEXT_PUBLIC_BLOCK_EXPLORER_URL=https://etherscan.io
-NEXT_PUBLIC_TOKENADDRESS=0xYourMainnetErc20Contract
-```
-
-For native EVM coins, register an asset with `"type": "native"` rather than supplying a token contract:
-
-```json
-{ "symbol": "ETH", "type": "native", "chainId": 1, "decimals": 18 }
-```
-
-## Stellar / Soroban
-
-Stellar configuration is explicit in 3.0.0. There are no implicit testnet defaults:
-
-```env
-NEXT_PUBLIC_STELLAR_HORIZON=https://horizon-testnet.stellar.org
-NEXT_PUBLIC_STELLAR_CONTRACT_ID=CCXI...
-NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
-```
-
-All three values are required before Stellar connection or balance operations are allowed. The contract ID identifies the Soroban contract configuration; native XLM balance reads still use Horizon.
-
-## Asset registry
-
-Pass application-owned assets to `ProvidersClientWrapper`:
+## Configuration shape
 
 ```json
 {
-  "evm": [
+  "walletConnectProjectId": "your-public-project-id",
+  "networks": [
     {
-      "symbol": "USDT",
-      "contractAddress": "0xTokenContract",
-      "decimals": 6,
-      "rpcUrl": "https://rpc.example"
-    },
-    { "symbol": "BOT", "type": "native", "decimals": 18 }
+      "chainId": 1,
+      "name": "Ethereum Mainnet",
+      "nativeCurrency": { "name": "Ether", "symbol": "ETH", "decimals": 18 },
+      "rpcUrl": "https://ethereum.publicnode.com",
+      "blockExplorerUrl": "https://etherscan.io",
+      "swapRouterAddress": "0xRouterAddress",
+      "wrappedNativeTokenAddress": "0xWrappedNativeAddress"
+    }
   ],
+  "evm": [
+    { "symbol": "ETH", "type": "native", "chainId": 1, "decimals": 18 },
+    { "symbol": "USDC", "contractAddress": "0xTokenContract", "chainId": 1, "decimals": 6 }
+  ],
+  "stellarNetwork": {
+    "horizonUrl": "https://horizon-testnet.stellar.org",
+    "contractId": "CCXI...",
+    "networkPassphrase": "Test SDF Network ; September 2015"
+  },
   "stellar": [
     { "symbol": "XLM", "type": "native" },
     { "symbol": "USDC", "type": "credit", "code": "USDC", "issuer": "G..." }
@@ -71,8 +43,12 @@ Pass application-owned assets to `ProvidersClientWrapper`:
 }
 ```
 
-If an EVM asset omits `chainId`, the Minikit associates it with `NEXT_PUBLIC_CHAIN_ID`. Add an explicit `chainId` only when the registry contains assets for multiple chains. The token contract address must belong to the selected chain. A Stellar credit asset must match the account's issuer and trustline.
+`walletConnectProjectId` is a public client identifier, not a secret. `networks` provides the EVM chain ID, RPC, currency, explorer, and optional swap contracts. Add an `evm` entry for each token or native asset the app wants the Minikit to read, transfer, or swap. If an EVM asset omits `chainId`, the Minikit associates it with the first configured network. The first configured ERC-20 is the default token for calls such as `cordy.balance()` without an asset option.
 
-## Security
+Stellar requires `stellarNetwork.horizonUrl`, `stellarNetwork.networkPassphrase`, and at least one `stellar` asset. `contractId` is optional metadata for app-specific Soroban integrations; Horizon balance and payment operations do not need it. A credit asset must match the account's issuer and trustline.
 
-All `NEXT_PUBLIC_*` values are public. Do not put private keys, JWT secrets, signing keys, or server credentials in them. RPC URLs and token contract addresses are configuration, not secrets.
+The wallet's selected EVM network must match the selected asset's chain ID. An RPC URL cannot switch the wallet's network. Stellar's configured passphrase must match the connected Freighter network.
+
+## Secrets
+
+JSON config is shipped to the browser and is public. Do not put private keys, signing keys, JWT secrets, or server credentials in it. Keep server-only secrets in the consuming app's server environment, without a `NEXT_PUBLIC_` prefix.

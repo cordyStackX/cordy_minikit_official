@@ -1,13 +1,9 @@
 "use client";
 import { ethers, parseUnits } from 'ethers';
-import { Horizon, Asset, BASE_FEE, Memo, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Horizon, Asset, BASE_FEE, Memo, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { getNetworkDetails, requestAccess, signTransaction as freighterSignTransaction } from "@stellar/freighter-api";
 import tokenAbi from '../config/ERC20_ABI.json';
-
-const tokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
-const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || "";
-const stellarRpc = process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-testnet.stellar.org";
-const stellarNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
+import { getCordyRuntimeConfig } from '../client/runtimeConfig';
 
 type CordyStackStellarTransOptions = {
   memo?: string;
@@ -22,6 +18,13 @@ export default async function CordyStackTrans(address: string, cost: number) {
   }
 
   try {
+    const runtimeConfig = getCordyRuntimeConfig();
+    const defaultNetwork = runtimeConfig?.networks?.[0];
+    const defaultAsset = runtimeConfig?.evm?.find((asset) =>
+      (asset.chainId ?? defaultNetwork?.chainId) === defaultNetwork?.chainId && asset.contractAddress,
+    );
+    const tokenAddress = defaultAsset?.contractAddress || "";
+    const rpcEndpoint = defaultAsset?.rpcUrl || defaultNetwork?.rpcUrl || "";
     const ethereum = window?.ethereum;
     if (!ethereum) {
       console.error("Ethereum provider not found");
@@ -31,12 +34,12 @@ export default async function CordyStackTrans(address: string, cost: number) {
     const signer = await provider.getSigner();
 
     if (!tokenAddress) {
-      console.error("NEXT_PUBLIC_TOKENADDRESS is not configured");
+      console.error("No EVM token is configured in the assets JSON");
       return false;
     }
 
     if (!rpcEndpoint) {
-      console.error("NEXT_PUBLIC_RPC_ENDPOINT is not configured");
+      console.error("No EVM network RPC is configured in the assets JSON");
       return false;
     }
 
@@ -92,6 +95,11 @@ export async function CordyStackTransStellar(
   }
 
   try {
+    const stellarConfig = getCordyRuntimeConfig()?.stellarNetwork;
+    if (!stellarConfig?.horizonUrl || !stellarConfig.networkPassphrase) {
+      console.error("Stellar network configuration is missing from the assets JSON");
+      return false;
+    }
     const access = await requestAccess();
     const sourceAddress = options.source || access.address;
 
@@ -101,18 +109,18 @@ export async function CordyStackTransStellar(
     }
 
     const networkDetails = await getNetworkDetails();
-    const networkPassphrase = networkDetails.networkPassphrase || stellarNetwork;
+    const networkPassphrase = networkDetails.networkPassphrase || stellarConfig.networkPassphrase;
     if (!networkPassphrase) {
       console.error("Stellar network passphrase not found");
       return false;
     }
 
-    if (networkDetails.networkPassphrase && networkDetails.networkPassphrase !== stellarNetwork) {
-      console.error("Stellar network mismatch. Expected", stellarNetwork, "got", networkDetails.networkPassphrase);
+    if (networkDetails.networkPassphrase && networkDetails.networkPassphrase !== stellarConfig.networkPassphrase) {
+      console.error("Stellar network mismatch. Expected", stellarConfig.networkPassphrase, "got", networkDetails.networkPassphrase);
       return false;
     }
 
-    const server = new Horizon.Server(stellarRpc);
+    const server = new Horizon.Server(stellarConfig.horizonUrl);
     const sourceAccount = await server.loadAccount(sourceAddress);
     const asset = Asset.native();
     const payment = Operation.payment({

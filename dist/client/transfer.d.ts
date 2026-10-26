@@ -1,44 +1,5 @@
-export type EvmAssetConfig = {
-    symbol: string;
-    /** Defaults to NEXT_PUBLIC_CHAIN_ID when omitted. */
-    chainId?: number;
-    type?: "native" | "erc20";
-    contractAddress?: string;
-    decimals?: number;
-    rpcUrl?: string;
-};
-export type EvmNetworkConfig = {
-    chainId: number;
-    name: string;
-    nativeCurrency: {
-        name: string;
-        symbol: string;
-        decimals: number;
-    };
-    rpcUrl: string;
-    blockExplorerUrl?: string;
-    /** Uniswap V2-compatible router used by cordy.swap(). */
-    swapRouterAddress?: string;
-    /** Wrapped native asset required to swap the chain's native currency. */
-    wrappedNativeTokenAddress?: string;
-};
-export type StellarAssetConfig = {
-    symbol: string;
-    type: "native";
-    networkPassphrase?: string;
-} | {
-    symbol: string;
-    type: "credit";
-    code: string;
-    issuer: string;
-    networkPassphrase?: string;
-};
-/** JSON registry supplied by the application developer. */
-export type CordyAssetsConfig = {
-    networks?: EvmNetworkConfig[];
-    evm?: EvmAssetConfig[];
-    stellar?: StellarAssetConfig[];
-};
+import type { CordyAssetsConfig } from "./runtimeConfig";
+export type { CordyAssetsConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig, StellarNetworkConfig } from "./runtimeConfig";
 export type CordyTransferOptions = {
     /** Asset symbol from the configured JSON registry. */
     asset?: string;
@@ -52,7 +13,7 @@ export type CordyTransferResult = {
     error?: string;
 };
 export type CordyBalanceOptions = {
-    /** Asset symbol from the configured JSON registry. Defaults to the EVM env token or Stellar XLM. */
+    /** Asset symbol from the configured JSON registry. Defaults to the first configured EVM token or Stellar XLM. */
     asset?: string;
 };
 export type CordyBalanceResult = {

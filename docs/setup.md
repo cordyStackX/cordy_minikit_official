@@ -55,7 +55,7 @@ export default function RootLayout({
 }
 ```
 
-`ProvidersClientWrapper` configures the active Wagmi config and the optional asset registry. The wrapper must be above `ConnectWalletBT` and any component that calls `cordy.balance()` or `cordy.transfer()`.
+`ProvidersClientWrapper` configures Wagmi, WalletConnect, EVM networks, Stellar endpoints, and the asset registry from this JSON. The wrapper must be above `ConnectWalletBT` and any component that calls `cordy.balance()` or `cordy.transfer()`. No `NEXT_PUBLIC_*` wallet or network variables are required.
 
 ## Render the wallet button
 
@@ -90,6 +90,22 @@ The active wallet is selected by the last successful connection:
 
 ```json
 {
+  "walletConnectProjectId": "your-public-project-id",
+  "networks": [
+    {
+      "chainId": 677,
+      "name": "BOT Chain",
+      "nativeCurrency": { "name": "BOT", "symbol": "BOT", "decimals": 18 },
+      "rpcUrl": "https://rpc.example",
+      "blockExplorerUrl": "https://scan.example",
+      "swapRouterAddress": "0xRouterAddress",
+      "wrappedNativeTokenAddress": "0xWrappedNativeAddress"
+    }
+  ],
+  "stellarNetwork": {
+    "horizonUrl": "https://horizon-testnet.stellar.org",
+    "networkPassphrase": "Test SDF Network ; September 2015"
+  },
   "evm": [
     {
       "symbol": "USDT",
@@ -115,4 +131,4 @@ The active wallet is selected by the last successful connection:
 }
 ```
 
-An omitted asset `chainId` defaults to `NEXT_PUBLIC_CHAIN_ID`. Use an explicit `chainId` for registries that contain assets on multiple chains. Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.
+An omitted asset `chainId` defaults to the first network in `networks`. Use an explicit `chainId` for registries that contain assets on multiple chains. Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.

@@ -1,15 +1,9 @@
 import { Horizon } from "@stellar/stellar-sdk";
 import { getNetworkDetails } from "@stellar/freighter-api";
-
-const STELLAR_HORIZON = process.env.NEXT_PUBLIC_STELLAR_HORIZON;
-const STELLAR_NETWORK_PASSPHRASE = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE;
+import { getCordyRuntimeConfig, isStellarConfigReady } from "../client/runtimeConfig";
 
 export function isStellarEnvironmentConfigured(): boolean {
-  return Boolean(
-    STELLAR_HORIZON &&
-    STELLAR_NETWORK_PASSPHRASE &&
-    process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID,
-  );
+  return isStellarConfigReady();
 }
 
 export type StellarBalanceAsset =
@@ -37,13 +31,15 @@ export default async function loadStellarBalance(
   accountId: string,
   options: StellarBalanceOptions = {},
 ): Promise<StellarBalanceResult> {
-  if (!isStellarEnvironmentConfigured()) {
-    throw new Error("Stellar environment is not configured. Set NEXT_PUBLIC_STELLAR_HORIZON, NEXT_PUBLIC_STELLAR_CONTRACT_ID, and NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE.");
+  const runtimeConfig = getCordyRuntimeConfig();
+  const stellarConfig = runtimeConfig?.stellarNetwork;
+  const horizonUrl = options.horizonUrl || stellarConfig?.horizonUrl;
+  const configuredPassphrase = options.networkPassphrase || stellarConfig?.networkPassphrase;
+  if (!isStellarEnvironmentConfigured() || !horizonUrl || !configuredPassphrase) {
+    throw new Error("Stellar is not configured. Add stellarNetwork and Stellar assets to the JSON passed to ProvidersClientWrapper.");
   }
-  const horizonUrl = STELLAR_HORIZON!;
-  const configuredPassphrase = STELLAR_NETWORK_PASSPHRASE!;
   const networkDetails = await getNetworkDetails();
-  const expectedPassphrase = options.networkPassphrase || configuredPassphrase;
+  const expectedPassphrase = configuredPassphrase;
   const freighterPassphrase = networkDetails.networkPassphrase;
 
   if (freighterPassphrase && freighterPassphrase !== expectedPassphrase) {
@@ -55,7 +51,7 @@ export default async function loadStellarBalance(
   let asset = options.asset;
 
   if (!asset) {
-    const candidates = (options.assets ?? []).filter((candidate) =>
+    const candidates = (options.assets ?? runtimeConfig?.stellar ?? []).filter((candidate) =>
       candidate.symbol.toLowerCase() === requestedSymbol.toLowerCase() &&
       (!candidate.networkPassphrase || candidate.networkPassphrase === networkPassphrase),
     );
@@ -73,7 +69,7 @@ export default async function loadStellarBalance(
     throw new Error(`The ${asset.symbol} asset is not configured for the connected Stellar network.`);
   }
 
-  const server = new Horizon.Server(options.horizonUrl || horizonUrl);
+  const server = new Horizon.Server(horizonUrl);
   const account = await server.loadAccount(accountId);
   const balance = asset.type === "native"
     ? account.balances.find((item) => item.asset_type === "native")

@@ -21,7 +21,7 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
         onStatusChange?.({ isPending: true });
         try {
             if (!isStellarEnvironmentConfigured()) {
-                throw new Error("Stellar environment is not configured. Set NEXT_PUBLIC_STELLAR_HORIZON, NEXT_PUBLIC_STELLAR_CONTRACT_ID, and NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE.");
+                throw new Error("Stellar is not configured. Add stellarNetwork and Stellar assets to the JSON passed to ProvidersClientWrapper.");
             }
             const connection = await isConnected();
             if (!connection.isConnected) {

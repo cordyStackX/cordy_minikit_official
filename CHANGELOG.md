@@ -1,8 +1,18 @@
+## [3.0.2] - Unreleased
+
+### Changed
+
+- Read public WalletConnect, EVM, and Stellar runtime settings from the JSON passed to `ProvidersClientWrapper` instead of `NEXT_PUBLIC_*` variables.
+
 ## [3.0.1] - Unreleased
 
 ### Removed
 
 - Remove the deprecated `AirDrop_Faucet` helper from the package source and public exports.
+
+### Changed
+
+- Read public WalletConnect, EVM, and Stellar runtime settings from the JSON passed to `ProvidersClientWrapper` instead of `NEXT_PUBLIC_*` variables.
 
 ## [3.0.0] - 2026-10-27
 
@@ -92,4 +102,4 @@ disconnect controllers.
   ### Notes                                                                                                          
                                                                                                                      
   - This is a major release because Cordy MiniKit now supports both EVM and Non-EVM wallet workflows.                
-  - Apps using Stellar features must configure the relevant `NEXT_PUBLIC_STELLAR_*` environment variables.
+  - Apps using Stellar features must configure the Horizon endpoint, network passphrase, and assets in `ProvidersClientWrapper` JSON.

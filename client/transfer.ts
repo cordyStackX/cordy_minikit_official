@@ -1,50 +1,19 @@
 "use client";
 
-import { Asset, BASE_FEE, Horizon, Memo, Networks, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Asset, BASE_FEE, Horizon, Memo, Operation, StrKey, TransactionBuilder } from "@stellar/stellar-sdk";
 import { getNetworkDetails, requestAccess, signTransaction as freighterSignTransaction } from "@stellar/freighter-api";
 import { BrowserProvider, Contract, formatUnits, isAddress, JsonRpcProvider, parseUnits, type Eip1193Provider } from "ethers";
 import { getActiveWagmiConfig } from "../config/walletConfig";
 import { readTokenBalance } from "../controllers/Get_Balance";
 import loadStellarBalance from "../controllers/loadStellarBalance";
 import tokenAbi from "../config/ERC20_ABI.json";
+import { setCordyRuntimeConfig } from "./runtimeConfig";
+import type { CordyAssetsConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig } from "./runtimeConfig";
+
+export type { CordyAssetsConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig, StellarNetworkConfig } from "./runtimeConfig";
 
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
-const stellarRpc = process.env.NEXT_PUBLIC_STELLAR_HORIZON || "https://horizon-testnet.stellar.org";
-const stellarNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
-
-export type EvmAssetConfig = {
-  symbol: string;
-  /** Defaults to NEXT_PUBLIC_CHAIN_ID when omitted. */
-  chainId?: number;
-  type?: "native" | "erc20";
-  contractAddress?: string;
-  decimals?: number;
-  rpcUrl?: string;
-};
-
-export type EvmNetworkConfig = {
-  chainId: number;
-  name: string;
-  nativeCurrency: { name: string; symbol: string; decimals: number };
-  rpcUrl: string;
-  blockExplorerUrl?: string;
-  /** Uniswap V2-compatible router used by cordy.swap(). */
-  swapRouterAddress?: string;
-  /** Wrapped native asset required to swap the chain's native currency. */
-  wrappedNativeTokenAddress?: string;
-};
-
-export type StellarAssetConfig =
-  | { symbol: string; type: "native"; networkPassphrase?: string }
-  | { symbol: string; type: "credit"; code: string; issuer: string; networkPassphrase?: string };
-
-/** JSON registry supplied by the application developer. */
-export type CordyAssetsConfig = {
-  networks?: EvmNetworkConfig[];
-  evm?: EvmAssetConfig[];
-  stellar?: StellarAssetConfig[];
-};
 
 export type CordyTransferOptions = {
   /** Asset symbol from the configured JSON registry. */
@@ -61,7 +30,7 @@ export type CordyTransferResult = {
 };
 
 export type CordyBalanceOptions = {
-  /** Asset symbol from the configured JSON registry. Defaults to the EVM env token or Stellar XLM. */
+  /** Asset symbol from the configured JSON registry. Defaults to the first configured EVM token or Stellar XLM. */
   asset?: string;
 };
 
@@ -130,7 +99,22 @@ export function configureCordyAssets({ assets }: { assets: CordyAssetsConfig }):
     networks: (assets.networks ?? []).map((network) => ({ ...network, nativeCurrency: { ...network.nativeCurrency } })),
     evm: (assets.evm ?? []).map((asset) => ({ ...asset })),
     stellar: (assets.stellar ?? []).map((asset) => ({ ...asset })),
+    walletConnectProjectId: assets.walletConnectProjectId,
+    stellarNetwork: assets.stellarNetwork ? { ...assets.stellarNetwork } : undefined,
   };
+  setCordyRuntimeConfig(configuredAssets);
+}
+
+function requireStellarNetwork() {
+  const network = configuredAssets?.stellarNetwork;
+  if (!network?.horizonUrl || !network.networkPassphrase || !configuredAssets?.stellar?.length) {
+    throw new Error("Stellar is not configured. Add stellarNetwork and Stellar assets to the JSON passed to ProvidersClientWrapper.");
+  }
+  return network;
+}
+
+function getDefaultEvmChainId(): number | undefined {
+  return configuredAssets?.networks?.[0]?.chainId;
 }
 
 function normalizedAmount(amount: number | string): string {
@@ -142,21 +126,25 @@ function normalizedAmount(amount: number | string): string {
 }
 
 function resolveEvmAsset(requestedSymbol: string | undefined, chainId: number, networkName: string): EvmAssetConfig | undefined {
-  if (!requestedSymbol) return undefined;
+  const defaultChainId = getDefaultEvmChainId();
+  const chainAssets = configuredAssets?.evm?.filter((asset) =>
+    (asset.chainId ?? defaultChainId) === chainId,
+  ) ?? [];
+  const symbol = requestedSymbol || chainAssets.find((asset) => asset.contractAddress)?.symbol || chainAssets[0]?.symbol;
+  if (!symbol) return undefined;
   const sameSymbol = (configuredAssets?.evm ?? []).filter(
-    (asset) => asset.symbol.toLowerCase() === requestedSymbol.toLowerCase(),
+    (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase(),
   );
-  const configuredChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
-  const matchingNetwork = sameSymbol.find((asset) => (asset.chainId ?? configuredChainId) === chainId);
+  const matchingNetwork = sameSymbol.find((asset) => (asset.chainId ?? defaultChainId) === chainId);
   if (sameSymbol.length > 0 && !matchingNetwork) {
-    const chainIds = [...new Set(sameSymbol.map((asset) => asset.chainId ?? configuredChainId))].join(", ");
-    throw new Error(`${requestedSymbol} is configured for chain ID ${chainIds}, but the connected wallet is on ${networkName} (chain ID ${chainId}). Switch networks or add an asset entry for this chain.`);
+    const chainIds = [...new Set(sameSymbol.map((asset) => asset.chainId ?? defaultChainId))].join(", ");
+    throw new Error(`${symbol} is configured for chain ID ${chainIds}, but the connected wallet is on ${networkName} (chain ID ${chainId}). Switch networks or add an asset entry for this chain.`);
   }
   return matchingNetwork;
 }
 
 function resolveConfiguredEvmSwapAsset(symbol: string, chainId: number): EvmAssetConfig {
-  const configuredChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
+  const configuredChainId = getDefaultEvmChainId();
   const matches = (configuredAssets?.evm ?? []).filter(
     (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase() &&
       (asset.chainId ?? configuredChainId) === chainId,
@@ -166,25 +154,7 @@ function resolveConfiguredEvmSwapAsset(symbol: string, chainId: number): EvmAsse
   }
   if (matches.length === 1) return matches[0];
 
-  const envTokenSymbol = process.env.NEXT_PUBLIC_TOKEN_SYMBOL?.trim();
-  const envTokenAddress = process.env.NEXT_PUBLIC_TOKENADDRESS?.trim();
-  const envChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
-  if (
-    envTokenSymbol?.toLowerCase() === symbol.toLowerCase() &&
-    envTokenAddress &&
-    Number.isSafeInteger(envChainId) &&
-    envChainId === chainId
-  ) {
-    if (!isAddress(envTokenAddress)) throw new Error("NEXT_PUBLIC_TOKENADDRESS is not a valid EVM token address.");
-    return {
-      symbol: envTokenSymbol,
-      chainId,
-      contractAddress: envTokenAddress,
-      rpcUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT,
-    };
-  }
-
-  throw new Error(`${symbol} is not configured for EVM chain ID ${chainId}. Add it to the assets JSON or configure it with NEXT_PUBLIC_TOKEN_SYMBOL and NEXT_PUBLIC_TOKENADDRESS for this chain.`);
+  throw new Error(`${symbol} is not configured for EVM chain ID ${chainId}. Add it to the assets JSON.`);
 }
 
 function resolveConfiguredStellarSwapAsset(symbol: string, networkPassphrase: string): StellarAssetConfig {
@@ -214,21 +184,11 @@ const ERC20_SWAP_ABI = [
 
 type EvmSwapNetworkConfig = Pick<EvmNetworkConfig, "chainId" | "name" | "rpcUrl" | "swapRouterAddress" | "wrappedNativeTokenAddress">;
 
-function resolveEvmSwapNetworkConfig(chainId: number, fallbackName: string): EvmSwapNetworkConfig | undefined {
+function resolveEvmSwapNetworkConfig(chainId: number): EvmSwapNetworkConfig | undefined {
   const registered = configuredAssets?.networks?.find((network) => network.chainId === chainId);
   if (registered) return registered;
 
-  const envChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
-  const rpcUrl = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
-  if (!rpcUrl || !Number.isSafeInteger(envChainId) || envChainId !== chainId) return undefined;
-
-  return {
-    chainId,
-    name: process.env.NEXT_PUBLIC_CHAIN_NAME || fallbackName,
-    rpcUrl,
-    swapRouterAddress: process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS,
-    wrappedNativeTokenAddress: process.env.NEXT_PUBLIC_WRAPPED_NATIVE_TOKEN_ADDRESS,
-  };
+  return undefined;
 }
 
 async function getEvmReadProvider(
@@ -237,7 +197,7 @@ async function getEvmReadProvider(
   networkName: string,
   assetRpcUrl?: string,
 ): Promise<BrowserProvider | JsonRpcProvider> {
-  const rpcUrl = assetRpcUrl || configuredAssets?.networks?.find((network) => network.chainId === chainId)?.rpcUrl || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+  const rpcUrl = assetRpcUrl || configuredAssets?.networks?.find((network) => network.chainId === chainId)?.rpcUrl;
   if (!rpcUrl) return walletProvider;
 
   const rpcProvider = new JsonRpcProvider(rpcUrl);
@@ -245,7 +205,6 @@ async function getEvmReadProvider(
   try {
     rpcNetwork = await rpcProvider.getNetwork();
   } catch {
-    if (!assetRpcUrl && !configuredAssets?.networks?.some((network) => network.rpcUrl === rpcUrl)) return walletProvider;
     throw new Error(`Could not reach the configured EVM RPC endpoint for ${networkName}. Check its URL and availability.`);
   }
   if (Number(rpcNetwork.chainId) !== chainId) {
@@ -377,10 +336,9 @@ async function transferEvm(amount: string, recipient: string, requestedSymbol?: 
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
   const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
-  const fallbackAddress = process.env.NEXT_PUBLIC_TOKENADDRESS || "";
-  const contractAddress = tokenConfig?.contractAddress || fallbackAddress;
+  const contractAddress = tokenConfig?.contractAddress || "";
   if (!contractAddress) {
-    throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON or set NEXT_PUBLIC_TOKENADDRESS.`);
+    throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON.`);
   }
   if (!isAddress(contractAddress)) throw new Error("The configured EVM token contract address is invalid.");
   const readProvider = await getEvmReadProvider(provider, chainId, chain.name, tokenConfig?.rpcUrl);
@@ -435,9 +393,9 @@ async function readEvmBalance(requestedSymbol?: string): Promise<CordyBalanceRes
     };
   }
 
-  const contractAddress = tokenConfig?.contractAddress || process.env.NEXT_PUBLIC_TOKENADDRESS || "";
+  const contractAddress = tokenConfig?.contractAddress || "";
   if (!contractAddress) {
-    throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON or set NEXT_PUBLIC_TOKENADDRESS.`);
+    throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON.`);
   }
   if (!isAddress(contractAddress)) throw new Error("The configured EVM token contract address is invalid.");
   const balance = await readTokenBalance(walletAddress, {
@@ -464,6 +422,7 @@ async function readEvmBalance(requestedSymbol?: string): Promise<CordyBalanceRes
 
 async function readStellarBalance(requestedSymbol?: string): Promise<CordyBalanceResult> {
   const symbol = requestedSymbol || "XLM";
+  const stellarConfig = requireStellarNetwork();
   const access = await requestAccess();
   const address = access.address;
   if (!address) throw new Error("Could not access the connected Stellar wallet.");
@@ -471,8 +430,8 @@ async function readStellarBalance(requestedSymbol?: string): Promise<CordyBalanc
   const balance = await loadStellarBalance(address, {
     assetSymbol: symbol,
     assets: configuredAssets?.stellar,
-    horizonUrl: stellarRpc,
-    networkPassphrase: stellarNetwork,
+    horizonUrl: stellarConfig.horizonUrl,
+    networkPassphrase: stellarConfig.networkPassphrase,
   });
 
   return {
@@ -499,6 +458,7 @@ export async function cordy_balance(options: CordyBalanceOptions = {}): Promise<
 }
 
 async function transferStellar(amount: string, recipient: string, requestedSymbol?: string, memo?: string): Promise<CordyTransferResult> {
+  const stellarConfig = requireStellarNetwork();
   if (!StrKey.isValidEd25519PublicKey(recipient)) throw new Error("Recipient must be a valid Stellar public address.");
   if (!/^\d+(\.\d{1,7})?$/.test(amount)) throw new Error("Stellar amounts support up to 7 decimal places.");
   const symbol = requestedSymbol || "XLM";
@@ -508,9 +468,9 @@ async function transferStellar(amount: string, recipient: string, requestedSymbo
   if (!sourceAddress) throw new Error("Could not access the connected Stellar wallet.");
 
   const networkDetails = await getNetworkDetails();
-  const networkPassphrase = networkDetails.networkPassphrase || stellarNetwork;
-  if (networkDetails.networkPassphrase && networkDetails.networkPassphrase !== stellarNetwork) {
-    throw new Error(`Stellar network mismatch. Expected ${stellarNetwork}, got ${networkDetails.networkPassphrase}.`);
+  const networkPassphrase = networkDetails.networkPassphrase || stellarConfig.networkPassphrase;
+  if (networkDetails.networkPassphrase && networkDetails.networkPassphrase !== stellarConfig.networkPassphrase) {
+    throw new Error(`Stellar network mismatch. Expected ${stellarConfig.networkPassphrase}, got ${networkDetails.networkPassphrase}.`);
   }
   const candidates = (configuredAssets?.stellar ?? []).filter(
     (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase() &&
@@ -524,7 +484,7 @@ async function transferStellar(amount: string, recipient: string, requestedSymbo
   const stellarAsset = assetConfig.type === "native"
     ? Asset.native()
     : new Asset(assetConfig.code, assetConfig.issuer);
-  const server = new Horizon.Server(stellarRpc);
+  const server = new Horizon.Server(stellarConfig.horizonUrl);
   const sourceAccount = await server.loadAccount(sourceAddress);
   const assetBalance = assetConfig.type === "native"
     ? sourceAccount.balances.find((item) => item.asset_type === "native")
@@ -575,21 +535,21 @@ async function swapEvm(amount: string, fromSymbol: string, toSymbol: string): Pr
   const provider = new BrowserProvider(rawProvider as Eip1193Provider);
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
-  const networkConfig = resolveEvmSwapNetworkConfig(chainId, chain.name);
+  const networkConfig = resolveEvmSwapNetworkConfig(chainId);
   const networkName = networkConfig?.name || chain.name;
   const fromAsset = resolveConfiguredEvmSwapAsset(fromSymbol, chainId);
   const toAsset = resolveConfiguredEvmSwapAsset(toSymbol, chainId);
   if (fromSymbol.toLowerCase() === toSymbol.toLowerCase()) throw new Error("Choose two different assets to swap.");
 
   if (!networkConfig?.swapRouterAddress || !isAddress(networkConfig.swapRouterAddress)) {
-    throw new Error(`No valid Uniswap V2-compatible swap router is configured for ${networkName} (chain ID ${chainId}). Set NEXT_PUBLIC_SWAP_ROUTER_ADDRESS or add the network to assets JSON.`);
+    throw new Error(`No valid Uniswap V2-compatible swap router is configured for ${networkName} (chain ID ${chainId}). Add swapRouterAddress to its network entry in assets JSON.`);
   }
   const isNative = (asset: EvmAssetConfig) => asset.type === "native" || !asset.contractAddress;
   const fromNative = isNative(fromAsset);
   const toNative = isNative(toAsset);
   const wrappedNative = networkConfig.wrappedNativeTokenAddress;
   if ((fromNative || toNative) && (!wrappedNative || !isAddress(wrappedNative))) {
-    throw new Error(`Set NEXT_PUBLIC_WRAPPED_NATIVE_TOKEN_ADDRESS or configure wrappedNativeTokenAddress for ${networkName} to swap its native currency.`);
+    throw new Error(`Configure wrappedNativeTokenAddress for ${networkName} in assets JSON to swap its native currency.`);
   }
   const fromAddress = fromNative ? wrappedNative! : fromAsset.contractAddress!;
   const toAddress = toNative ? wrappedNative! : toAsset.contractAddress!;
@@ -648,6 +608,7 @@ function stellarAssetFromConfig(asset: StellarAssetConfig): Asset {
 }
 
 async function swapStellar(amount: string, fromSymbol: string, toSymbol: string): Promise<CordySwapResult> {
+  const stellarConfig = requireStellarNetwork();
   if (fromSymbol.toLowerCase() === toSymbol.toLowerCase()) throw new Error("Choose two different assets to swap.");
   if (!/^\d+(\.\d{1,7})?$/.test(amount)) throw new Error("Stellar swap amounts support up to 7 decimal places.");
 
@@ -655,13 +616,13 @@ async function swapStellar(amount: string, fromSymbol: string, toSymbol: string)
   const source = access.address;
   if (!source) throw new Error("Could not access the connected Stellar wallet.");
   const networkDetails = await getNetworkDetails();
-  const passphrase = networkDetails.networkPassphrase || stellarNetwork;
-  if (passphrase !== stellarNetwork) throw new Error(`Stellar network mismatch. Expected ${stellarNetwork}, got ${passphrase}.`);
+  const passphrase = networkDetails.networkPassphrase || stellarConfig.networkPassphrase;
+  if (passphrase !== stellarConfig.networkPassphrase) throw new Error(`Stellar network mismatch. Expected ${stellarConfig.networkPassphrase}, got ${passphrase}.`);
   const fromAsset = resolveConfiguredStellarSwapAsset(fromSymbol, passphrase);
   const toAsset = resolveConfiguredStellarSwapAsset(toSymbol, passphrase);
   const stellarFrom = stellarAssetFromConfig(fromAsset);
   const stellarTo = stellarAssetFromConfig(toAsset);
-  const server = new Horizon.Server(stellarRpc);
+  const server = new Horizon.Server(stellarConfig.horizonUrl);
   const sourceAccount = await server.loadAccount(source);
   const paths = await server.strictSendPaths(stellarFrom, amount, [stellarTo]).call();
   const route = paths.records[0];

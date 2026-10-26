@@ -34,7 +34,7 @@ export default function WalletButton({ onStatusChange, connectorGroup = "all", }
                 setPendingConnector(connector);
                 try {
                     if (!isEvmEnvironmentConfigured()) {
-                        throw new Error("EVM environment is not configured. Set NEXT_PUBLIC_RPC_ENDPOINT, NEXT_PUBLIC_CHAIN_ID, and NEXT_PUBLIC_TOKENADDRESS.");
+                        throw new Error("EVM is not configured. Add an EVM network and at least one asset to the JSON passed to ProvidersClientWrapper.");
                     }
                     await connectAsync({ connector });
                     if (typeof window !== "undefined")

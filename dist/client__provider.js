@@ -26,8 +26,8 @@ export default function ProvidersClientWrapper({ children, assets, }) {
                     : {}),
             }),
         ]));
-        return getConfig(customChains);
-    }, [assets?.networks]);
+        return getConfig(customChains, { walletConnectProjectId: assets?.walletConnectProjectId });
+    }, [assets?.networks, assets?.walletConnectProjectId]);
     useEffect(() => {
         if (assets)
             configureCordyAssets({ assets });

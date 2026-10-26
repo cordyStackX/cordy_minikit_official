@@ -1,5 +1,6 @@
 import { Contract, formatUnits, isAddress, JsonRpcProvider, type Provider } from "ethers";
 import ERC20_ABI from "../config/ERC20_ABI.json";
+import { getCordyRuntimeConfig } from "../client/runtimeConfig";
 
 export type TokenBalanceOptions = {
   tokenAddress?: string;
@@ -26,8 +27,14 @@ export async function readTokenBalance(
   address: string,
   options: TokenBalanceOptions = {},
 ): Promise<TokenBalanceResult> {
-  const tokenAddress = options.tokenAddress || process.env.NEXT_PUBLIC_TOKENADDRESS;
-  const rpcUrl = options.rpcUrl || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+  const assets = getCordyRuntimeConfig();
+  const configuredChainId = options.expectedChainId ?? assets?.networks?.[0]?.chainId;
+  const chainAssets = assets?.evm?.filter((asset) =>
+    (asset.chainId ?? assets.networks?.[0]?.chainId) === configuredChainId,
+  ) ?? [];
+  const defaultAsset = chainAssets.find((asset) => asset.contractAddress) || chainAssets[0];
+  const tokenAddress = options.tokenAddress || defaultAsset?.contractAddress;
+  const rpcUrl = options.rpcUrl || defaultAsset?.rpcUrl || assets?.networks?.find((network) => network.chainId === configuredChainId)?.rpcUrl;
   const provider = options.provider || (rpcUrl ? new JsonRpcProvider(rpcUrl) : undefined);
 
   if (!tokenAddress) throw new Error("No EVM token address is configured.");
