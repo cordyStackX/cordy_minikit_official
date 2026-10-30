@@ -1,3 +1,10 @@
+## [3.0.6] - 2026-10-30
+
+### Fixed
+
+- Bundled wallet icons with the package so wallet choices do not depend on runtime image requests to GitHub.
+- Added a fallback icon for Freighter if its image cannot be displayed.
+
 ## [3.0.5] - 2026-10-27
 
 ### Changed
