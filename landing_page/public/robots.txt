@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://cordy-minikit-official.vercel.app/
+
+# Sitemaps
+Sitemap: https://cordy-minikit-official.vercel.app/sitemap.xml

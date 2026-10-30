@@ -1,9 +1,9 @@
 {
-    "title" : "",
-    "description" : "",
-    "domain__links": "",
-    "openGraph": "",
-    "openGraphSvg": "",
+    "title" : "Cordy Minikit — Build wallet experiences from every angle",
+    "description" : "A TypeScript toolkit for connecting EVM and Stellar wallets, reading balances, transferring assets, and building onchain experiences.",
+    "domain__links": "https://cordy-minikit-official.vercel.app/",
+    "openGraph": "https://cordy-minikit-official.vercel.app/image.png",
+    "openGraphSvg": "https://cordy-minikit-official.vercel.app/cordy-logo.svg",
     "wallet__connect_PRID": {
         "Wallet__Connect": "",
         "Based__Sepolia": "",

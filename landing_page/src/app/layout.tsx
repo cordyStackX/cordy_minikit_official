@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { MetadataUtils, JsonLD, Gtag } from "@/utilities";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,10 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Cordy Minikit — Build wallet experiences from every angle",
-  description: "A TypeScript toolkit for connecting EVM and Stellar wallets, reading balances, transferring assets, and building onchain experiences.",
-};
+export const metadata = MetadataUtils();
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -23,6 +20,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JsonLD()) }}
+        />
+        <Gtag />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
