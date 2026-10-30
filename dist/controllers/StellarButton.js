@@ -3,6 +3,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import { requestAccess, getNetworkDetails, isConnected, } from "@stellar/freighter-api";
 import img_src from "../config/Image.json";
+import { UI_Comp__css } from "../css";
 import { isStellarEnvironmentConfigured } from "./loadStellarBalance";
 const FREIGHTER_DOWNLOAD_URL = "https://www.freighter.app/";
 function isMobileDevice() {
@@ -15,6 +16,7 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
     const [isPending, setIsPending] = useState(false);
     const [errorMsg, setErrorMsg] = useState();
     const [network, setNetwork] = useState();
+    const [imageFailed, setImageFailed] = useState(false);
     const connect = async () => {
         setIsPending(true);
         setErrorMsg(undefined);
@@ -63,7 +65,7 @@ export default function StellarWalletButton({ onConnect, onStatusChange, }) {
             setIsPending(false);
         }
     };
-    return (_jsxs("button", { onClick: connect, disabled: isPending, children: [_jsx("img", { src: img_src.Freighter, alt: "Freighter", title: "Freighter", width: 18, height: 18 }), isPending
+    return (_jsxs("button", { onClick: connect, disabled: isPending, children: [img_src.Freighter && !imageFailed ? (_jsx("img", { src: img_src.Freighter, alt: "", "aria-hidden": "true", title: "Freighter", width: 18, height: 18, onError: () => setImageFailed(true) })) : _jsx("span", { className: UI_Comp__css.wallet_icon_fallback, "aria-hidden": "true", children: "F" }), isPending
                 ? "Connecting..."
                 : address
                     ? `Connected: ${address.slice(0, 6)}...`

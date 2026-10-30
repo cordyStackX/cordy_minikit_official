@@ -7,6 +7,7 @@ import {
   isConnected,
 } from "@stellar/freighter-api";
 import img_src from "../config/Image.json";
+import { UI_Comp__css } from "../css";
 import { isStellarEnvironmentConfigured } from "./loadStellarBalance";
 
 const FREIGHTER_DOWNLOAD_URL = "https://www.freighter.app/";
@@ -33,6 +34,7 @@ export default function StellarWalletButton({
   const [isPending, setIsPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [network, setNetwork] = useState<string | undefined>();
+  const [imageFailed, setImageFailed] = useState(false);
 
   const connect = async () => {
     setIsPending(true);
@@ -94,13 +96,17 @@ export default function StellarWalletButton({
 
   return (
     <button onClick={connect} disabled={isPending}>
-      <img
-        src={img_src.Freighter}
-        alt="Freighter"
-        title="Freighter"
-        width={18}
-        height={18}
-      />
+      {img_src.Freighter && !imageFailed ? (
+        <img
+          src={img_src.Freighter}
+          alt=""
+          aria-hidden="true"
+          title="Freighter"
+          width={18}
+          height={18}
+          onError={() => setImageFailed(true)}
+        />
+      ) : <span className={UI_Comp__css.wallet_icon_fallback} aria-hidden="true">F</span>}
       {isPending
         ? "Connecting..."
         : address
