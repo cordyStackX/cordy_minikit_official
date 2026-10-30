@@ -273,6 +273,7 @@ if (!result.success) console.error(result.error);`}</CodeBlock>
             <div className="resource-links">
               <a href="https://www.npmjs.com/package/@cordystackx/cordy_minikit" target="_blank" rel="noreferrer">NPM package <ExternalIcon /></a>
               <a href="https://github.com/cordyStackX/cordy_minikit_official/tree/main/docs" target="_blank" rel="noreferrer">Full documentation <ExternalIcon /></a>
+              <a href="https://dev-docs.botchain.ai/docs/Developers/quick-guide/" target="_blank" rel="noreferrer">BOT Chain Developer Quick Guide <ExternalIcon /></a>
               <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog <ExternalIcon /></a>
             </div>
           </section>

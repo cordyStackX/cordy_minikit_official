@@ -64,7 +64,7 @@ export default function Home() {
           <p className="hero-copy">A practical TypeScript toolkit for connecting wallets and working with assets across EVM networks and Stellar.</p>
 
           <div className="hero-actions">
-            <Link className="button button-primary" href="/docs/setup-guide">Open the docs <ArrowIcon /></Link>
+            <Link className="button button-primary" href="/docs">Open the docs <ArrowIcon /></Link>
             <a className="button button-secondary" href="https://github.com/cordyStackX/cordy_minikit_official" target="_blank" rel="noreferrer"><GithubIcon /> View on GitHub</a>
           </div>
 
@@ -73,7 +73,7 @@ export default function Home() {
             <code>pnpm install @cordystackx/cordy_minikit</code>
             <span className="install-tag">NPM</span>
           </div>
-          <p className="install-note">Start with the setup guide, then connect the wallet and assets your app needs.</p>
+          <p className="install-note">Tested on BOT Chain Mainnet. Start with the docs to configure your networks and assets.</p>
         </div>
 
         <div className="hero-visual" aria-label="Cordy Minikit supports BOT Chain, other EVM networks, and Stellar wallets">
@@ -128,7 +128,7 @@ export default function Home() {
           <h2 id="banner-title">Your next build<br />starts here.</h2>
           <p>Follow the setup guide and make Cordy Minikit part of your stack.</p>
         </div>
-        <Link className="button button-banner" href="/docs/setup-guide">Open the docs <ArrowIcon /></Link>
+        <Link className="button button-banner" href="/docs">Open the docs <ArrowIcon /></Link>
       </section>
 
       <footer className="site-footer">
