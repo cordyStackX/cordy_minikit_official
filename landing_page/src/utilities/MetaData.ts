@@ -27,7 +27,7 @@ export default function MetadataUtils() {
       title: setting.title,
       description: setting.description,
       url: setting.domain__links,
-      siteName: "Otterpie",
+      siteName: "Cordy Minikit",
       images: [
         {
             url: setting.openGraph,
