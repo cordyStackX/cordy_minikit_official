@@ -142,7 +142,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 import { ConnectWalletBT } from "@cordystackx/cordy_minikit";
 
 export function WalletAccess() {
-  return <ConnectWalletBT />;
+  return <ConnectWalletBT className="" jwt_session={true} navigate={"/dashboard"} />;
 }`}</CodeBlock>
           </section>
 
@@ -175,7 +175,7 @@ export function WalletAccess() {
       "contractAddress": "0xYourTokenContractAddress",
       "decimals": 6
     }
-  },
+  ],
   "stellar": [
     {
       "symbol": "USDC",
