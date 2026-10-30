@@ -1,0 +1,22 @@
+{
+    "title" : "",
+    "description" : "",
+    "domain__links": "",
+    "openGraph": "",
+    "openGraphSvg": "",
+    "wallet__connect_PRID": {
+        "Wallet__Connect": "",
+        "Based__Sepolia": "",
+        "Stellar" : "",
+        "Bot__Chain" : ""
+    },
+    "links__src" : {
+        "Social__links" : {
+            "linked_in" : "https://www.linkedin.com/in/marc-giestin-louis-cordova-657849276",
+            "github" : "https://github.com/cordyStackX",
+            "facebook" : "https://www.facebook.com/cordyStackX/",
+            "twitter" : "https://x.com/cordyStackX",
+            "tiktok" : "https://www.tiktok.com/@cordystackx"
+        }
+    }
+}

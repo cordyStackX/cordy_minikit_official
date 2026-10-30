@@ -36,6 +36,7 @@
     "node_modules",
     "dist",
     ".next",
-    "demo"
+    "demo",
+    "landing_page"
   ]
 }
