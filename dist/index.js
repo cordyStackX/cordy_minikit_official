@@ -7,7 +7,7 @@ export { useWalletModal } from "./wagmi__providers";
 //Components
 export { ConnectWalletBT } from "./components";
 //Controllers
-export { CordyStackTrans, CordyStackTransStellar, useWalletStatus, useDisconnectWallets, WalletButton, StellarWalletButton } from "./controllers";
+export { CordyStackTrans, CordyStackTransStellar, useWalletStatus, useDisconnectWallets, WalletButton, StellarWalletButton, BridgeEvmWalletModal, bridgeRequestNeedsEvmWallet, useBridgeEvmWallet } from "./controllers";
 // Client-side JWT session helpers (safe for browser imports).
 export { cordy, cons_verify, cons_disconnect } from "./client";
 export { configureCordyAssets, cordy_balance, cordy_configure, cordy_bridge, cordy_swap, cordy_transfer } from "./client/transfer";

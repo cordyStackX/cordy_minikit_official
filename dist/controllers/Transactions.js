@@ -3,7 +3,7 @@ import { ethers, parseUnits } from 'ethers';
 import { Horizon, Asset, BASE_FEE, Memo, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { getNetworkDetails, requestAccess, signTransaction as freighterSignTransaction } from "@stellar/freighter-api";
 import tokenAbi from '../config/ERC20_ABI.json';
-import { getCordyRuntimeConfig } from '../client/runtimeConfig';
+import { getConfiguredEvmAssets, getCordyRuntimeConfig } from '../client/runtimeConfig';
 /** @deprecated Use `cordy.transfer(amount, recipient, { asset })` instead. */
 export default async function CordyStackTrans(address, cost) {
     if (!address) {
@@ -13,7 +13,7 @@ export default async function CordyStackTrans(address, cost) {
     try {
         const runtimeConfig = getCordyRuntimeConfig();
         const defaultNetwork = runtimeConfig?.networks?.[0];
-        const defaultAsset = runtimeConfig?.evm?.find((asset) => (asset.chainId ?? defaultNetwork?.chainId) === defaultNetwork?.chainId && asset.contractAddress);
+        const defaultAsset = getConfiguredEvmAssets(runtimeConfig).find((asset) => asset.chainId === defaultNetwork?.chainId && asset.contractAddress);
         const tokenAddress = defaultAsset?.contractAddress || "";
         const rpcEndpoint = defaultAsset?.rpcUrl || defaultNetwork?.rpcUrl || "";
         const ethereum = window?.ethereum;

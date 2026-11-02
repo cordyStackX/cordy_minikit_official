@@ -97,6 +97,16 @@
 .spinner { width: 0.9rem; height: 0.9rem; border: 2px solid rgba(88, 166, 255, 0.25); border-top-color: #58a6ff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .error_message { width: 100%; margin-top: 0.7rem; padding: 0.65rem 0.75rem; border: 1px solid rgba(248, 81, 73, 0.32); border-radius: 8px; color: #ff7b72; background: rgba(248, 81, 73, 0.08); font-size: 0.75rem; line-height: 1.5; overflow-wrap: anywhere; }
 
+.bridge_modal_container { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(1, 4, 9, 0.72); backdrop-filter: blur(8px); }
+.bridge_modal { position: relative; width: min(100%, 520px); padding: 1.15rem; border: 1px solid var(--panel-border_wagmi_34535); border-radius: 16px; color: var(--foreground_wagmi_34535); background: var(--foreground_wagmi_11111); box-shadow: 0 24px 80px rgba(1, 4, 9, 0.68); }
+.bridge_modal_header { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 0.75rem; padding-right: 2.35rem; }
+.bridge_modal_header h2 { margin: 0; color: var(--foreground_wagmi_34535); font-size: 1.08rem; font-weight: 650; letter-spacing: -0.015em; line-height: 1.3; }
+.bridge_wallet_options { display: flex; width: 100%; flex-direction: column; gap: 0.4rem; margin-top: 0.35rem; }
+.bridge_wallet_option { display: flex; width: 100%; min-height: 2.75rem; align-items: center; justify-content: flex-start; gap: 0.65rem; padding: 0.55rem 0.7rem; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; background: #161b22; cursor: pointer; font: inherit; font-size: 0.79rem; font-weight: 550; text-align: left; }
+.bridge_wallet_option:hover:not(:disabled) { border-color: #58a6ff; background: #1c2430; }
+.bridge_wallet_option:disabled { cursor: not-allowed; opacity: 0.45; }
+.bridge_wallet_option img { width: 1.45rem; height: 1.45rem; object-fit: contain; }
+
 .connected_card { width: 100%; margin-top: 1.1rem; padding: 1rem; border: 1px solid var(--panel-border_wagmi_34535); border-radius: 11px; background: #161b22; }
 .connected_heading { align-items: center; gap: 0.5rem; color: var(--foreground_wagmi_34535); font-size: 0.8rem; font-weight: 600; }
 .connected_dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #3fb950; box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.12); }

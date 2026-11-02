@@ -1,3 +1,26 @@
+## [3.0.10] - 2026-11-02
+
+### Added
+
+- Added chain-keyed EVM asset configuration: `evm["<chainId>"]` groups ERC-20 assets by network.
+- Added SDK-owned `BridgeEvmWalletModal` orchestration for automatic wallet connection and bridge continuation.
+- Added automatic configured-network preparation during bridge wallet connection, including wallet network addition/switching and token watch-asset prompts when supported.
+- Added explicit unsupported-EVM-network validation before balance, transfer, and swap asset resolution.
+- Added configurable EVM V3 swaps alongside V2, including per-network router, QuoterV2, and fee-tier settings.
+- Added automatic V2/V3 quote comparison and an option to select a swap version explicitly.
+- Added per-swap `feeTiers` selection to limit which V3 pools are quoted for a call.
+- Added app-configurable bridge sides, token and bridge addresses, and resource IDs through the assets JSON.
+- Added multiple bridge routes with per-call route selection, plus route selection controls in the demo.
+
+### Changed
+
+- Renamed the wallet button's navigation prop from `jwt_session` to `cons_session` to match the local `cons_verify()` and `cons_disconnect()` APIs.
+- Promoted `cordy.bridge()` from experimental to a supported API for configured compatible EVM bridge sides.
+- Native EVM currencies now come from `networks[].nativeCurrency`; they no longer need redundant entries in the `evm` registry.
+- Successful EVM bridge transactions disconnect the EVM connector after the final required transaction step without clearing Stellar wallet state.
+- CCTP bridge flows validate V2 arguments and preserve underlying provider error details.
+
+
 ## [3.0.6] - 2026-10-30
 
 ### Fixed

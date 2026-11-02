@@ -99,6 +99,51 @@ export default function Home() {
         <Link className="text-link" href="/docs">Explore the documentation <ArrowIcon /></Link>
       </section>
 
+      <section className="architecture-section" aria-labelledby="architecture-title">
+        <div className="section-kicker"><span /> CONFIGURATION ARCHITECTURE</div>
+        <div className="architecture-heading">
+          <div>
+            <h2 id="architecture-title">One configuration.<br /><span>Every integration.</span></h2>
+            <p>Define your wallet, network, asset, Stellar, and bridge settings in one typed configuration file.</p>
+          </div>
+          <span className="architecture-badge">CONFIGURATION / OVERVIEW</span>
+        </div>
+        <div className="architecture-graph architecture-config-graph" role="img" aria-label="JSON configuration map showing assets.json and its wallet, network, asset, Stellar, and bridge keys">
+          <div className="architecture-source">
+            <span className="architecture-node-icon">◇</span>
+            <strong>assets.json</strong>
+            <small>Application configuration</small>
+          </div>
+          <div className="architecture-lanes">
+            <article className="architecture-lane lane-evm">
+              <div className="lane-heading"><span className="lane-icon">01</span><div><strong>walletConnectProjectId</strong><small>Wallet infrastructure</small></div></div>
+              <code className="lane-value">"project-id"</code>
+            </article>
+            <article className="architecture-lane lane-assets">
+              <div className="lane-heading"><span className="lane-icon">02</span><div><strong>networks[]</strong><small>EVM network registry</small></div></div>
+              <code className="lane-value">chainId · rpcUrl · nativeCurrency</code>
+            </article>
+            <article className="architecture-lane lane-stellar">
+              <div className="lane-heading"><span className="lane-icon">03</span><div><strong>evm["chainId"]</strong><small>Chain-scoped assets</small></div></div>
+              <code className="lane-value">symbol · contractAddress · decimals</code>
+            </article>
+            <article className="architecture-lane lane-bridge">
+              <div className="lane-heading"><span className="lane-icon">04</span><div><strong>stellarNetwork</strong><small>Stellar infrastructure</small></div></div>
+              <code className="lane-value">horizonUrl · networkPassphrase</code>
+            </article>
+            <article className="architecture-lane lane-stellar">
+              <div className="lane-heading"><span className="lane-icon">05</span><div><strong>stellar[]</strong><small>Stellar asset registry</small></div></div>
+              <code className="lane-value">symbol · type · issuer</code>
+            </article>
+            <article className="architecture-lane lane-bridge">
+              <div className="lane-heading"><span className="lane-icon">06</span><div><strong>bridge.routes[]</strong><small>Cross-network routes</small></div></div>
+              <code className="lane-value">source · destination · protocol</code>
+            </article>
+          </div>
+        </div>
+        <Link className="text-link architecture-link" href="/docs">Read the configuration guide <ArrowIcon /></Link>
+      </section>
+
       <section className="features-section" aria-labelledby="features-title">
         <div className="features-heading">
           <div>

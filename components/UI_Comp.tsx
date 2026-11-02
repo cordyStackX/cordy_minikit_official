@@ -38,7 +38,7 @@ function CordyLogo() {
 }
 
 export default function UI_Comp() {
-  const { closeModal, jwtSession } = useWalletModal();
+  const { closeModal, consSession } = useWalletModal();
   const { stellarWallet, setStellarWallet } = useStellarWallet();
   const { isConnected, address, chain } = useAccount();
   const [loading, setLoading] = useState(false);
@@ -51,12 +51,12 @@ export default function UI_Comp() {
   const { disconnectEVM, disconnectStellar } = useDisconnectWallets();
 
   useEffect(() => {
-    if (!jwtSession && isConnected && address) void Get_Balance();
-  }, [isConnected, address, jwtSession]);
+    if (!consSession && isConnected && address) void Get_Balance();
+  }, [isConnected, address, consSession]);
 
   useEffect(() => {
-    if (!jwtSession && stellarWallet.address) void loadStellarBalance(stellarWallet.address);
-  }, [stellarWallet.address, jwtSession]);
+    if (!consSession && stellarWallet.address) void loadStellarBalance(stellarWallet.address);
+  }, [stellarWallet.address, consSession]);
 
   const Get_Balance = async () => {
     if (!address) return;
@@ -107,7 +107,7 @@ export default function UI_Comp() {
           </header>
           <div className={UI_Comp__css.connected_card}>
             <div className={UI_Comp__css.connected_heading}><span className={UI_Comp__css.connected_dot} /> {isStellar ? "Stellar wallet" : "EVM wallet"}<span className={UI_Comp__css.network_badge}>{connectedNetwork}</span></div>
-            {!jwtSession && <>
+            {!consSession && <>
               <div className={UI_Comp__css.balance_value}>{connectedBalance}</div>
               <p className={UI_Comp__css.muted}>{isStellar ? "Native balance" : "Token balance"}</p>
             </>}
@@ -160,14 +160,14 @@ export default function UI_Comp() {
                 {selectedRoute === "stellar" && <StellarWalletButton
                   onConnect={(accountId) => {
                     setStellarWallet((current) => ({ ...current, address: accountId }));
-                    if (!jwtSession) void handleLoadStellarBalance(accountId);
+                    if (!consSession) void handleLoadStellarBalance(accountId);
                   }}
                   onStatusChange={({ isPending, error, address: accountId, network }) => {
                     setStellarLoading(isPending);
                     setStellarError(error);
                     if (accountId) {
                       setStellarWallet((current) => ({ ...current, address: accountId }));
-                      if (!jwtSession) void handleLoadStellarBalance(accountId);
+                      if (!consSession) void handleLoadStellarBalance(accountId);
                     }
                     if (network) setStellarWallet((current) => ({ ...current, network }));
                   }}

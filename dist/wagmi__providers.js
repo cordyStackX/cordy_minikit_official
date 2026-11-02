@@ -32,15 +32,15 @@ function readStellarWallet() {
 }
 export default function WalletProviders({ children, config: walletConfig = config }) {
     const [open, setOpen] = useState(false);
-    const [jwtSession, setJwtSession] = useState(false);
+    const [consSession, setConsSession] = useState(false);
     const [stellarWallet, setStellarWallet] = useState(() => readStellarWallet());
     const openWalletModal = useCallback((options) => {
-        setJwtSession(options?.jwtSession ?? false);
+        setConsSession(options?.consSession ?? false);
         setOpen(true);
     }, []);
     const closeWalletModal = useCallback(() => {
         setOpen(false);
-        setJwtSession(false);
+        setConsSession(false);
     }, []);
     useEffect(() => {
         const handleStellarDisconnect = () => {
@@ -63,7 +63,7 @@ export default function WalletProviders({ children, config: walletConfig = confi
     return (_jsx(WagmiProvider, { config: walletConfig, children: _jsx(QueryClientProvider, { client: queryClient, children: _jsx(WalletContext.Provider, { value: {
                     openModal: openWalletModal,
                     closeModal: closeWalletModal,
-                    jwtSession,
+                    consSession,
                 }, children: _jsxs(StellarWalletContext.Provider, { value: {
                         stellarWallet,
                         setStellarWallet,

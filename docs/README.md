@@ -1,6 +1,6 @@
-# Cordy Minikit 3.0.5 Documentation
+# Cordy Minikit 3.0.10 Documentation
 
-Cordy Minikit 3.0.5 provides wallet access, local wallet connection checks, asset transfers, and balance reads for EVM and Stellar/Soroban applications.
+Cordy Minikit provides wallet access, local wallet connection checks, asset transfers, balance reads, configurable EVM V2/V3 swaps, and configured EVM/Stellar bridge flows.
 
 ## Start here
 
@@ -21,13 +21,18 @@ The package does not create wallet accounts, switch a user's network, or create 
 | `cordy.cons_disconnect()` | Current | Disconnect connected EVM and Stellar wallets locally; no endpoint required. |
 | `cordy.transfer()` | Current | Transfer a configured EVM or Stellar asset. |
 | `cordy.balance()` | Current | Read the active wallet's native or configured asset balance. |
-| `cordy.swap()` | Current | Swap configured EVM or Stellar assets with optional percentage tolerance; defaults to 1%. |
-| `cordy.bridge()` | Experimental | Test USDT between BOT Chain Testnet and Ethereum Sepolia. |
+| `cordy.swap()` | Current | Swap configured EVM or Stellar assets; EVM supports V2/V3 selection, per-call V3 fee tiers, and automatic quote selection. |
+| `cordy.bridge()` | Current | Choose a configured EVM or CCTP route and direction; destination delivery is asynchronous unless the configured CCTP flow completes minting. |
 
 ## Current API
 
-- `cordy.swap()` — swaps configured EVM and Stellar assets with an optional percentage tolerance; `1` means 1%, and omission defaults to 1%.
-- `cordy.bridge()` — **experimental** test USDT bridging between BOT Chain Testnet and Ethereum Sepolia only.
+- `cordy.swap()` — swaps configured EVM and Stellar assets; EVM can use V2, V3, or automatic quote selection for configured routers. Pass `feeTiers` in the options to choose which V3 pools are quoted for one call.
+- `cordy.bridge()` — choose a configured EVM route with `routeId`, then choose its direction. Destination delivery is asynchronous.
+
+EVM assets are grouped by numeric chain ID under `assets.evm`. Native EVM
+currencies are defined only by `assets.networks[].nativeCurrency`. The SDK
+allows wallet connection on unsupported chains but rejects EVM asset operations
+on chains that are absent from `assets.networks`.
 
 ## Documentation
 

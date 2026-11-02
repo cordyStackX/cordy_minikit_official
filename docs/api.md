@@ -10,7 +10,7 @@ All methods return promises. Check `success` before using `balance`, `asset`, or
 
 ## `cordy.configure({ assets })`
 
-Configure the caller-owned EVM and Stellar asset registry before calling balance, transfer, or swap methods. Most apps should pass the registry to `ProvidersClientWrapper`, which configures Cordy for the app:
+Configure the caller-owned EVM, bridge, and Stellar registry before calling balance, transfer, swap, or bridge methods. Most apps should pass the registry to `ProvidersClientWrapper`, which configures Cordy for the app:
 
 ```tsx
 <ProvidersClientWrapper assets={assets}>
@@ -66,6 +66,11 @@ if (!result.success) {
 
 The returned balance is a full-precision decimal string. Format it for display; do not convert large token balances through JavaScript `Number` when precision matters.
 
+Native EVM symbols come from `networks[].nativeCurrency`. ERC-20 symbols must
+be present under the connected chain's `evm["<chainId>"]` entry. If the
+connected wallet is on a chain absent from `networks`, the operation returns
+an explicit unsupported-network error.
+
 ## `cordy.transfer(amount, recipient, options?)`
 
 Transfers a configured ERC-20 or Stellar asset through the active wallet:
@@ -92,13 +97,17 @@ The recipient must match the active network:
 
 Amounts must be positive decimal values. The configured ERC-20 decimals determine token precision. Stellar amounts support up to seven decimal places, and Stellar text memos are limited to 28 UTF-8 bytes.
 
-## `cordy.swap(amount, from, to, tolerancePercent?)`
+## `cordy.swap(amount, from, to, tolerancePercent?, options?)`
 
 Swaps two assets from the configured registry using the connected wallet:
 
 ```ts
 const result = await cordy.swap("10", "USDT", "BOT"); // EVM example
 const saferResult = await cordy.swap("10", "USDT", "BOT", 1); // 1% tolerance
+const selectedPools = await cordy.swap("10", "USDT", "BOT", 0.5, {
+  version: "v3",
+  feeTiers: [500, 3000],
+}); // 0.5% slippage; quote only V3 pools with 0.05% or 0.30% fees
 const stellarResult = await cordy.swap("10", "USDC", "XLM"); // Stellar example
 ```
 
@@ -106,27 +115,62 @@ The optional fourth argument is the slippage tolerance percentage. `1` means **1
 
 Both assets must exist in the configured list for the wallet's current network. A missing asset returns `{ success: false, error }`. The result includes the input, estimated output, network, and transaction hash.
 
-For EVM, the corresponding `networks` JSON entry must provide a Uniswap V2-compatible `swapRouterAddress`. If either asset is the chain's native currency, configure `wrappedNativeTokenAddress` as well. The router quote uses 1% slippage tolerance and prompts for token approval when needed. Stellar swaps use Horizon strict-send paths and set a 1% minimum-output tolerance. Stellar asset swaps need a valid available order-book path; the example uses `XLM`, not `XML`.
+For EVM, configure a V2-compatible `swapRouterAddress`, a V3-compatible `swapV3` router and QuoterV2, or both. With both configured, the default `auto` mode compares available quotes and uses the best output. To select a version explicitly, pass a fifth argument: `cordy.swap("10", "USDT", "BOT", 1, { version: "v3" })`. To limit V3 quote search for one call, pass `feeTiers`, such as `{ version: "v3", feeTiers: [500, 3000] }`. Per-call tiers override the network's configured `swapV3.feeTiers`; omit them to use the configured tiers (or defaults `[500, 3000, 10000]`). With `version: "auto"`, V2 is still compared against the selected V3 tiers. These values select which pools to quote; they do not set slippage or create pools. Common values are `500` = 0.05%, `3000` = 0.30%, and `10000` = 1.00% pool fee. A tier must be enabled and have a pool for the token pair on that DEX. The fourth argument remains the slippage tolerance percentage. Add compatible router and quote contracts for each chain; support is configuration-driven and does not discover routers or guarantee liquidity on every network. If either asset is the chain's native currency, configure `wrappedNativeTokenAddress`. The optional fourth argument controls slippage tolerance and defaults to 1%. Stellar swaps use Horizon strict-send paths and set a 1% minimum-output tolerance. Stellar asset swaps need a valid available order-book path; the example uses `XLM`, not `XML`.
 
-## Deprecated compatibility APIs
+## `cordy.bridge(amount, from, to, recipient, options?)`
 
-These legacy helpers remain available in 3.0.0 for compatibility and are deprecated in favor of the unified `cordy.*` API:
+Choose a route from `assets.bridge.routes`, then choose its direction. `from` and `to` are `"internal"` or `"external"`; these labels map to chain details in that route.
+
+```ts
+// Demo route: BOT Chain Testnet -> Ethereum Sepolia.
+const result = await cordy.bridge(
+  "10.5",
+  "internal",
+  "external",
+  "0xRecipient",
+  { routeId: "bot-testnet-sepolia-usdt" },
+);
+
+// Another configured route: BNB Smart Chain Testnet -> BOT Chain Testnet.
+const reverse = await cordy.bridge(
+  "5",
+  "external",
+  "internal",
+  "0xRecipient",
+  { routeId: "bot-testnet-bsc-testnet-usdt" },
+);
+```
+
+`routeId` is required when more than one route is configured. If there is only one route, it can be omitted. The wallet must be connected to the source chain, have enough of that route's token, and have gas for the source transaction. The recipient address must be valid for the destination EVM chain.
+
+### What the call does
+
+1. Cordy checks the selected route and source network.
+2. If needed, it asks the wallet to approve the source token for the source bridge contract.
+3. It calls the source contract's `deposit(destinationChainId, resourceId, recipient, amount)` and waits for that transaction to confirm.
+4. Bridge validators detect the deposit and deliver the asset on the destination chain. This happens asynchronously after the Cordy call returns.
+
+If no EVM wallet is connected, the SDK-owned `BridgeEvmWalletModal` opens
+automatically. After connection, the SDK revalidates the request, prepares the
+configured route chain, and resumes the same call without a second click.
+Closing or rejecting the modal clears the request and does not submit a source
+deposit.
+
+The call does not directly transfer tokens between chains. `success: true` means the **source deposit** confirmed. `status: "submitted"` means destination delivery is pending; it does not confirm the recipient has received funds. `transactionHash` is the source deposit hash. `approvalTransactionHash` appears only if an approval transaction was needed. Check the destination balance or the bridge operator's status service to confirm delivery. Cordy does not poll for destination completion.
+
+The configured Stellar Testnet ↔ Ethereum Sepolia USDC route uses Circle CCTP:
+the source USDC is burned, Circle attestation is awaited, and destination USDC
+is minted through the destination MessageTransmitter. This differs from the
+custom EVM bridge routes, which require an external validator or relayer for
+destination delivery.
+
+In the demo, the BOT Chain Testnet source requires **more than 10 USDT**, so exactly 10 fails and 10.5 passes. The Sepolia and BNB Testnet sources have no configured minimum. These are testnet assets with no real-world value.
+
+### Deprecated compatibility APIs
+
+These legacy helpers remain available for compatibility and are deprecated in favor of the unified `cordy.*` API:
 
 - `CordyStackTrans()` and `CordyStackTransStellar()` → `cordy.transfer()`
 - `getTokenBalance()` → `cordy.balance()`
 
 Use `cordy.cons_verify()` to check browser wallet connection state. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
-
-## `cordy.bridge(amount, from, to, recipient)` — Experimental
-
-`cordy.bridge()` is experimental in the current 3.0.0 release. It is provided for testnet evaluation and is not production-ready. The initial route supports test USDT between BOT Chain Testnet (`internal`) and Ethereum Sepolia (`external`) only:
-
-```ts
-const result = await cordy.bridge("12", "internal", "external", "0xRecipient");
-// Reverse direction: connect the source wallet to Sepolia first.
-const reverse = await cordy.bridge("5", "external", "internal", "0xRecipient");
-```
-
-The wallet must be connected to the selected source network. This call can prompt for a USDT approval followed by a bridge deposit. `success: true` means the source deposit was confirmed; delivery to the destination is asynchronous and handled by the bridge validators. The result includes `transactionHash` and, when an approval was needed, `approvalTransactionHash`. BOT Chain Testnet bridge-out requires more than 10 USDT. Testnet tokens have no real-world value.
-
-For this test route, add BOT Chain Testnet (chain ID `968`) and its RPC to the app's `networks` array in the JSON passed to `ProvidersClientWrapper`. The bridge route and test USDT contracts are currently hardcoded in the SDK. Sepolia is included in the Minikit's Wagmi chain list so wallets can switch to it. The SDK currently does not bridge Stellar, mainnet assets, or other networks.

@@ -1,11 +1,11 @@
 import { Contract, formatUnits, isAddress, JsonRpcProvider } from "ethers";
 import ERC20_ABI from "../config/ERC20_ABI.json";
-import { getCordyRuntimeConfig } from "../client/runtimeConfig";
+import { getConfiguredEvmAssets, getCordyRuntimeConfig, requireConfiguredEvmNetwork } from "../client/runtimeConfig";
 /** Shared ERC-20 balance reader used by wallet status and the Cordy API. */
 export async function readTokenBalance(address, options = {}) {
     const assets = getCordyRuntimeConfig();
     const configuredChainId = options.expectedChainId ?? assets?.networks?.[0]?.chainId;
-    const chainAssets = assets?.evm?.filter((asset) => (asset.chainId ?? assets.networks?.[0]?.chainId) === configuredChainId) ?? [];
+    const chainAssets = getConfiguredEvmAssets(assets).filter((asset) => asset.chainId === configuredChainId) ?? [];
     const defaultAsset = chainAssets.find((asset) => asset.contractAddress) || chainAssets[0];
     const tokenAddress = options.tokenAddress || defaultAsset?.contractAddress;
     const rpcUrl = options.rpcUrl || defaultAsset?.rpcUrl || assets?.networks?.find((network) => network.chainId === configuredChainId)?.rpcUrl;
@@ -24,6 +24,7 @@ export async function readTokenBalance(address, options = {}) {
         throw new Error("Could not connect to the configured EVM RPC endpoint.");
     }
     const chainId = Number(network.chainId);
+    requireConfiguredEvmNetwork(assets, chainId, network.name);
     if (options.expectedChainId !== undefined && chainId !== options.expectedChainId) {
         throw new Error(`The EVM RPC is on chain ID ${chainId}, but the wallet is on ${options.networkName || "another network"} (chain ID ${options.expectedChainId}).`);
     }

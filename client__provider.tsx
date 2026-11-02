@@ -17,6 +17,8 @@ export default function ProvidersClientWrapper({
   children: ReactNode;
   assets?: CordyAssetsConfig;
 }) {
+  if (assets) configureCordyAssets({ assets });
+
   const walletConfig = useMemo(() => {
     const networks = assets?.networks ?? [];
     if (networks.length === 0) return defaultConfig;
@@ -35,9 +37,6 @@ export default function ProvidersClientWrapper({
     return getConfig(customChains, { walletConnectProjectId: assets?.walletConnectProjectId });
   }, [assets?.networks, assets?.walletConnectProjectId]);
 
-  useEffect(() => {
-    if (assets) configureCordyAssets({ assets });
-  }, [assets]);
   useEffect(() => setActiveWagmiConfig(walletConfig), [walletConfig]);
 
   return <WalletProviders config={walletConfig}>{children}</WalletProviders>;

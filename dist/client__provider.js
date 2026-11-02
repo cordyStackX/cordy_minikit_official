@@ -10,6 +10,8 @@ const WalletProviders = dynamic(() => import('./wagmi__providers'), {
     ssr: false,
 });
 export default function ProvidersClientWrapper({ children, assets, }) {
+    if (assets)
+        configureCordyAssets({ assets });
     const walletConfig = useMemo(() => {
         const networks = assets?.networks ?? [];
         if (networks.length === 0)
@@ -28,10 +30,6 @@ export default function ProvidersClientWrapper({ children, assets, }) {
         ]));
         return getConfig(customChains, { walletConnectProjectId: assets?.walletConnectProjectId });
     }, [assets?.networks, assets?.walletConnectProjectId]);
-    useEffect(() => {
-        if (assets)
-            configureCordyAssets({ assets });
-    }, [assets]);
     useEffect(() => setActiveWagmiConfig(walletConfig), [walletConfig]);
     return _jsx(WalletProviders, { config: walletConfig, children: children });
 }

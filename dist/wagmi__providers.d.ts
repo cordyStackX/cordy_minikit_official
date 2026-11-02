@@ -2,10 +2,10 @@ import { ReactNode, Dispatch, SetStateAction } from "react";
 import { type Config } from "wagmi";
 type WalletContextType = {
     openModal: (options?: {
-        jwtSession?: boolean;
+        consSession?: boolean;
     }) => void;
     closeModal: () => void;
-    jwtSession: boolean;
+    consSession: boolean;
 };
 type StellarWalletState = {
     address: string | null;

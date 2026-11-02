@@ -50,4 +50,23 @@ The configured EVM RPC and connected wallet must use the same chain ID. If the a
 
 ## Experimental bridge test route
 
-`cordy.bridge()` is experimental in 3.0.0 and is provided for testnet evaluation only. It supports test USDT between BOT Chain Testnet and Ethereum Sepolia. It is not production-ready and does not support production networks or Stellar. See [the bridge API reference](./api.md#cordybridgeamount-from-to-recipient).
+`cordy.bridge()` was experimental in 3.0.0 and was provided for testnet evaluation only. It supported test USDT between BOT Chain Testnet and Ethereum Sepolia. See [the current bridge API reference](./api.md#cordybridgeamount-from-to-recipient-options).
+
+## EVM asset registry update
+
+EVM assets are now grouped by chain ID:
+
+```json
+{
+  "evm": {
+    "968": [
+      { "symbol": "USDT", "contractAddress": "0x..." }
+    ]
+  }
+}
+```
+
+Remove `chainId` from individual EVM asset entries. Native currencies belong
+in `networks[].nativeCurrency`, so remove redundant native entries from
+`evm`. The SDK rejects asset operations on EVM chains that are not present in
+`networks`.

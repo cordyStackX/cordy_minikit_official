@@ -72,10 +72,10 @@ export function WalletAccess() {
 For applications that need session-aware navigation:
 
 ```tsx
-<ConnectWalletBT jwt_session={true} navigate="/dashboard" />
+<ConnectWalletBT cons_session={true} navigate="/dashboard" />
 ```
 
-When `jwt_session` is enabled, connecting a wallet navigates to the requested route. Use `cordy.cons_verify()` to check whether a wallet is still connected in the browser; it returns status `200` or `401` and does not call a server endpoint. This connection check is not server-side proof of wallet ownership.
+When `cons_session` is enabled, connecting a wallet navigates to the requested route. Use `cordy.cons_verify()` to check whether a wallet is still connected in the browser; it returns status `200` or `401` and does not call a server endpoint. This connection check is not server-side proof of wallet ownership.
 
 ## Active wallet rules
 
@@ -106,19 +106,16 @@ The active wallet is selected by the last successful connection:
     "horizonUrl": "https://horizon-testnet.stellar.org",
     "networkPassphrase": "Test SDF Network ; September 2015"
   },
-  "evm": [
-    {
-      "symbol": "USDT",
-      "contractAddress": "0xTokenContract",
-      "decimals": 6,
-      "rpcUrl": "https://rpc.example"
-    },
-    {
-      "symbol": "BOT",
-      "type": "native",
-      "decimals": 18
-    }
-  ],
+  "evm": {
+    "1": [
+      {
+        "symbol": "USDT",
+        "contractAddress": "0xTokenContract",
+        "decimals": 6,
+        "rpcUrl": "https://rpc.example"
+      }
+    ]
+  },
   "stellar": [
     { "symbol": "XLM", "type": "native" },
     {
@@ -131,4 +128,33 @@ The active wallet is selected by the last successful connection:
 }
 ```
 
-An omitted asset `chainId` defaults to the first network in `networks`. Use an explicit `chainId` for registries that contain assets on multiple chains. Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.
+Group EVM assets under their numeric chain ID. Add another chain as another key, such as `"11155111": [...]`. Use the exact contract address for the target chain. A wallet balance in another network or another token contract is not interchangeable.
+
+Native EVM currencies are defined by `networks[].nativeCurrency`; do not
+repeat BOT, ETH, or another native currency in `evm`. Keep only ERC-20
+contracts in the chain-keyed registry.
+
+## Bridge wallet modal
+
+Mount the SDK modal once in a client component:
+
+```tsx
+import { BridgeEvmWalletModal, cordy } from "@cordystackx/cordy_minikit";
+
+export function BridgeAccess() {
+  return <BridgeEvmWalletModal />;
+}
+
+const result = await cordy.bridge(
+  "10.5",
+  "internal",
+  "external",
+  recipient,
+  { routeId: "bot-testnet-sepolia-usdt" },
+);
+```
+
+When a bridge needs an EVM wallet and none is connected, `cordy.bridge()`
+opens the modal, waits for connection, prepares the configured route network,
+and continues without a second click. The exported `useBridgeEvmWallet()`
+hook remains available for applications requiring custom behavior.

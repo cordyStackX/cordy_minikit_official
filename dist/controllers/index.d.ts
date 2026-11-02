@@ -1,4 +1,8 @@
 export { default as WalletButton } from "./WagmiButton";
+export { default as BridgeEvmWalletModal } from "./BridgeEvmWalletModal";
+export type { BridgeEvmWalletModalProps } from "./BridgeEvmWalletModal";
+export { bridgeRequestNeedsEvmWallet, useBridgeEvmWallet } from "./useBridgeEvmWallet";
+export type { BridgeEvmWalletRequest, UseBridgeEvmWalletOptions } from "./useBridgeEvmWallet";
 export { default as CordyStackTrans } from "./Transactions";
 export { CordyStackTransStellar } from "./Transactions";
 export { default as getTokenBalance } from "./Get_Balance";

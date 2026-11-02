@@ -11,7 +11,7 @@ const sections = [
   { id: "transfer", label: "Transfer assets" },
   { id: "swap", label: "Swap assets" },
   { id: "disconnect", label: "Disconnect wallet" },
-  { id: "experimental-api", label: "Experimental API" },
+  { id: "bridge-api", label: "Bridge" },
   { id: "links", label: "Links" },
 ];
 
@@ -77,9 +77,9 @@ export default function DocsHome() {
           <a className="sidebar-item" href="#transfer">Transfer assets</a>
           <a className="sidebar-item" href="#swap">Swap assets</a>
           <a className="sidebar-item" href="#disconnect">Disconnect wallet</a>
-          <a className="sidebar-item" href="#experimental-api">Experimental features</a>
+          <a className="sidebar-item" href="#bridge-api">Bridge</a>
           <div className="sidebar-bottom">
-            <span className="version-dot" /> Cordy Minikit <span>v3.0.5</span>
+            <span className="version-dot" /> Cordy Minikit <span>v3.0.10</span>
           </div>
         </aside>
 
@@ -142,7 +142,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 import { ConnectWalletBT } from "@cordystackx/cordy_minikit";
 
 export function WalletAccess() {
-  return <ConnectWalletBT className="" jwt_session={true} navigate={"/dashboard"} />;
+  return <ConnectWalletBT className="" cons_session={true} navigate={"/dashboard"} />;
 }`}</CodeBlock>
           </section>
 
@@ -151,42 +151,112 @@ export function WalletAccess() {
             <p>Define supported networks and assets in your application’s JSON configuration and pass it to the provider wrapper above. The wrapper configures Cordy automatically.</p>
             <p>This filtered example follows the demo’s <code>assets.json</code> structure. Replace the sample IDs and addresses with values for your own app:</p>
             <CodeBlock language="json">{`{
-  "walletConnectProjectId": "YOUR_WALLETCONNECT_PROJECT_ID",
+  "walletConnectProjectId": "your-public-project-id",
   "networks": [
     {
       "chainId": 1,
-      "name": "Your EVM Network",
+      "name": "Ethereum Mainnet",
       "nativeCurrency": { "name": "Ether", "symbol": "ETH", "decimals": 18 },
-      "rpcUrl": "https://your-network-rpc.example",
-      "blockExplorerUrl": "https://your-block-explorer.example",
-      "swapRouterAddress": "0xYourSwapRouterAddress",
-      "wrappedNativeTokenAddress": "0xYourWrappedNativeTokenAddress"
+      "rpcUrl": "https://ethereum.publicnode.com",
+      "blockExplorerUrl": "https://etherscan.io",
+      "swapRouterAddress": "0xRouterAddress",
+      "swapV3": {
+        "routerAddress": "0xV3SwapRouter",
+        "quoterAddress": "0xQuoterV2",
+        "feeTiers": [500, 3000, 10000],
+        "routerType": "swapRouter"
+      },
+      "wrappedNativeTokenAddress": "0xWrappedNativeAddress"
     }
   ],
+  "evm": {
+    "1": [
+      { "symbol": "USDC", "contractAddress": "0xTokenContract", "decimals": 6 }
+    ]
+  },
   "stellarNetwork": {
     "horizonUrl": "https://horizon-testnet.stellar.org",
-    "contractId": "YOUR_SOROBAN_CONTRACT_ID",
+    "contractId": "CCXI...",
     "networkPassphrase": "Test SDF Network ; September 2015"
   },
-  "evm": [
-    { "symbol": "ETH", "type": "native", "decimals": 18 },
-    {
-      "symbol": "USDC",
-      "contractAddress": "0xYourTokenContractAddress",
-      "decimals": 6
-    }
-  ],
   "stellar": [
+    { "symbol": "XLM", "type": "native" },
+    { "symbol": "USDC", "type": "credit", "code": "USDC", "issuer": "G..." }
+  ],
+  "bridge": {
+  "routes": [
     {
-      "symbol": "USDC",
-      "type": "credit",
-      "code": "USDC",
-      "issuer": "YOUR_STELLAR_ASSET_ISSUER"
+      "id": "bot-testnet-sepolia-usdt",
+      "name": "BOT Chain Testnet ↔ Ethereum Sepolia · USDT",
+      "resourceId": "<RESOURCE_ID>",
+      "internal": {
+        "chainId": 968,
+        "networkName": "BOT Chain Testnet",
+        "bridgeAddress": "<BRIDGE_ADDRESS>",
+        "tokenAddress": "<TOKEN_ADDRESS>",
+        "assetSymbol": "USDT",
+        "minimumAmountExclusive": "10"
+      },
+      "external": {
+        "chainId": 11155111,
+        "networkName": "Ethereum Sepolia",
+        "bridgeAddress": "<BRIDGE_ADDRESS>",
+        "tokenAddress": "<TOKEN_ADDRESS>",
+        "assetSymbol": "USDT"
+      }
     },
-    { "symbol": "XLM", "type": "native" }
+    {
+      "id": "bot-testnet-bsc-testnet-usdt",
+      "name": "BOT Chain Testnet ↔ BNB Smart Chain Testnet · USDT",
+      "resourceId": "<RESOURCE_ID>",
+      "internal": {
+        "chainId": 968,
+        "networkName": "BOT Chain Testnet",
+        "bridgeAddress": "<BRIDGE_ADDRESS>",
+        "tokenAddress": "<TOKEN_ADDRESS>",
+        "assetSymbol": "USDT",
+        "minimumAmountExclusive": "10"
+      },
+      "external": {
+        "chainId": 97,
+        "networkName": "BNB Smart Chain Testnet",
+        "bridgeAddress": "<BRIDGE_ADDRESS>",
+        "tokenAddress": "<TOKEN_ADDRESS>",
+        "assetSymbol": "USDT"
+      }
+    },
+    {
+      "id": "stellar-testnet-sepolia-usdc",
+      "name": "Stellar Testnet ↔ Ethereum Sepolia · USDC",
+      "protocol": "cctp",
+      "resourceId": "cctp-stellar-sepolia",
+      "internal": {
+        "networkType": "stellar",
+        "networkName": "Stellar Testnet",
+        "domain": 27,
+        "assetSymbol": "USDC",
+        "tokenAddress": "STELLAR_USDC_CONTRACT",
+        "tokenMessengerMinter": "STELLAR_TOKEN_MESSENGER_MINTER",
+        "messageTransmitter": "STELLAR_MESSAGE_TRANSMITTER",
+        "cctpForwarder": "STELLAR_CCTP_FORWARDER",
+        "tokenIssuer": "STELLAR_USDC_ISSUER"
+      },
+      "external": {
+        "networkType": "evm",
+        "networkName": "Ethereum Sepolia",
+        "chainId": 11155111,
+        "domain": 0,
+        "assetSymbol": "USDC",
+        "tokenMessenger": "0xEVM_TOKEN_MESSENGER",
+        "messageTransmitter": "0xEVM_MESSAGE_TRANSMITTER",
+        "tokenAddress": "0xEVM_USDC"
+      }
+    }
   ]
+}
 }`}</CodeBlock>
-            <p>Use a Horizon URL and passphrase for the same Stellar network, and make sure the connected wallet matches its configured network. See the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md" target="_blank" rel="noreferrer">configuration reference</a> for all supported fields.</p>
+            <p>Native EVM currencies come from <code>networks[].nativeCurrency</code>; group ERC-20 assets under <code>evm["&lt;chainId&gt;"]</code>. Wallets may connect on another chain, but balance, transfer, and swap operations reject chains absent from <code>networks</code>. Use a Horizon URL and passphrase for the same Stellar network, and make sure the connected wallet matches its configured network. See the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md" target="_blank" rel="noreferrer">configuration reference</a> for all supported fields.</p>
+            <p>For Stellar Testnet ↔ Ethereum Sepolia USDC, set <code>protocol</code> to <code>"cctp"</code>. The Stellar side uses Circle's Soroban contracts and domain <code>27</code>; Ethereum Sepolia uses domain <code>0</code>. CCTP burns USDC on the source, waits for Circle attestation, and mints USDC on the destination.</p>
             <p>For apps that configure Cordy directly, import the client and asset JSON, then call <code>cordy.configure()</code> once before balance, transfer, or swap operations. The remaining examples assume this import is in scope:</p>
             <CodeBlock language="ts">{`import { cordy } from "@cordystackx/cordy_minikit";
 import assets from "./assets.json";
@@ -220,7 +290,7 @@ if (!result.success) {
 
           <section id="transfer" className="article-section">
             <h2>Transfer an asset</h2>
-            <p>Transfers require an asset configured for the active wallet network and wallet approval. Use an EVM address for EVM assets or a Stellar public address for Stellar assets.</p>
+            <p>Transfers require an asset configured for the active wallet network and wallet approval. Native EVM currencies come from the network configuration; ERC-20 assets are selected from the chain-keyed registry. Use an EVM address for EVM assets or a Stellar public address for Stellar assets.</p>
             <CodeBlock language="ts">{`const result = await cordy.transfer("1", recipient, {
   asset: "USDT",
 });
@@ -235,7 +305,10 @@ if (!result.success) {
           <section id="swap" className="article-section">
             <h2>Swap assets</h2>
             <p>Swap two configured assets on the connected wallet’s network. The optional fourth argument sets slippage tolerance as a percentage; it defaults to <code>1</code> (1%). Swaps require wallet approval and available liquidity.</p>
-            <CodeBlock language="ts">{`const result = await cordy.swap("10", "USDT", "BOT", 0.5);
+            <CodeBlock language="ts">{`const result = await cordy.swap("10", "USDT", "BOT", 0.5, {
+  version: "v3",
+  feeTiers: [500, 3000],
+});
 
 if (!result.success) {
   console.error(result.error);
@@ -245,7 +318,7 @@ if (!result.success) {
 }
 
 // Omit the fourth argument to use the default 1 percent tolerance.`}</CodeBlock>
-            <p>EVM swaps need a configured Uniswap V2-compatible router; native-asset swaps also need the wrapped native token address. Stellar swaps use Horizon strict-send paths and need a valid path and matching trustlines.</p>
+            <p>EVM swaps can use configured V2 and V3 routers. Auto compares available quotes; per-call <code>feeTiers</code> can restrict which V3 pools are quoted while leaving the network defaults intact. Common tiers are 500 (0.05%), 3000 (0.30%), and 10000 (1.00%). Slippage tolerance remains the separate fourth argument. Every chain needs its own router, QuoterV2, fee-tier, and token configuration. Native swaps also need the wrapped native token address. Stellar swaps use Horizon strict-send paths and need a valid path and matching trustlines.</p>
           </section>
 
           <section id="disconnect" className="article-section">
@@ -255,17 +328,20 @@ if (!result.success) {
 if (!result.success) console.error(result.error);`}</CodeBlock>
           </section>
 
-          <section id="experimental-api" className="article-section">
-            <div className="section-title-row"><h2>Experimental API</h2><span className="experimental-badge">EXPERIMENTAL</span></div>
+          <section id="bridge-api" className="article-section">
+            <h2>Bridge assets</h2>
             <h3><code>cordy.bridge()</code></h3>
-            <p>The current bridge test route supports test USDT between BOT Chain Testnet and Ethereum Sepolia only. It is experimental and is not production-ready.</p>
+            <p>Choose a route from <code>assets.bridge.routes</code>, then choose its direction. In a call, <code>internal</code> and <code>external</code> refer to the sides in that route. The demo offers BOT Chain Testnet ↔ Sepolia and BOT Chain Testnet ↔ BNB Smart Chain Testnet. The provider imports only <code>assets.json</code>. See the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md#bridge-routes" target="_blank" rel="noreferrer">route configuration guide</a>.</p>
             <CodeBlock language="ts">{`const result = await cordy.bridge(
-  "12",
+  "10.5",
   "internal",
   "external",
   recipient,
+  { routeId: "bot-testnet-sepolia-usdt" },
 );`}</CodeBlock>
-            <p>Both directions require test assets and source-chain gas. A successful result means the source deposit was confirmed; destination delivery is handled asynchronously by bridge validators.</p>
+            <p>Cordy checks the source chain and balance, asks for token approval if needed, then submits the source deposit and waits for confirmation. If no EVM wallet is connected, the SDK modal opens automatically, prepares the configured route network, and resumes without a second click. Custom bridge validators deliver the asset on the destination chain afterward; the configured Stellar ↔ Sepolia route uses Circle CCTP burn, attestation, and mint.</p>
+            <p><code>success: true</code> confirms the source deposit only. <code>status: "submitted"</code> means destination delivery is pending. Cordy does not track completion; check the destination balance or bridge status service.</p>
+            <p>The demo's BOT testnet source requires more than 10 USDT, so the example uses 10.5. The external sides have no configured minimum. All demo route tokens are testnet assets with no real-world value.</p>
           </section>
 
           <section id="links" className="article-section">

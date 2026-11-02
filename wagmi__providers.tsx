@@ -6,9 +6,9 @@ import { config } from "./config/walletConfig";
 import { UI_Comp } from "./components";
 
 type WalletContextType = {
-  openModal: (options?: { jwtSession?: boolean }) => void;
+  openModal: (options?: { consSession?: boolean }) => void;
   closeModal: () => void;
-  jwtSession: boolean;
+  consSession: boolean;
 };
 
 type StellarWalletState = {
@@ -52,15 +52,15 @@ function readStellarWallet(): StellarWalletState {
 
 export default function WalletProviders({ children, config: walletConfig = config }: { children: ReactNode; config?: Config }) {
   const [open, setOpen] = useState(false);
-  const [jwtSession, setJwtSession] = useState(false);
+  const [consSession, setConsSession] = useState(false);
   const [stellarWallet, setStellarWallet] = useState<StellarWalletState>(() => readStellarWallet());
-  const openWalletModal = useCallback((options?: { jwtSession?: boolean }) => {
-    setJwtSession(options?.jwtSession ?? false);
+  const openWalletModal = useCallback((options?: { consSession?: boolean }) => {
+    setConsSession(options?.consSession ?? false);
     setOpen(true);
   }, []);
   const closeWalletModal = useCallback(() => {
     setOpen(false);
-    setJwtSession(false);
+    setConsSession(false);
   }, []);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function WalletProviders({ children, config: walletConfig = confi
           value={{
             openModal: openWalletModal,
             closeModal: closeWalletModal,
-            jwtSession,
+            consSession,
           }}
         >
           <StellarWalletContext.Provider

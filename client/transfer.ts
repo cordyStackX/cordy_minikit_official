@@ -6,11 +6,14 @@ import { BrowserProvider, Contract, formatUnits, isAddress, JsonRpcProvider, par
 import { getActiveWagmiConfig } from "../config/walletConfig";
 import { readTokenBalance } from "../controllers/Get_Balance";
 import loadStellarBalance from "../controllers/loadStellarBalance";
+import { cctpBridge } from "../controllers/cctpBridge";
 import tokenAbi from "../config/ERC20_ABI.json";
 import { setCordyRuntimeConfig } from "./runtimeConfig";
-import type { CordyAssetsConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig } from "./runtimeConfig";
+import { waitForBridgeEvmWallet } from "../controllers/bridgeWalletSession";
+import { getConfiguredEvmAssets, requireConfiguredEvmNetwork } from "./runtimeConfig";
+import type { CordyAssetsConfig, CordyBridgeRouteConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig } from "./runtimeConfig";
 
-export type { CordyAssetsConfig, EvmAssetConfig, EvmNetworkConfig, StellarAssetConfig, StellarNetworkConfig } from "./runtimeConfig";
+export type { CordyAssetsConfig, CordyBridgeConfig, CordyBridgeNetworkConfig, CordyBridgeRouteConfig, EvmAssetConfig, EvmAssetRegistry, EvmNetworkConfig, StellarAssetConfig, StellarNetworkConfig } from "./runtimeConfig";
 
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
@@ -49,11 +52,25 @@ export type CordySwapResult = {
   to?: string;
   amountIn?: string;
   estimatedAmountOut?: string;
+  version?: "v2" | "v3";
+  feeTier?: number;
   transactionHash?: string;
   error?: string;
 };
 
+export type CordySwapOptions = {
+  /** Select one router family or compare configured V2 and V3 quotes. Defaults to auto. */
+  version?: "auto" | "v2" | "v3";
+  /** Restrict this call's V3 quote search to these fee tiers. Defaults to the network's configured feeTiers. */
+  feeTiers?: number[];
+};
+
 export type CordyBridgeSide = "internal" | "external";
+
+export type CordyBridgeOptions = {
+  /** Select a configured route. Required when assets.bridge.routes contains multiple routes. */
+  routeId?: string;
+};
 
 export type CordyBridgeResult = {
   success: boolean;
@@ -62,21 +79,18 @@ export type CordyBridgeResult = {
   to?: CordyBridgeSide;
   fromNetwork?: string;
   toNetwork?: string;
+  routeId?: string;
+  routeName?: string;
   amount?: string;
   approvalTransactionHash?: string;
   transactionHash?: string;
-  status?: "submitted";
+  status?: "submitted" | "pending";
   error?: string;
+  errorDetail?: string;
+  warning?: string;
 };
 
-// First test route: BOT Chain Testnet <-> Ethereum Sepolia, USDT only.
-const BOT_TESTNET_CHAIN_ID = 968;
-const SEPOLIA_CHAIN_ID = 11155111;
-const BOT_TESTNET_BRIDGE_ROUTER = "0x6239404Aa276ba68486E2Fa40E90CDd36ff8ec3A";
-const BOT_TESTNET_USDT = "0x75edC9335175Fc0552D51D48439F229c10420fe3";
-const SEPOLIA_BRIDGE_GATEWAY = "0xc83AE6F73e8918750b87DD001E36093A1AB7b272";
-const SEPOLIA_USDT = "0x7B1e05a39adF207a759EAf89E867dBcC1C615130";
-const USDT_RESOURCE_ID = "0xac589789ed8c9d2c61f17b13369864b5f181e58eba230a6ee4ec4c3e7750cd1d";
+// Bridge deployments and tokens are supplied through the app's bridge configuration.
 const BRIDGE_ERC20_ABI = [
   "function allowance(address owner,address spender) view returns (uint256)",
   "function approve(address spender,uint256 amount) returns (bool)",
@@ -91,13 +105,26 @@ let configuredAssets: CordyAssetsConfig | undefined;
 
 export function configureCordyAssets({ assets }: { assets: CordyAssetsConfig }): void {
   if (!assets || (assets.networks !== undefined && !Array.isArray(assets.networks)) ||
-    (assets.evm !== undefined && !Array.isArray(assets.evm)) ||
+    (assets.evm !== undefined && (Array.isArray(assets.evm) || typeof assets.evm !== "object")) ||
     (assets.stellar !== undefined && !Array.isArray(assets.stellar))) {
-    throw new Error('Cordy Minikit: "networks", "evm", and "stellar" must be arrays when provided.');
+    throw new Error('Cordy Minikit: "networks" and "stellar" must be arrays; "evm" must be grouped by chain ID.');
   }
   configuredAssets = {
     networks: (assets.networks ?? []).map((network) => ({ ...network, nativeCurrency: { ...network.nativeCurrency } })),
-    evm: (assets.evm ?? []).map((asset) => ({ ...asset })),
+    evm: Object.fromEntries(Object.entries(assets.evm ?? {}).map(([chainId, entries]) => [
+      chainId,
+      entries.map((asset) => ({ ...asset })),
+    ])),
+    bridge: assets.bridge ? {
+      ...assets.bridge,
+      internal: assets.bridge.internal ? { ...assets.bridge.internal } : undefined,
+      external: assets.bridge.external ? { ...assets.bridge.external } : undefined,
+      routes: assets.bridge.routes?.map((route) => ({
+        ...route,
+        internal: { ...route.internal },
+        external: { ...route.external },
+      })),
+    } : undefined,
     stellar: (assets.stellar ?? []).map((asset) => ({ ...asset })),
     walletConnectProjectId: assets.walletConnectProjectId,
     stellarNetwork: assets.stellarNetwork ? { ...assets.stellarNetwork } : undefined,
@@ -113,10 +140,6 @@ function requireStellarNetwork() {
   return network;
 }
 
-function getDefaultEvmChainId(): number | undefined {
-  return configuredAssets?.networks?.[0]?.chainId;
-}
-
 function normalizedAmount(amount: number | string): string {
   const value = String(amount).trim();
   if (!/^\d+(\.\d+)?$/.test(value) || !Number.isFinite(Number(value)) || Number(value) <= 0) {
@@ -126,28 +149,42 @@ function normalizedAmount(amount: number | string): string {
 }
 
 function resolveEvmAsset(requestedSymbol: string | undefined, chainId: number, networkName: string): EvmAssetConfig | undefined {
-  const defaultChainId = getDefaultEvmChainId();
-  const chainAssets = configuredAssets?.evm?.filter((asset) =>
-    (asset.chainId ?? defaultChainId) === chainId,
+  const network = configuredAssets?.networks?.find((candidate) => candidate.chainId === chainId);
+  const chainAssets = getConfiguredEvmAssets(configuredAssets).filter((asset) =>
+    asset.chainId === chainId,
   ) ?? [];
+  if (requestedSymbol && network?.nativeCurrency.symbol.toLowerCase() === requestedSymbol.toLowerCase()) {
+    return {
+      symbol: network.nativeCurrency.symbol,
+      type: "native",
+      decimals: network.nativeCurrency.decimals,
+    };
+  }
   const symbol = requestedSymbol || chainAssets.find((asset) => asset.contractAddress)?.symbol || chainAssets[0]?.symbol;
   if (!symbol) return undefined;
-  const sameSymbol = (configuredAssets?.evm ?? []).filter(
+  const sameSymbol = getConfiguredEvmAssets(configuredAssets).filter(
     (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase(),
   );
-  const matchingNetwork = sameSymbol.find((asset) => (asset.chainId ?? defaultChainId) === chainId);
+  const matchingNetwork = sameSymbol.find((asset) => asset.chainId === chainId);
   if (sameSymbol.length > 0 && !matchingNetwork) {
-    const chainIds = [...new Set(sameSymbol.map((asset) => asset.chainId ?? defaultChainId))].join(", ");
+    const chainIds = [...new Set(sameSymbol.map((asset) => asset.chainId))].join(", ");
     throw new Error(`${symbol} is configured for chain ID ${chainIds}, but the connected wallet is on ${networkName} (chain ID ${chainId}). Switch networks or add an asset entry for this chain.`);
   }
   return matchingNetwork;
 }
 
 function resolveConfiguredEvmSwapAsset(symbol: string, chainId: number): EvmAssetConfig {
-  const configuredChainId = getDefaultEvmChainId();
-  const matches = (configuredAssets?.evm ?? []).filter(
+  const network = configuredAssets?.networks?.find((candidate) => candidate.chainId === chainId);
+  if (network?.nativeCurrency.symbol.toLowerCase() === symbol.toLowerCase()) {
+    return {
+      symbol: network.nativeCurrency.symbol,
+      type: "native",
+      decimals: network.nativeCurrency.decimals,
+    };
+  }
+  const matches = getConfiguredEvmAssets(configuredAssets).filter(
     (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase() &&
-      (asset.chainId ?? configuredChainId) === chainId,
+      asset.chainId === chainId,
   );
   if (matches.length > 1) {
     throw new Error(`More than one ${symbol} asset is configured for chain ID ${chainId}. Keep one entry per asset and network.`);
@@ -176,6 +213,19 @@ const V2_SWAP_ROUTER_ABI = [
   "function swapExactETHForTokens(uint amountOutMin,address[] calldata path,address to,uint deadline) external payable returns (uint[] memory amounts)",
   "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) external returns (uint[] memory amounts)",
 ];
+const V3_QUOTER_V2_ABI = [
+  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96) params) returns (uint256 amountOut,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)",
+];
+const V3_ROUTER_ABI = [
+  "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)",
+  "function multicall(bytes[] data) payable returns (bytes[] results)",
+  "function unwrapWETH9(uint256 amountMinimum,address recipient) payable",
+];
+const V3_ROUTER_02_ABI = [
+  "function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)",
+  "function multicall(bytes[] data) payable returns (bytes[] results)",
+  "function unwrapWETH9(uint256 amountMinimum,address recipient) payable",
+];
 const ERC20_SWAP_ABI = [
   "function approve(address spender,uint256 amount) returns (bool)",
   "function allowance(address owner,address spender) view returns (uint256)",
@@ -191,7 +241,7 @@ function swapMinimumOutputBps(tolerancePercent = DEFAULT_SWAP_TOLERANCE_PERCENT)
   return BigInt(Math.round((100 - tolerancePercent) * 100));
 }
 
-type EvmSwapNetworkConfig = Pick<EvmNetworkConfig, "chainId" | "name" | "rpcUrl" | "swapRouterAddress" | "wrappedNativeTokenAddress">;
+type EvmSwapNetworkConfig = EvmNetworkConfig;
 
 function resolveEvmSwapNetworkConfig(chainId: number): EvmSwapNetworkConfig | undefined {
   const registered = configuredAssets?.networks?.find((network) => network.chainId === chainId);
@@ -241,11 +291,47 @@ function getActiveWallet(): "evm" | "stellar" {
   throw new Error("Connect an EVM or Stellar wallet first.");
 }
 
+function resolveBridgeRoute(
+  bridgeConfig: CordyAssetsConfig["bridge"],
+  routeId?: string,
+): CordyBridgeRouteConfig {
+  if (!bridgeConfig) throw new Error("Bridge is not configured. Add bridge routes to the assets JSON.");
+
+  if (bridgeConfig.routes?.length) {
+    const routeIds = bridgeConfig.routes.map((route) => route.id);
+    if (routeIds.some((id) => !id) || new Set(routeIds).size !== routeIds.length) {
+      throw new Error("Bridge route IDs must be present and unique in assets.bridge.routes.");
+    }
+    if (!routeId && bridgeConfig.routes.length > 1) {
+      throw new Error(`Choose a bridge route. Available route IDs: ${bridgeConfig.routes.map((route) => route.id).join(", ")}.`);
+    }
+    const route = routeId
+      ? bridgeConfig.routes.find((candidate) => candidate.id === routeId)
+      : bridgeConfig.routes[0];
+    if (!route) throw new Error(`Bridge route "${routeId}" is not configured.`);
+    return route;
+  }
+
+  if (bridgeConfig.resourceId && bridgeConfig.internal && bridgeConfig.external) {
+    if (routeId && routeId !== "default") throw new Error(`Bridge route "${routeId}" is not configured.`);
+    return {
+      id: "default",
+      name: `${bridgeConfig.internal.networkName} ↔ ${bridgeConfig.external.networkName}`,
+      resourceId: bridgeConfig.resourceId,
+      internal: bridgeConfig.internal,
+      external: bridgeConfig.external,
+    };
+  }
+
+  throw new Error("Add at least one complete route to assets.bridge.routes.");
+}
+
 async function bridgeEvm(
   amount: string,
   from: CordyBridgeSide,
   to: CordyBridgeSide,
   recipient: string,
+  options: CordyBridgeOptions = {},
 ): Promise<CordyBridgeResult> {
   if (from !== "internal" && from !== "external") throw new Error("Source must be internal or external.");
   if (to !== "internal" && to !== "external") throw new Error("Destination must be internal or external.");
@@ -261,29 +347,65 @@ async function bridgeEvm(
   const provider = new BrowserProvider(rawProvider as Eip1193Provider);
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
-  const expectedSourceChainId = from === "internal" ? BOT_TESTNET_CHAIN_ID : SEPOLIA_CHAIN_ID;
-  const destinationChainId = to === "internal" ? BOT_TESTNET_CHAIN_ID : SEPOLIA_CHAIN_ID;
+  const route = resolveBridgeRoute(configuredAssets?.bridge, options.routeId);
+  if (!route.id || !route.name) throw new Error("Each bridge route must have an id and name.");
+  if (!route.resourceId || !/^0x[\da-fA-F]{64}$/.test(route.resourceId)) {
+    throw new Error("The configured bridge resourceId must be a 32-byte hex value.");
+  }
+  const sourceConfig = route[from];
+  const destinationConfig = route[to];
+  if (!sourceConfig || !destinationConfig || !Number.isInteger(sourceConfig.chainId) || !Number.isInteger(destinationConfig.chainId)) {
+    throw new Error("Bridge internal and external settings must include valid chain IDs.");
+  }
+  for (const [side, networkConfig] of [[from, sourceConfig], [to, destinationConfig]] as const) {
+    const bridgeAddress = networkConfig.bridgeAddress;
+    const tokenAddress = networkConfig.tokenAddress;
+    if (!networkConfig.networkName || !networkConfig.assetSymbol ||
+      !bridgeAddress || !tokenAddress || !isAddress(bridgeAddress) || !isAddress(tokenAddress)) {
+      throw new Error(`Configure a networkName, assetSymbol, valid bridgeAddress, and valid tokenAddress for the ${side} bridge side.`);
+    }
+    if (!walletConfig.chains.some((network) => network.id === networkConfig.chainId)) {
+      throw new Error(`Configure ${networkConfig.networkName} (chain ID ${networkConfig.chainId}) in the provider's EVM networks.`);
+    }
+  }
+  if (sourceConfig.assetSymbol.toLowerCase() !== destinationConfig.assetSymbol.toLowerCase()) {
+    throw new Error("The bridge asset symbols must match on the internal and external networks.");
+  }
+  if (sourceConfig.chainId === destinationConfig.chainId) {
+    throw new Error("The internal and external bridge sides must use different chain IDs.");
+  }
+  const expectedSourceChainId = sourceConfig.chainId;
+  const destinationChainId = destinationConfig.chainId;
   if (chainId !== expectedSourceChainId) {
-    const expectedNetwork = from === "internal" ? "BOT Chain Testnet" : "Ethereum Sepolia";
+    const expectedNetwork = sourceConfig.networkName;
     throw new Error(`Connect your wallet to ${expectedNetwork} (chain ID ${expectedSourceChainId}) to bridge from ${from}. The connected wallet is on ${chain.name} (chain ID ${chainId}).`);
   }
 
   const inputAmount = normalizedAmount(amount);
-  if (from === "internal" && Number(inputAmount) <= 10) {
-    throw new Error("BOT Chain Testnet bridge-out requires more than 10 USDT.");
-  }
-  const tokenAddress = from === "internal" ? BOT_TESTNET_USDT : SEPOLIA_USDT;
-  const bridgeAddress = from === "internal" ? BOT_TESTNET_BRIDGE_ROUTER : SEPOLIA_BRIDGE_GATEWAY;
   const signer = await provider.getSigner(connection.accounts[0]);
   const sender = await signer.getAddress();
+  const bridgeAddress = sourceConfig.bridgeAddress;
+  const tokenAddress = sourceConfig.tokenAddress;
+  if (!bridgeAddress || !tokenAddress) throw new Error("The EVM bridge route is missing bridge and token addresses.");
   const token = new Contract(tokenAddress, BRIDGE_ERC20_ABI, signer);
   const code = await provider.getCode(bridgeAddress);
-  if (code === "0x") throw new Error(`No bridge contract is deployed at the configured ${from === "internal" ? "BOT Chain Testnet" : "Sepolia"} testnet address.`);
+  if (code === "0x") throw new Error(`No bridge contract is deployed at the configured ${sourceConfig.networkName} address.`);
   const decimals = Number(await token.decimals());
-  if (!Number.isInteger(decimals) || decimals < 0 || decimals > 18) throw new Error("The configured test USDT token returned invalid decimals.");
+  if (!Number.isInteger(decimals) || decimals < 0 || decimals > 18) throw new Error(`The configured ${sourceConfig.assetSymbol} token returned invalid decimals.`);
   const amountIn = parseUnits(inputAmount, decimals);
+  if (sourceConfig.minimumAmountExclusive !== undefined) {
+    let minimumAmount: bigint;
+    try {
+      minimumAmount = parseUnits(normalizedAmount(sourceConfig.minimumAmountExclusive), decimals);
+    } catch {
+      throw new Error(`The configured minimumAmountExclusive for ${sourceConfig.networkName} is invalid.`);
+    }
+    if (amountIn <= minimumAmount) {
+      throw new Error(`${sourceConfig.networkName} bridge-out requires more than ${sourceConfig.minimumAmountExclusive} ${sourceConfig.assetSymbol}.`);
+    }
+  }
   const tokenBalance = BigInt((await token.balanceOf(sender)).toString());
-  if (tokenBalance < amountIn) throw new Error(`Insufficient test USDT on ${from === "internal" ? "BOT Chain Testnet" : "Sepolia"}.`);
+  if (tokenBalance < amountIn) throw new Error(`Insufficient ${sourceConfig.assetSymbol} on ${sourceConfig.networkName}.`);
   const allowance = BigInt((await token.allowance(sender, bridgeAddress)).toString());
   let approvalTransactionHash: string | undefined;
 
@@ -291,26 +413,32 @@ async function bridgeEvm(
     if (allowance > 0n) {
       const reset = await token.approve(bridgeAddress, 0n);
       const resetReceipt = await reset.wait();
-      if (!resetReceipt || resetReceipt.status !== 1) throw new Error("Could not reset the USDT bridge allowance.");
+      if (!resetReceipt || resetReceipt.status !== 1) throw new Error(`Could not reset the ${sourceConfig.assetSymbol} bridge allowance.`);
     }
     const approval = await token.approve(bridgeAddress, amountIn);
     const approvalReceipt = await approval.wait();
-    if (!approvalReceipt || approvalReceipt.status !== 1) throw new Error("Could not approve USDT for the bridge.");
+    if (!approvalReceipt || approvalReceipt.status !== 1) throw new Error(`Could not approve ${sourceConfig.assetSymbol} for the bridge.`);
     approvalTransactionHash = approvalReceipt.hash || approval.hash;
   }
 
   const bridge = new Contract(bridgeAddress, BOT_BRIDGE_ABI, signer);
-  const transaction = await bridge.deposit(destinationChainId, USDT_RESOURCE_ID, recipient, amountIn);
+  const transaction = await bridge.deposit(destinationChainId, route.resourceId!, recipient, amountIn);
   const receipt = await transaction.wait();
   if (!receipt || receipt.status !== 1) throw new Error("The source-chain bridge deposit failed.");
+  const { disconnect } = await import("wagmi/actions");
+  for (const activeConnection of Array.from(walletConfig.state.connections.values())) {
+    await disconnect(walletConfig, { connector: activeConnection.connector });
+  }
 
   return {
     success: true,
-    asset: "USDT",
+    asset: sourceConfig.assetSymbol,
     from,
     to,
-    fromNetwork: from === "internal" ? "BOT Chain Testnet" : "Ethereum Sepolia",
-    toNetwork: to === "internal" ? "BOT Chain Testnet" : "Ethereum Sepolia",
+    fromNetwork: sourceConfig.networkName,
+    toNetwork: destinationConfig.networkName,
+    routeId: route.id,
+    routeName: route.name,
     amount: inputAmount,
     ...(approvalTransactionHash ? { approvalTransactionHash } : {}),
     transactionHash: receipt.hash || transaction.hash,
@@ -318,17 +446,178 @@ async function bridgeEvm(
   };
 }
 
-/** Bridge test USDT between BOT Chain Testnet (internal) and Ethereum Sepolia (external). */
+async function bridgeStellar(
+  amount: string,
+  from: CordyBridgeSide,
+  to: CordyBridgeSide,
+  recipient: string,
+  options: CordyBridgeOptions = {},
+): Promise<CordyBridgeResult> {
+  if (from !== "internal" && from !== "external") throw new Error("Source must be internal or external.");
+  if (to !== "internal" && to !== "external") throw new Error("Destination must be internal or external.");
+  if (from === to) throw new Error("Choose different source and destination sides.");
+  if (!StrKey.isValidEd25519PublicKey(recipient)) throw new Error("Recipient must be a valid Stellar public address.");
+  if (!/^\d+(\.\d{1,7})?$/.test(amount)) throw new Error("Stellar amounts support up to 7 decimal places.");
+
+  const stellarConfig = requireStellarNetwork();
+  const access = await requestAccess();
+  const sourceAddress = access.address;
+  if (!sourceAddress) throw new Error("Could not access the connected Stellar wallet.");
+
+  const networkDetails = await getNetworkDetails();
+  const networkPassphrase = networkDetails.networkPassphrase || stellarConfig.networkPassphrase;
+  if (networkDetails.networkPassphrase && networkDetails.networkPassphrase !== stellarConfig.networkPassphrase) {
+    throw new Error(`Stellar network mismatch. Expected ${stellarConfig.networkPassphrase}, got ${networkDetails.networkPassphrase}.`);
+  }
+
+  const route = resolveBridgeRoute(configuredAssets?.bridge, options.routeId);
+  if (!route.id || !route.name) throw new Error("Each bridge route must have an id and name.");
+  if (!route.resourceId || !/^0x[\da-fA-F]{64}$/.test(route.resourceId)) {
+    throw new Error("The configured bridge resourceId must be a 32-byte hex value.");
+  }
+
+  const sourceConfig = route[from];
+  const destinationConfig = route[to];
+
+  if (!sourceConfig || !destinationConfig || sourceConfig.networkType !== "stellar" || destinationConfig.networkType !== "stellar") {
+    throw new Error("Bridge internal and external settings must include valid Stellar network types.");
+  }
+  if (!sourceConfig.networkName || !sourceConfig.assetSymbol || !sourceConfig.bridgeAddress || !StrKey.isValidEd25519PublicKey(sourceConfig.bridgeAddress)) {
+    throw new Error(`Configure a networkName, assetSymbol, and valid bridgeAddress for the ${from} bridge side.`);
+  }
+  if (!destinationConfig.networkName || !destinationConfig.assetSymbol) {
+    throw new Error(`Configure a networkName and assetSymbol for the ${to} bridge side.`);
+  }
+
+  if (sourceConfig.assetSymbol.toLowerCase() !== destinationConfig.assetSymbol.toLowerCase()) {
+    throw new Error("The bridge asset symbols must match on the internal and external networks.");
+  }
+
+  const server = new Horizon.Server(stellarConfig.horizonUrl);
+  const sourceAccount = await server.loadAccount(sourceAddress);
+
+  const assetConfig: StellarAssetConfig = (configuredAssets?.stellar ?? []).find(
+    (asset) => asset.symbol.toLowerCase() === sourceConfig.assetSymbol.toLowerCase() &&
+      (!asset.networkPassphrase || asset.networkPassphrase === networkPassphrase),
+  ) ?? (sourceConfig.assetSymbol.toLowerCase() === "xlm" ? { symbol: "XLM", type: "native" } : undefined)!;
+
+  if (!assetConfig) throw new Error(`No ${sourceConfig.assetSymbol} asset is configured for this Stellar network.`);
+
+  const stellarAsset = assetConfig.type === "native"
+    ? Asset.native()
+    : new Asset(assetConfig.code, assetConfig.issuer);
+
+  const assetBalance = assetConfig.type === "native"
+    ? sourceAccount.balances.find((item) => item.asset_type === "native")
+    : sourceAccount.balances.find((item) =>
+      (item.asset_type === "credit_alphanum4" || item.asset_type === "credit_alphanum12") &&
+      item.asset_code === assetConfig.code &&
+      item.asset_issuer === assetConfig.issuer,
+    );
+  if (!assetBalance) {
+    throw new Error(assetConfig.type === "native"
+      ? `The connected Stellar account has no ${sourceConfig.assetSymbol} balance.`
+      : `The connected Stellar account has no ${sourceConfig.assetSymbol} trustline from the configured issuer.`);
+  }
+  const requiredBalance = Number(amount) + (assetConfig.type === "native" ? 0.00001 : 0);
+  if (Number(assetBalance.balance) < requiredBalance) throw new Error(`Insufficient ${sourceConfig.assetSymbol} balance for this transfer.`);
+
+  const builder = new TransactionBuilder(sourceAccount, { fee: BASE_FEE, networkPassphrase })
+    .addOperation(Operation.payment({
+      destination: sourceConfig.bridgeAddress,
+      asset: stellarAsset,
+      amount: Number(amount).toFixed(7),
+    }));
+  if (sourceConfig.stellarMemo) builder.addMemo(Memo.text(sourceConfig.stellarMemo));
+  builder.setTimeout(180);
+
+  const unsignedTx = builder.build();
+  const { signedTxXdr, error } = await freighterSignTransaction(unsignedTx.toXDR(), {
+    networkPassphrase,
+    address: sourceAddress,
+  });
+  if (error || !signedTxXdr) throw new Error(error?.message || "Stellar wallet signing was rejected.");
+
+  const signedTx = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
+  const receipt = await server.submitTransaction(signedTx);
+  if (!receipt.successful || !receipt.hash) throw new Error("Stellar bridge deposit did not complete successfully.");
+
+  return {
+    success: true,
+    asset: sourceConfig.assetSymbol,
+    from,
+    to,
+    fromNetwork: sourceConfig.networkName,
+    toNetwork: destinationConfig.networkName,
+    routeId: route.id,
+    routeName: route.name,
+    amount: amount,
+    transactionHash: receipt.hash,
+    status: "submitted",
+  };
+}
+
+/** Bridge a configured ERC-20 asset between the configured internal and external EVM sides. */
 export async function cordy_bridge(
   amount: number | string,
   from: CordyBridgeSide,
   to: CordyBridgeSide,
   recipient: string,
+  options: CordyBridgeOptions = {},
 ): Promise<CordyBridgeResult> {
   try {
-    return await bridgeEvm(normalizedAmount(amount), from, to, recipient);
+    const normalized = normalizedAmount(amount);
+    const route = resolveBridgeRoute(configuredAssets?.bridge, options.routeId);
+    const sourceConfig = route[from];
+
+    if (!sourceConfig) {
+      throw new Error(`Bridge source configuration for '${from}' is missing.`);
+    }
+
+    const destinationConfig = route[to];
+    if (!destinationConfig) {
+      throw new Error(`Bridge destination configuration for '${to}' is missing.`);
+    }
+    const needsEvmWallet = sourceConfig.networkType === "evm"
+      || (route.protocol === "cctp" && sourceConfig.networkType === "stellar" && destinationConfig.networkType === "evm");
+    if (needsEvmWallet) {
+      const walletConfig = getActiveWagmiConfig();
+      const current = walletConfig.state.current;
+      const connection = current ? walletConfig.state.connections.get(current) : undefined;
+      let connectedAddress: string | undefined = connection?.accounts[0];
+      if (!connectedAddress) {
+        connectedAddress = await waitForBridgeEvmWallet({
+          routeId: route.id,
+          amount: normalized,
+          from,
+          to,
+          recipient,
+          sourceChainId: sourceConfig.networkType === "evm" ? sourceConfig.chainId : destinationConfig.chainId,
+          sourceNetworkType: sourceConfig.networkType,
+          destinationNetworkType: destinationConfig.networkType,
+        });
+      }
+      if (!recipient && destinationConfig.networkType === "evm") {
+        recipient = connectedAddress;
+      }
+    }
+
+    if (route.protocol === "cctp") {
+      return await cctpBridge(normalized, from, to, recipient, route);
+    } else if (sourceConfig.networkType === "stellar") {
+      return await bridgeStellar(normalized, from, to, recipient, options);
+    } else if (sourceConfig.networkType === "evm") {
+      return await bridgeEvm(normalized, from, to, recipient, options);
+    } else {
+      throw new Error(`Unsupported network type for bridging: ${sourceConfig.networkType}.`);
+    }
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : "Could not submit the bridge deposit." };
+    const errorDetail = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: errorDetail,
+      errorDetail,
+    };
   }
 }
 
@@ -344,6 +633,7 @@ async function transferEvm(amount: string, recipient: string, requestedSymbol?: 
   const provider = new BrowserProvider(rawProvider as Eip1193Provider);
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
+  requireConfiguredEvmNetwork(configuredAssets, chainId, chain.name);
   const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
   const contractAddress = tokenConfig?.contractAddress || "";
   if (!contractAddress) {
@@ -388,6 +678,7 @@ async function readEvmBalance(requestedSymbol?: string): Promise<CordyBalanceRes
   const provider = new BrowserProvider(rawProvider as Eip1193Provider);
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
+  requireConfiguredEvmNetwork(configuredAssets, chainId, chain.name);
   const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
   const readProvider = await getEvmReadProvider(provider, chainId, chain.name, tokenConfig?.rpcUrl);
   const walletAddress = connection.accounts[0];
@@ -534,7 +825,13 @@ async function transferStellar(amount: string, recipient: string, requestedSymbo
   return { success: true, asset: symbol, network: "stellar", transactionHash: receipt.hash };
 }
 
-async function swapEvm(amount: string, fromSymbol: string, toSymbol: string, tolerancePercent: number): Promise<CordySwapResult> {
+async function swapEvm(
+  amount: string,
+  fromSymbol: string,
+  toSymbol: string,
+  tolerancePercent: number,
+  options: CordySwapOptions = {},
+): Promise<CordySwapResult> {
   const walletConfig = getActiveWagmiConfig();
   const current = walletConfig.state.current;
   const connection = current ? walletConfig.state.connections.get(current) : undefined;
@@ -544,15 +841,14 @@ async function swapEvm(amount: string, fromSymbol: string, toSymbol: string, tol
   const provider = new BrowserProvider(rawProvider as Eip1193Provider);
   const chain = await provider.getNetwork();
   const chainId = Number(chain.chainId);
+  requireConfiguredEvmNetwork(configuredAssets, chainId, chain.name);
   const networkConfig = resolveEvmSwapNetworkConfig(chainId);
   const networkName = networkConfig?.name || chain.name;
   const fromAsset = resolveConfiguredEvmSwapAsset(fromSymbol, chainId);
   const toAsset = resolveConfiguredEvmSwapAsset(toSymbol, chainId);
   if (fromSymbol.toLowerCase() === toSymbol.toLowerCase()) throw new Error("Choose two different assets to swap.");
 
-  if (!networkConfig?.swapRouterAddress || !isAddress(networkConfig.swapRouterAddress)) {
-    throw new Error(`No valid Uniswap V2-compatible swap router is configured for ${networkName} (chain ID ${chainId}). Add swapRouterAddress to its network entry in assets JSON.`);
-  }
+  if (!networkConfig) throw new Error(`No swap network configuration found for ${networkName} (chain ID ${chainId}).`);
   const isNative = (asset: EvmAssetConfig) => asset.type === "native" || !asset.contractAddress;
   const fromNative = isNative(fromAsset);
   const toNative = isNative(toAsset);
@@ -563,6 +859,7 @@ async function swapEvm(amount: string, fromSymbol: string, toSymbol: string, tol
   const fromAddress = fromNative ? wrappedNative! : fromAsset.contractAddress!;
   const toAddress = toNative ? wrappedNative! : toAsset.contractAddress!;
   if (!isAddress(fromAddress) || !isAddress(toAddress)) throw new Error("A configured swap asset has an invalid token contract address.");
+  if (fromAddress.toLowerCase() === toAddress.toLowerCase()) throw new Error("These assets resolve to the same token contract and cannot be swapped.");
 
   const signer = await provider.getSigner(connection.accounts[0]);
   const sender = await signer.getAddress();
@@ -570,33 +867,120 @@ async function swapEvm(amount: string, fromSymbol: string, toSymbol: string, tol
   const inputDecimals = fromNative ? 18 : fromAsset.decimals ?? Number(await new Contract(fromAddress, ERC20_SWAP_ABI, provider).decimals());
   const outputDecimals = toNative ? 18 : toAsset.decimals ?? Number(await new Contract(toAddress, ERC20_SWAP_ABI, provider).decimals());
   const amountIn = parseUnits(inputAmount, inputDecimals);
-  const router = new Contract(networkConfig.swapRouterAddress, V2_SWAP_ROUTER_ABI, signer);
-  const path = [fromAddress, toAddress];
-  const amounts = await router.getAmountsOut(amountIn, path);
-  const quotedOut = BigInt(amounts[amounts.length - 1].toString());
-  if (quotedOut <= 0n) throw new Error(`No swap quote is available for ${fromSymbol} to ${toSymbol} on ${networkName}.`);
+  const version = options.version ?? "auto";
+  if (version !== "auto" && version !== "v2" && version !== "v3") throw new Error("Swap version must be auto, v2, or v3.");
+  const candidates: Array<{ version: "v2" | "v3"; quotedOut: bigint; feeTier?: number }> = [];
+  const v2RouterAddress = networkConfig.swapRouterAddress;
+  if ((version === "auto" || version === "v2") && v2RouterAddress && isAddress(v2RouterAddress)) {
+    try {
+      const router = new Contract(v2RouterAddress, V2_SWAP_ROUTER_ABI, provider);
+      const amounts = await router.getFunction("getAmountsOut").staticCall(amountIn, [fromAddress, toAddress]);
+      const quotedOut = BigInt(amounts[amounts.length - 1].toString());
+      if (quotedOut > 0n) candidates.push({ version: "v2", quotedOut });
+    } catch {
+      // A missing pool or unsupported route should not prevent trying V3 in auto mode.
+    }
+  }
+
+  const v3 = networkConfig.swapV3;
+  if ((version === "auto" || version === "v3") && v3 && isAddress(v3.routerAddress) && isAddress(v3.quoterAddress)) {
+    const feeTiers = options.feeTiers ?? (v3.feeTiers?.length ? v3.feeTiers : [500, 3000, 10000]);
+    if (options.feeTiers && (!options.feeTiers.length || options.feeTiers.some((feeTier) =>
+      !Number.isInteger(feeTier) || feeTier <= 0 || feeTier >= 1_000_000,
+    ))) {
+      throw new Error("Per-swap feeTiers must be a non-empty array of integer pool fee values between 1 and 999999.");
+    }
+    const quoter = new Contract(v3.quoterAddress, V3_QUOTER_V2_ABI, provider);
+    for (const feeTier of feeTiers) {
+      if (!Number.isInteger(feeTier) || feeTier <= 0 || feeTier >= 1_000_000) continue;
+      try {
+        const quote = await quoter.getFunction("quoteExactInputSingle").staticCall({
+          tokenIn: fromAddress,
+          tokenOut: toAddress,
+          amountIn,
+          fee: feeTier,
+          sqrtPriceLimitX96: 0,
+        });
+        const quotedOut = BigInt(quote[0].toString());
+        if (quotedOut > 0n) candidates.push({ version: "v3", quotedOut, feeTier });
+      } catch {
+        // This fee tier may not have a pool or may not be enabled on this deployment.
+      }
+    }
+  }
+
+  const candidate = candidates
+    .filter((item) => version === "auto" || item.version === version)
+    .sort((a, b) => a.quotedOut === b.quotedOut ? 0 : a.quotedOut > b.quotedOut ? -1 : 1)[0];
+  if (!candidate) {
+    if (version === "v2" && (!v2RouterAddress || !isAddress(v2RouterAddress))) {
+      throw new Error(`No valid V2 swap router is configured for ${networkName}. Add swapRouterAddress to its network entry.`);
+    }
+    if (version === "v3" && (!v3 || !isAddress(v3.routerAddress) || !isAddress(v3.quoterAddress))) {
+      throw new Error(`No valid V3 router and QuoterV2 are configured for ${networkName}. Add swapV3 to its network entry.`);
+    }
+    throw new Error(`No V2 or V3 quote is available for ${fromSymbol} to ${toSymbol} on ${networkName}. Check the router configuration, fee tiers, and pool liquidity.`);
+  }
+
+  const quotedOut = candidate.quotedOut;
   const minOut = quotedOut * swapMinimumOutputBps(tolerancePercent) / SWAP_BPS_DENOMINATOR;
   const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
 
   let transaction;
-  if (fromNative) {
-    transaction = await router.swapExactETHForTokens(minOut, path, sender, deadline, { value: amountIn });
-  } else {
-    const token = new Contract(fromAddress, ERC20_SWAP_ABI, signer);
-    const allowance = BigInt((await token.allowance(sender, networkConfig.swapRouterAddress)).toString());
-    if (allowance < amountIn) {
-      if (allowance > 0n) {
-        const reset = await token.approve(networkConfig.swapRouterAddress, 0n);
-        const resetReceipt = await reset.wait();
-        if (!resetReceipt || resetReceipt.status !== 1) throw new Error(`Could not reset the ${fromSymbol} swap allowance.`);
+  let selectedRouterAddress: string;
+  if (candidate.version === "v2") {
+    selectedRouterAddress = v2RouterAddress!;
+    const router = new Contract(selectedRouterAddress, V2_SWAP_ROUTER_ABI, signer);
+    const path = [fromAddress, toAddress];
+    if (fromNative) {
+      transaction = await router.getFunction("swapExactETHForTokens").send(minOut, path, sender, deadline, { value: amountIn });
+    } else {
+      const token = new Contract(fromAddress, ERC20_SWAP_ABI, signer);
+      const allowance = BigInt((await token.allowance(sender, selectedRouterAddress)).toString());
+      if (allowance < amountIn) {
+        if (allowance > 0n) {
+          const reset = await token.approve(selectedRouterAddress, 0n);
+          const resetReceipt = await reset.wait();
+          if (!resetReceipt || resetReceipt.status !== 1) throw new Error(`Could not reset the ${fromSymbol} swap allowance.`);
+        }
+        const approval = await token.approve(selectedRouterAddress, amountIn);
+        const approvalReceipt = await approval.wait();
+        if (!approvalReceipt || approvalReceipt.status !== 1) throw new Error(`Could not approve ${fromSymbol} for the swap.`);
       }
-      const approval = await token.approve(networkConfig.swapRouterAddress, amountIn);
-      const approvalReceipt = await approval.wait();
-      if (!approvalReceipt || approvalReceipt.status !== 1) throw new Error(`Could not approve ${fromSymbol} for the swap.`);
+      transaction = toNative
+        ? await router.getFunction("swapExactTokensForETH").send(amountIn, minOut, path, sender, deadline)
+        : await router.getFunction("swapExactTokensForTokens").send(amountIn, minOut, path, sender, deadline);
     }
+  } else {
+    selectedRouterAddress = v3!.routerAddress;
+    const routerAbi = v3!.routerType === "swapRouter02" ? V3_ROUTER_02_ABI : V3_ROUTER_ABI;
+    const router = new Contract(selectedRouterAddress, routerAbi, signer);
+    if (!fromNative) {
+      const token = new Contract(fromAddress, ERC20_SWAP_ABI, signer);
+      const allowance = BigInt((await token.allowance(sender, selectedRouterAddress)).toString());
+      if (allowance < amountIn) {
+        if (allowance > 0n) {
+          const reset = await token.approve(selectedRouterAddress, 0n);
+          const resetReceipt = await reset.wait();
+          if (!resetReceipt || resetReceipt.status !== 1) throw new Error(`Could not reset the ${fromSymbol} swap allowance.`);
+        }
+        const approval = await token.approve(selectedRouterAddress, amountIn);
+        const approvalReceipt = await approval.wait();
+        if (!approvalReceipt || approvalReceipt.status !== 1) throw new Error(`Could not approve ${fromSymbol} for the swap.`);
+      }
+    }
+    const routerRecipient = toNative ? selectedRouterAddress : sender;
+    const params = v3!.routerType === "swapRouter02"
+      ? [fromAddress, toAddress, candidate.feeTier!, routerRecipient, amountIn, minOut, 0n]
+      : [fromAddress, toAddress, candidate.feeTier!, routerRecipient, deadline, amountIn, minOut, 0n];
+    const swapData = router.interface.encodeFunctionData("exactInputSingle", [params]);
+    const overrides = fromNative ? { value: amountIn } : {};
     transaction = toNative
-      ? await router.swapExactTokensForETH(amountIn, minOut, path, sender, deadline)
-      : await router.swapExactTokensForTokens(amountIn, minOut, path, sender, deadline);
+      ? await router.getFunction("multicall").send([
+        swapData,
+        router.interface.encodeFunctionData("unwrapWETH9", [minOut, sender]),
+      ], overrides)
+      : await router.getFunction("exactInputSingle").send(params, overrides);
   }
   const receipt = await transaction.wait();
   if (!receipt || receipt.status !== 1) throw new Error(`The ${fromSymbol} to ${toSymbol} swap failed on ${networkName}.`);
@@ -608,6 +992,8 @@ async function swapEvm(amount: string, fromSymbol: string, toSymbol: string, tol
     to: toAsset.symbol,
     amountIn: inputAmount,
     estimatedAmountOut: formatUnits(quotedOut, outputDecimals),
+    version: candidate.version,
+    ...(candidate.feeTier ? { feeTier: candidate.feeTier } : {}),
     transactionHash: receipt.hash || transaction.hash,
   };
 }
@@ -672,6 +1058,7 @@ export async function cordy_swap(
   from: string,
   to: string,
   tolerancePercent = DEFAULT_SWAP_TOLERANCE_PERCENT,
+  options: CordySwapOptions = {},
 ): Promise<CordySwapResult> {
   try {
     swapMinimumOutputBps(tolerancePercent);
@@ -679,7 +1066,7 @@ export async function cordy_swap(
     const activeWallet = getActiveWallet();
     return activeWallet === "stellar"
       ? await swapStellar(normalized, from, to, tolerancePercent)
-      : await swapEvm(normalized, from, to, tolerancePercent);
+      : await swapEvm(normalized, from, to, tolerancePercent, options);
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : "Could not swap the selected assets." };
   }

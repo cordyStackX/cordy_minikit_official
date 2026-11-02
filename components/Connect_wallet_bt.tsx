@@ -12,13 +12,13 @@ const STELLAR_BALANCE_REFRESH_EVENT = "cordy:stellar-balance-updated";
 type ConnectWalletBTProps = {
   className?: string;
 } & (
-  | { jwt_session: true; navigate: string }
-  | { jwt_session?: false; navigate?: never }
+  | { cons_session: true; navigate: string }
+  | { cons_session?: false; navigate?: never }
 );
 
 export default function ConnectWalletBT({
   className,
-  jwt_session = false,
+  cons_session = false,
   navigate,
 }: ConnectWalletBTProps) {
   const router = useRouter();
@@ -29,11 +29,11 @@ export default function ConnectWalletBT({
   const [symbol, setSymbol] = useState("");
   const walletConnected = Boolean((isConnected && address) || stellarWallet.address);
 
-  if (jwt_session !== Boolean(navigate)) {
-    throw new Error('ConnectWalletBT: provide both "jwt_session={true}" and a "navigate" path, or neither.');
+  if (cons_session !== Boolean(navigate)) {
+    throw new Error('ConnectWalletBT: provide both "cons_session={true}" and a "navigate" path, or neither.');
   }
   if (
-    jwt_session &&
+    cons_session &&
     navigate &&
     (!navigate.startsWith("/") || navigate.startsWith("//") || navigate.includes("\\"))
   ) {
@@ -41,22 +41,22 @@ export default function ConnectWalletBT({
   }
 
   useEffect(() => {
-    if (jwt_session && navigate && walletConnected) {
+    if (cons_session && navigate && walletConnected) {
       closeModal();
       router.replace(navigate);
     }
-  }, [closeModal, jwt_session, navigate, router, walletConnected]);
+  }, [closeModal, cons_session, navigate, router, walletConnected]);
 
   useEffect(() => {
-    if (jwt_session || !isConnected || !address) return;
+    if (cons_session || !isConnected || !address) return;
     void getTokenBalance(address).then(({ balance: nextBalance, symbol: nextSymbol }) => {
       setBalance(nextBalance);
       setSymbol(nextSymbol);
     });
-  }, [address, isConnected, jwt_session]);
+  }, [address, isConnected, cons_session]);
 
   useEffect(() => {
-    if (!stellarWallet.address || jwt_session) return;
+    if (!stellarWallet.address || cons_session) return;
     let active = true;
     void loadStellarBalance(stellarWallet.address)
       .then((result) => {
@@ -73,10 +73,10 @@ export default function ConnectWalletBT({
         if (active) setStellarWallet((current) => ({ ...current, balance: "0" }));
       });
     return () => { active = false; };
-  }, [jwt_session, setStellarWallet, stellarWallet.address]);
+  }, [cons_session, setStellarWallet, stellarWallet.address]);
 
   useEffect(() => {
-    if (jwt_session || !stellarWallet.address) return;
+    if (cons_session || !stellarWallet.address) return;
     const handler = () => {
       void loadStellarBalance(stellarWallet.address!).then((result) => {
         setStellarWallet((current) => ({
@@ -89,16 +89,16 @@ export default function ConnectWalletBT({
     };
     window.addEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
     return () => window.removeEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
-  }, [jwt_session, setStellarWallet, stellarWallet.address]);
+  }, [cons_session, setStellarWallet, stellarWallet.address]);
 
   return (
     <button
       className={className}
-      onClick={() => openModal({ jwtSession: jwt_session })}
-      data-jwt-session={jwt_session ? "enabled" : undefined}
+      onClick={() => openModal({ consSession: cons_session })}
+      data-cons-session={cons_session ? "enabled" : undefined}
       type="button"
     >
-      {jwt_session
+      {cons_session
         ? walletConnected ? "Connected" : "Connect Wallet"
         : isConnected
           ? `BAL ${balance} ${symbol}`

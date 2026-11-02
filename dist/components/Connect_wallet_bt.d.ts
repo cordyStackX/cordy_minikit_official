@@ -1,12 +1,12 @@
 type ConnectWalletBTProps = {
     className?: string;
 } & ({
-    jwt_session: true;
+    cons_session: true;
     navigate: string;
 } | {
-    jwt_session?: false;
+    cons_session?: false;
     navigate?: never;
 });
-export default function ConnectWalletBT({ className, jwt_session, navigate, }: ConnectWalletBTProps): import("react").JSX.Element;
+export default function ConnectWalletBT({ className, cons_session, navigate, }: ConnectWalletBTProps): import("react").JSX.Element;
 export {};
 //# sourceMappingURL=Connect_wallet_bt.d.ts.map
