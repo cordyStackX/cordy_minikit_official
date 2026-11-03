@@ -204,53 +204,131 @@ For EVM, configure a V2-compatible `swapRouterAddress`, a V3-compatible `swapV3`
 
 ## `cordy.bridge(amount, from, to, recipient, options?)`
 
-Choose a route from `assets.bridge.routes`, then choose its direction. `from` and `to` are `"internal"` or `"external"`; these labels map to chain details in that route.
+Bridges assets using one route from `assets.bridge.routes`. `from` and `to`
+select the route's `"internal"` and `"external"` sides. The side's
+`networkType` chooses EVM, Stellar, or a configured CCTP path. Pass
+`{ routeId }` when more than one route is configured.
 
 ```ts
-// Demo route: BOT Chain Testnet -> Ethereum Sepolia.
 const result = await cordy.bridge(
   "10.5",
   "internal",
   "external",
-  "0xRecipient",
-  { routeId: "bot-testnet-sepolia-usdt" },
+  "0xEvmRecipient",
+  { routeId: "my-evm-route" },
 );
 
-// Another configured route: BNB Smart Chain Testnet -> BOT Chain Testnet.
-const reverse = await cordy.bridge(
-  "5",
-  "external",
-  "internal",
-  "0xRecipient",
-  { routeId: "bot-testnet-bsc-testnet-usdt" },
-);
+if (!result.success) console.error(result.error);
+else console.log(result.status, result.transactionHash);
 ```
 
-`routeId` is required when more than one route is configured. If there is only one route, it can be omitted. The wallet must be connected to the source chain, have enough of that route's token, and have gas for the source transaction. The recipient address must be valid for the destination EVM chain.
+Use an EVM `0x...` recipient for EVM destinations and a Stellar `G...`
+recipient for a Stellar destination. Configure both sides and the relevant
+networks/assets under the same `assets.json` passed to
+`ProvidersClientWrapper`; see [Bridge route setup](./environment.md#bridge-routes)
+for complete EVM and Stellar/CCTP configuration examples.
 
-### What the call does
+### EVM validator routes
 
-1. Cordy checks the selected route and source network.
-2. If needed, it asks the wallet to approve the source token for the source bridge contract.
-3. It calls the source contract's `deposit(destinationChainId, resourceId, recipient, amount)` and waits for that transaction to confirm.
-4. Bridge validators detect the deposit and deliver the asset on the destination chain. This happens asynchronously after the Cordy call returns.
+For EVM → EVM routes (`protocol: "custom"` or omitted), each side needs
+`networkType: "evm"`, `chainId`, `networkName`, `bridgeAddress`,
+`tokenAddress`, and matching `assetSymbol`. The route needs a 32-byte
+validator-registered `resourceId`; each chain must also be configured under
+`networks`. The wallet must be on the source chain and have the configured
+asset and gas. Cordy approves the token if needed and submits the source
+contract deposit. The bridge's validators/relayer handle destination delivery
+asynchronously.
 
-If no EVM wallet is connected, the SDK-owned `BridgeEvmWalletModal` opens
-automatically. After connection, the SDK revalidates the request, prepares the
-configured route chain, and resumes the same call without a second click.
-Closing or rejecting the modal clears the request and does not submit a source
-deposit.
+### Stellar validator routes
 
-The call does not directly transfer tokens between chains. `success: true` means the **source deposit** confirmed. `status: "submitted"` means destination delivery is pending; it does not confirm the recipient has received funds. `transactionHash` is the source deposit hash. `approvalTransactionHash` appears only if an approval transaction was needed. Check the destination balance or the bridge operator's status service to confirm delivery. Cordy does not poll for destination completion.
+A custom Stellar → Stellar route pays the source asset to the configured
+`bridgeAddress`. Set `networkType: "stellar"` on both sides, use a
+validator-registered `resourceId`, and configure the source Stellar network,
+asset, and trustline. Destination delivery is handled by the external service
+that watches the source payment; Cordy does not relay or confirm it. An
+optional `stellarMemo` is attached to the source payment for route
+identification.
 
-The configured Stellar Testnet ↔ Ethereum Sepolia USDC route uses Circle CCTP:
-the source USDC is burned, Circle attestation is awaited, and destination USDC
-is minted through the destination MessageTransmitter. This differs from the
-custom EVM bridge routes, which require an external validator or relayer for
-destination delivery.
+### Stellar and EVM through CCTP
 
-In the demo, the BOT Chain Testnet source requires **more than 10 USDT**, so exactly 10 fails and 10.5 passes. The Sepolia and BNB Testnet sources have no configured minimum. These are testnet assets with no real-world value.
+For the Circle Stellar Testnet ↔ Ethereum Sepolia USDC route, set
+`protocol: "cctp"` and configure Circle domain IDs and the deployed token,
+TokenMessenger/TokenMessengerMinter, MessageTransmitter, and Stellar
+CctpForwarder addresses. Stellar CCTP needs `stellarNetwork.sorobanRpcUrl` in
+addition to Horizon and the matching network passphrase; configure the USDC
+credit asset and issuer in `stellar`. Add the EVM chain/token to `networks`
+and `evm` too. See the setup guide for the full JSON example and field-by-field
+notes.
 
+Direction changes which wallets and completion steps are needed:
+
+- **Stellar → EVM:** Cordy requires a connected Stellar wallet with the USDC
+  trustline and an EVM wallet on the destination chain. It signs Stellar
+  approval/burn calls, waits for Circle attestation, and submits the EVM mint.
+- **EVM → Stellar:** Cordy submits the EVM CCTP burn and returns with
+  `status: "pending"`. The current SDK call does not submit the Stellar
+  destination mint/forward. Confirm that the destination CCTP forwarder flow
+  is operational and verify the Stellar balance separately; the burn hash by
+  itself does not mean delivery completed.
+
+#### UI: connect the EVM wallet for a Stellar → EVM bridge
+
+The user starts with a connected Stellar wallet (Freighter). If there is no
+EVM wallet connected for the destination, Cordy pauses the request and opens
+`BridgeEvmWalletModal`. After the user connects an EVM wallet, Cordy switches
+it to the configured destination chain and resumes the same request; the user
+does not need to press the bridge button a second time. Mount the modal once in
+the client component that owns the bridge action:
+
+```tsx
+"use client";
+
+import { BridgeEvmWalletModal, cordy } from "@cordystackx/cordy_minikit";
+
+export function StellarToEvmBridge({ amount, evmRecipient }: {
+  amount: string;
+  evmRecipient: string;
+}) {
+  async function startBridge() {
+    const result = await cordy.bridge(
+      amount,
+      "internal", // Stellar side in this route
+      "external", // Ethereum Sepolia side
+      evmRecipient,
+      { routeId: "stellar-testnet-sepolia-usdc" },
+    );
+    if (!result.success) console.error(result.error);
+    else console.log(result.status, result.transactionHash);
+  }
+
+  return (
+    <>
+      <button type="button" onClick={() => void startBridge()}>
+        Bridge USDC to Ethereum
+      </button>
+      <BridgeEvmWalletModal />
+    </>
+  );
+}
+```
+
+For this direction, the Stellar wallet signs the source approval/burn and the
+EVM wallet is needed to receive the attested destination mint. If the EVM
+wallet is already connected, the modal stays closed. If the user closes or
+rejects it, the bridge request is cancelled and no Stellar burn is submitted.
+For EVM → Stellar, the EVM wallet is the source wallet; the modal is only
+needed if that source EVM wallet is not connected. Mounting the modal once is
+still sufficient for both directions.
+
+A successful response confirms only the work indicated by that route and
+`status`; it is not a general guarantee that destination funds are available.
+For custom routes, destination delivery depends on the bridge validators. For
+CCTP, use the direction-specific behavior above. Check the destination balance
+or the relevant bridge/Circle status before treating the transfer as complete.
+Amounts must be positive; EVM bridge amounts use the token's on-chain decimals
+and Stellar payments allow up to seven decimal places. The demo's BOT Chain
+Testnet source requires **more than 10 USDT**, so exactly 10 fails and 10.5
+passes. Testnet assets have no real-world value.
 ### Deprecated compatibility APIs
 
 These legacy helpers remain available for compatibility and are deprecated in favor of the unified `cordy.*` API:

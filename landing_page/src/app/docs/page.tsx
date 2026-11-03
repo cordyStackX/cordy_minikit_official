@@ -200,6 +200,7 @@ export function WalletAccess() {
       "name": "BOT Chain Testnet ↔ Ethereum Sepolia · USDT",
       "resourceId": "<RESOURCE_ID>",
       "internal": {
+        "networkType": "evm",
         "chainId": 968,
         "networkName": "BOT Chain Testnet",
         "bridgeAddress": "<BRIDGE_ADDRESS>",
@@ -208,6 +209,7 @@ export function WalletAccess() {
         "minimumAmountExclusive": "10"
       },
       "external": {
+        "networkType": "evm",
         "chainId": 11155111,
         "networkName": "Ethereum Sepolia",
         "bridgeAddress": "<BRIDGE_ADDRESS>",
@@ -228,6 +230,7 @@ export function WalletAccess() {
         "minimumAmountExclusive": "10"
       },
       "external": {
+        "networkType": "evm",
         "chainId": 97,
         "networkName": "BNB Smart Chain Testnet",
         "bridgeAddress": "<BRIDGE_ADDRESS>",
@@ -266,7 +269,8 @@ export function WalletAccess() {
 }
 }`}</CodeBlock>
             <p>Native EVM currencies come from <code>networks[].nativeCurrency</code>; group ERC-20 assets under <code>evm["&lt;chainId&gt;"]</code>. Wallets may connect on another chain, but balance, transfer, and swap operations reject chains absent from <code>networks</code>. Use a Horizon URL and passphrase for the same Stellar network, and make sure the connected wallet matches its configured network. See the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md" target="_blank" rel="noreferrer">configuration reference</a> for all supported fields.</p>
-            <p>For Stellar Testnet ↔ Ethereum Sepolia USDC, set <code>protocol</code> to <code>"cctp"</code>. The Stellar side uses Circle's Soroban contracts and domain <code>27</code>; Ethereum Sepolia uses domain <code>0</code>. CCTP burns USDC on the source, waits for Circle attestation, and mints USDC on the destination.</p>
+            <p>Bridge configuration lives in this same JSON file. Every route has an ID, two sides (<code>internal</code> and <code>external</code>), and a <code>networkType</code> for each side. EVM validator routes need a registered <code>resourceId</code>, deployed bridge and token addresses on both chains, and a relayer/validator service. The wallet signs the source approval and deposit; the destination release is asynchronous.</p>
+            <p>For Stellar Testnet ↔ Ethereum Sepolia USDC, use <code>protocol: "cctp"</code>, Circle domain IDs (<code>27</code> for Stellar Testnet and <code>0</code> for Sepolia), and the deployed Circle contracts on both sides. Stellar also needs <code>sorobanRpcUrl</code>, Horizon, the matching passphrase, and a USDC trustline. Add the EVM chain/token to <code>networks</code> and <code>evm</code>. The exact, copyable route configuration and direction-specific wallet requirements are in the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md#bridge-routes" target="_blank" rel="noreferrer">bridge setup guide</a>.</p>
             <p>For apps that configure Cordy directly, import the client and asset JSON, then call <code>cordy.configure()</code> once before balance, transfer, or swap operations. The remaining examples assume this import is in scope:</p>
             <CodeBlock language="ts">{`import { cordy } from "@cordystackx/cordy_minikit";
 import assets from "./assets.json";
@@ -417,8 +421,34 @@ if (!result.success) console.error(result.error);`}</CodeBlock>
   recipient,
   { routeId: "bot-testnet-sepolia-usdt" },
 );`}</CodeBlock>
-            <p>Cordy checks the source chain and balance, asks for token approval if needed, then submits the source deposit and waits for confirmation. If no EVM wallet is connected, the SDK modal opens automatically, prepares the configured route network, and resumes without a second click. Custom bridge validators deliver the asset on the destination chain afterward; the configured Stellar ↔ Sepolia route uses Circle CCTP burn, attestation, and mint.</p>
-            <p><code>success: true</code> confirms the source deposit only. <code>status: "submitted"</code> means destination delivery is pending. Cordy does not track completion; check the destination balance or bridge status service.</p>
+            <p>EVM validator routes and Stellar/EVM CCTP routes use different contract fields; configure both sides under one route in <code>assets.bridge.routes</code>. EVM routes use <code>networkType: "evm"</code>, chain IDs, token/bridge addresses, and a validator-registered resource ID. Stellar CCTP uses <code>networkType: "stellar"</code> plus Circle domains and Soroban contract addresses; Stellar also needs a Soroban RPC and USDC trustline. See the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md#bridge-routes" target="_blank" rel="noreferrer">full setup guide</a>.</p>
+            <p>For Stellar → EVM CCTP, the user starts with Freighter connected. If no EVM wallet is connected, Cordy pauses the request, opens <code>BridgeEvmWalletModal</code>, switches the connected EVM wallet to the configured destination chain, then resumes the bridge automatically. Mount <code>&lt;BridgeEvmWalletModal /&gt;</code> once beside the bridge UI; the user does not need to click the bridge button again. Stellar signs the source approval/burn, Circle attestation is awaited, then the EVM wallet submits the destination mint. For EVM → Stellar, the EVM wallet is the source and the modal is needed only if that EVM wallet is not connected. EVM → Stellar currently returns after submitting the EVM burn with <code>status: "pending"</code>; the SDK call does not complete the Stellar mint/forward, so verify destination delivery separately.</p>
+            <CodeBlock language="tsx">{`"use client";
+
+import { BridgeEvmWalletModal, cordy } from "@cordystackx/cordy_minikit";
+
+export function StellarToEvmBridge({ amount, evmRecipient }: {
+  amount: string;
+  evmRecipient: string;
+}) {
+  async function startBridge() {
+    const result = await cordy.bridge(
+      amount,
+      "internal", // Stellar source
+      "external", // EVM destination
+      evmRecipient,
+      { routeId: "stellar-testnet-sepolia-usdc" },
+    );
+    if (!result.success) console.error(result.error);
+  }
+
+  return (
+    <>
+      <button onClick={() => void startBridge()}>Bridge USDC to Ethereum</button>
+      <BridgeEvmWalletModal />
+    </>
+  );
+}`}</CodeBlock>
             <p>The demo's BOT testnet source requires more than 10 USDT, so the example uses 10.5. The external sides have no configured minimum. All demo route tokens are testnet assets with no real-world value.</p>
           </section>
 

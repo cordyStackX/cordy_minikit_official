@@ -62,52 +62,43 @@ error.
 
 ## Bridge routes
 
-Put bridge settings under `bridge.routes` in the same `assets.json` passed to `ProvidersClientWrapper`. Keep your existing assets and networks. The demo provider imports only `assets.json`.
+Put routes in `bridge.routes` in the same `assets.json` passed to
+`ProvidersClientWrapper`. Keep the route ID stable: your UI passes it to
+`cordy.bridge()`. Each route has `internal` and `external` sides; these names
+are labels only. `networkType` selects the implementation (`"evm"` or
+`"stellar"`), and `from`/`to` select the source and destination sides.
 
-Each route connects two EVM sides. In `cordy.bridge()`, `from` and `to` select `internal` or `external`; `options.routeId` selects which configured pair to use.
+### EVM to EVM: validator based route
+
+Use `protocol: "custom"` (or omit `protocol`) when both sides use compatible
+EVM bridge contracts and a bridge validator/relayer delivers the destination
+asset. Every EVM side must have a matching chain in `networks` and the route
+needs a validator-registered 32-byte `resourceId`.
 
 ```json
 {
   "bridge": {
     "routes": [
       {
-        "id": "bot-testnet-sepolia-usdt",
-        "name": "BOT Chain Testnet ↔ Ethereum Sepolia · USDT",
-        "resourceId": "0xac589789ed8c9d2c61f17b13369864b5f181e58eba230a6ee4ec4c3e7750cd1d",
+        "id": "my-evm-route",
+        "name": "Chain A ↔ Chain B · USDC",
+        "protocol": "custom",
+        "resourceId": "0x<64-hex-characters-registered-with-the-bridge>",
         "internal": {
-          "chainId": 968,
-          "networkName": "BOT Chain Testnet",
-          "bridgeAddress": "0x6239404Aa276ba68486E2Fa40E90CDd36ff8ec3A",
-          "tokenAddress": "0x75edC9335175Fc0552D51D48439F229c10420fe3",
-          "assetSymbol": "USDT",
-          "minimumAmountExclusive": "10"
-        },
-        "external": {
+          "networkType": "evm",
           "chainId": 11155111,
           "networkName": "Ethereum Sepolia",
-          "bridgeAddress": "0xc83AE6F73e8918750b87DD001E36093A1AB7b272",
-          "tokenAddress": "0x7B1e05a39adF207a759EAf89E867dBcC1C615130",
-          "assetSymbol": "USDT"
-        }
-      },
-      {
-        "id": "bot-testnet-bsc-testnet-usdt",
-        "name": "BOT Chain Testnet ↔ BNB Smart Chain Testnet · USDT",
-        "resourceId": "0xac589789ed8c9d2c61f17b13369864b5f181e58eba230a6ee4ec4c3e7750cd1d",
-        "internal": {
-          "chainId": 968,
-          "networkName": "BOT Chain Testnet",
-          "bridgeAddress": "0x6239404Aa276ba68486E2Fa40E90CDd36ff8ec3A",
-          "tokenAddress": "0x75edC9335175Fc0552D51D48439F229c10420fe3",
-          "assetSymbol": "USDT",
-          "minimumAmountExclusive": "10"
+          "bridgeAddress": "0x<bridge-contract-on-sepolia>",
+          "tokenAddress": "0x<usdc-on-sepolia>",
+          "assetSymbol": "USDC"
         },
         "external": {
+          "networkType": "evm",
           "chainId": 97,
           "networkName": "BNB Smart Chain Testnet",
-          "bridgeAddress": "0xbCAA929FdB16f5a7185C96A4Ed0CC4F25ab86E40",
-          "tokenAddress": "0x5d012516D129Ab3aE7673FE32E5ABFCD9be4d086",
-          "assetSymbol": "USDT"
+          "bridgeAddress": "0x<bridge-contract-on-bnb-testnet>",
+          "tokenAddress": "0x<usdc-on-bnb-testnet>",
+          "assetSymbol": "USDC"
         }
       }
     ]
@@ -115,16 +106,155 @@ Each route connects two EVM sides. In `cordy.bridge()`, `from` and `to` select `
 }
 ```
 
-Add each custom chain to `networks` so the wallet can connect to it. The demo has two testnet routes: BOT Chain Testnet ↔ Sepolia, and BOT Chain Testnet ↔ BNB Smart Chain Testnet. Both use USDT and the same test resource ID. The addresses come from the [BOT Chain bridge contract list](https://dev-docs.bohr.life/docs/Bridge/contract-addresses/); BNB Testnet uses chain ID `97` and the [official BNB RPC](https://docs.bnbchain.org/bnb-smart-chain/developers/json_rpc/json-rpc-endpoint/).
+For this route type, each bridge contract must implement the SDK's `deposit`
+interface and validators must be configured to observe the source event and
+release the destination asset. The token symbols must match. An optional
+`minimumAmountExclusive` is enforced only when that side is the source. The
+wallet must be connected to the source EVM chain, hold the configured token,
+and have native gas. Cordy requests token approval when needed, submits the
+source deposit, waits for its confirmation, then returns; validator delivery
+happens separately.
 
-Each route needs a unique `id`, display `name`, validator-registered `resourceId`, and matching `assetSymbol` on both sides. Each side defines `chainId`, `networkName`, `bridgeAddress`, and ERC-20 `tokenAddress`. The contracts must implement `deposit(destinationChainId, resourceId, recipient, amount)`, and bridge validators must be running for that route. `minimumAmountExclusive` is optional and applies when that side is the source. In the demo, the BOT Chain Testnet source requires more than 10 USDT; Sepolia and BNB Testnet have no configured minimum. Testnet tokens have no real-world value.
+### Stellar to Stellar: validator based route
 
-During bridge wallet connection, the SDK can prepare the route's configured
-EVM network. Wallets that support the relevant methods may be asked to add a
-missing chain, switch to it, and display the configured ERC-20 with
-`wallet_watchAsset`. Wallet rejection is returned and no bridge deposit is
-started.
+A custom Stellar route sends the configured Stellar asset from the source account
+to a Stellar bridge receiver account. Set `networkType: "stellar"` on both
+sides and use a 32-byte `resourceId` registered with the service that handles
+destination delivery. `bridgeAddress` on the source side must be a valid
+Stellar public receiver address. That service must watch the source payment
+(and the optional `stellarMemo`) and deliver the matching asset on the
+destination network; Cordy only submits the source payment.
 
+```json
+{
+  "bridge": {
+    "routes": [
+      {
+        "id": "stellar-testnet-to-public-usdc",
+        "name": "Stellar Testnet ↔ Stellar Public · USDC",
+        "protocol": "custom",
+        "resourceId": "0x<64-hex-characters-registered-with-the-bridge>",
+        "internal": {
+          "networkType": "stellar",
+          "networkName": "Stellar Testnet",
+          "bridgeAddress": "G<TESTNET-BRIDGE-RECEIVER>",
+          "assetSymbol": "USDC",
+          "stellarMemo": "<OPTIONAL-ROUTE-MEMO>"
+        },
+        "external": {
+          "networkType": "stellar",
+          "networkName": "Stellar Public",
+          "assetSymbol": "USDC"
+        }
+      }
+    ]
+  }
+}
+```
+
+Configure the source Stellar network, asset issuer, and trustline in
+`stellarNetwork` and `stellar`. The configured Stellar passphrase must match
+the connected Freighter network. Set up the destination receiver and delivery
+service separately; there is no automatic validator setup in the SDK.
+
+### Stellar and EVM: Circle CCTP
+
+For the configured Circle route, set `protocol` to `"cctp"`. Use the actual
+Circle-supported USDC contract/token messenger/forwarder deployments and
+Circle domain IDs for the networks you select. Do not substitute a bridge
+`resourceId`: CCTP uses `domain` plus Circle contract addresses. The Stellar
+side uses Soroban, so `stellarNetwork` needs both Horizon (for Stellar wallet
+account data) and Soroban RPC (for CCTP contract calls). Configure Stellar
+USDC as a credit asset with the correct issuer so the account has the required
+trustline.
+
+```json
+{
+  "stellarNetwork": {
+    "horizonUrl": "https://horizon-testnet.stellar.org",
+    "sorobanRpcUrl": "https://soroban-testnet.stellar.org",
+    "networkPassphrase": "Test SDF Network ; September 2015"
+  },
+  "stellar": [
+    { "symbol": "USDC", "type": "credit", "code": "USDC", "issuer": "G<USDC-ISSUER>" }
+  ],
+  "bridge": {
+    "routes": [
+      {
+        "id": "stellar-testnet-sepolia-usdc",
+        "name": "Stellar Testnet ↔ Ethereum Sepolia · USDC",
+        "protocol": "cctp",
+        "internal": {
+          "networkType": "stellar",
+          "networkName": "Stellar Testnet",
+          "domain": 27,
+          "assetSymbol": "USDC",
+          "tokenAddress": "C<STELLAR-USDC-CONTRACT>",
+          "tokenMessengerMinter": "C<STELLAR-TOKEN-MESSENGER-MINTER>",
+          "messageTransmitter": "C<STELLAR-MESSAGE-TRANSMITTER>",
+          "cctpForwarder": "C<STELLAR-CCTP-FORWARDER>",
+          "tokenIssuer": "G<USDC-ISSUER>"
+        },
+        "external": {
+          "networkType": "evm",
+          "networkName": "Ethereum Sepolia",
+          "chainId": 11155111,
+          "domain": 0,
+          "assetSymbol": "USDC",
+          "tokenMessenger": "0x<SEPOLIA-TOKEN-MESSENGER>",
+          "messageTransmitter": "0x<SEPOLIA-MESSAGE-TRANSMITTER>",
+          "tokenAddress": "0x<SEPOLIA-USDC>"
+        }
+      }
+    ]
+  }
+}
+```
+
+The actual demo keeps the deployment addresses in
+[`demo/src/config/assets.json`](../demo/src/config/assets.json); copy the
+verified values for your target network rather than using the placeholders
+above. Add each EVM chain to `networks` and its USDC token to `evm[chainId]` as
+well. `domain` is Circle's domain ID, not an EVM chain ID. Stellar CCTP also
+requires `stellarNetwork.sorobanRpcUrl` and a connected Stellar account with
+USDC trustline and enough XLM for fees.
+
+On Stellar → EVM, Cordy asks for the Stellar approval and burn signatures,
+waits for Circle's attestation, then submits the EVM destination mint. An EVM
+wallet must also be connected on the destination chain. On EVM → Stellar, the
+current SDK submits the EVM burn and reports `status: "pending"`; it does not
+complete the Stellar-side mint/forward in that call. Do not treat that result
+as delivered USDC: the destination CCTP forwarder/relayer flow must be
+operational and the Stellar balance should be checked separately.
+
+### Call a configured route
+
+```ts
+const result = await cordy.bridge(
+  "10.5",
+  "internal", // source side: "internal" or "external"
+  "external", // destination side
+  "0xRecipient", // use a G... address when destination is Stellar
+  { routeId: "my-evm-route" },
+);
+
+if (!result.success) {
+  console.error(result.error);
+} else {
+  console.log(result.status, result.transactionHash);
+}
+```
+
+Replace `"0xRecipient"` with the address format for the destination network:
+EVM `0x...` for an EVM destination; Stellar `G...` (or a supported contract
+address for CCTP forwarding) for Stellar. For more than one configured route,
+`routeId` is required. Mount `BridgeEvmWalletModal` once in the client tree if
+the SDK should open its EVM connection dialog when a route needs an EVM wallet.
+
+A successful response confirms the source-side operation only. For custom
+routes, validator delivery is external. For CCTP, use the direction-specific
+completion behavior above and verify the destination token balance. Testnet
+tokens have no real-world value.
 Stellar requires `stellarNetwork.horizonUrl`, `stellarNetwork.networkPassphrase`, and at least one `stellar` asset. `contractId` is optional metadata for app-specific Soroban integrations; Horizon balance and payment operations do not need it. A credit asset must match the account's issuer and trustline.
 
 The wallet's selected EVM network must match the selected asset's chain ID. An RPC URL cannot switch the wallet's network. Stellar's configured passphrase must match the connected Freighter network.
