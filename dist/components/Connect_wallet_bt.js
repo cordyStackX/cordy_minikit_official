@@ -1,15 +1,13 @@
 "use client";
 import { jsx as _jsx } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { getTokenBalance, loadStellarBalance } from "../controllers";
 import { useStellarWallet, useWalletModal } from "../wagmi__providers";
 // const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_BALANCE_REFRESH_EVENT = "cordy:stellar-balance-updated";
 export default function ConnectWalletBT({ className, cons_session = false, navigate, }) {
-    const router = useRouter();
-    const { openModal, closeModal } = useWalletModal();
+    const { openModal } = useWalletModal();
     const { stellarWallet, setStellarWallet } = useStellarWallet();
     const { isConnected, address } = useAccount();
     const [balance, setBalance] = useState("");
@@ -23,12 +21,6 @@ export default function ConnectWalletBT({ className, cons_session = false, navig
         (!navigate.startsWith("/") || navigate.startsWith("//") || navigate.includes("\\"))) {
         throw new Error('ConnectWalletBT: "navigate" must be a safe internal path starting with "/".');
     }
-    useEffect(() => {
-        if (cons_session && navigate && walletConnected) {
-            closeModal();
-            router.replace(navigate);
-        }
-    }, [closeModal, cons_session, navigate, router, walletConnected]);
     useEffect(() => {
         if (cons_session || !isConnected || !address)
             return;
@@ -75,7 +67,7 @@ export default function ConnectWalletBT({ className, cons_session = false, navig
         window.addEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
         return () => window.removeEventListener(STELLAR_BALANCE_REFRESH_EVENT, handler);
     }, [cons_session, setStellarWallet, stellarWallet.address]);
-    return (_jsx("button", { className: className, onClick: () => openModal({ consSession: cons_session }), "data-cons-session": cons_session ? "enabled" : undefined, type: "button", children: cons_session
+    return (_jsx("button", { className: className, onClick: () => openModal({ consSession: cons_session, navigate }), "data-cons-session": cons_session ? "enabled" : undefined, type: "button", children: cons_session
             ? walletConnected ? "Connected" : "Connect Wallet"
             : isConnected
                 ? `BAL ${balance} ${symbol}`

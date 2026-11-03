@@ -1,1 +1,2 @@
-export { cordy, jwt_sign } from "./server/jwt";
+import "server-only";
+export { createCordyServer } from "./server/cons";

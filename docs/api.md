@@ -8,6 +8,8 @@ import { cordy } from "@cordystackx/cordy_minikit";
 
 All methods return promises. Check `success` before using `balance`, `asset`, or `transactionHash`.
 
+For step-by-step client examples that show how to call each method from UI actions, start with [Use Cordy in your app](./recipes.md). This page documents the method options and results.
+
 ## `cordy.configure({ assets })`
 
 Configure the caller-owned EVM, bridge, and Stellar registry before calling balance, transfer, swap, or bridge methods. Most apps should pass the registry to `ProvidersClientWrapper`, which configures Cordy for the app:
@@ -22,24 +24,107 @@ You can also configure it directly with `cordy.configure({ assets })`. The `asse
 
 ## `cordy.cons_verify()`
 
-Checks the current browser wallet connection without calling an application endpoint. It returns status `200` with the connected wallet details, or status `401` when no wallet is connected:
+Checks the Cordy server session established by a successful wallet signature. It returns `{ success: true, authenticated: true, address, chain }` for an active session, or an unauthenticated result when no valid session exists:
 
 ```ts
 const result = await cordy.cons_verify();
-if (result.status === 200) console.log(result.network, result.address);
+if (result.authenticated) console.log(result.chain, result.address);
 ```
 
-This checks local connection state only; it does not authenticate wallet ownership to a server. Use a signature challenge and server verification when authorizing protected server actions.
+This requires the server handler described below. For authorization, check the session on the server with `cordyServer.session(request)`; client state alone is not an authorization boundary.
+
+You can call `cordy.cons_verify()` without importing `useConsSession()`. The hook is an optional React convenience for components that should load and reactively display session state. Neither method creates a session: a wallet must first complete sign-in through `ConnectWalletBT` and the server handler.
 
 ## `cordy.cons_disconnect()`
 
-Disconnects active EVM connectors and clears the Minikit Stellar wallet selection. It makes no endpoint request and needs no session environment variables.
+Posts to the configured Cordy session endpoint to clear the HTTP-only session cookie, then disconnects active EVM connectors and clears the Minikit Stellar wallet selection.
 
 ```ts
 const result = await cordy.cons_disconnect();
 ```
 
-The result has `success`, `walletDisconnected`, and an optional `error`.
+The result has `success`, `walletDisconnected`, and an optional `error`. A server endpoint must be mounted for this operation.
+
+## Server authentication
+
+Set `cons_session={true}` on `ConnectWalletBT` to require sign-in before navigation. Cordy requests a one-time challenge and prompts the connected wallet to sign it: EVM wallets sign a SIWE (EIP-4361) message; Stellar wallets sign the server-created SEP-10 challenge transaction. The SDK sends the signed response to your server handler. On verification, the handler issues a 24-hour HTTP-only session cookie and returns the address and chain. Rejected or invalid signatures do not navigate.
+
+### 1. Create the server instance
+
+Pass secrets from your app's server environment. The SDK itself does not read environment variables. Keep this module server-only and never import it into a client component.
+
+```ts
+// src/lib/cordy-server.ts
+import "server-only";
+import { createCordyServer } from "@cordystackx/cordy_minikit/server";
+
+export const cordyServer = createCordyServer({
+  signingSecret: process.env.SIGNING_SECRET,
+  jwtKey: process.env.JWT_SECRET,
+  // Optional host allowlist:
+  // allowedDomains: ["app.example.com"],
+});
+```
+
+`SIGNING_SECRET` is the Stellar server signing key used to build SEP-10 challenges. `JWT_SECRET` is a random secret of at least 32 bytes used to sign short-lived challenge tokens and session cookies. Both are server-only; do not use `NEXT_PUBLIC_` names or pass them to `ProvidersClientWrapper`. EVM-only applications do not need a Stellar signing key.
+
+### 2. Mount one dynamic route
+
+For Next.js App Router, create a single route file:
+
+```ts
+// app/services/cons/[action]/route.ts
+import { cordyServer } from "@/lib/cordy-server";
+
+export const { GET, POST } = cordyServer.handler();
+```
+
+The folder path before `[action]` sets the URL prefix. This example serves `POST /services/cons/challenge`, `POST /services/cons/verify`, `POST /services/cons/disconnect`, and `GET /services/cons/session`. Unknown actions return 404; unsupported methods return 405.
+
+The SDK uses `/services/cons` by default, so you do not need an extra prop when you keep the example path. If you move the route to `app/api/cons/[action]/route.ts`, its URL prefix becomes `/api/cons`; set the same value on the provider:
+
+```tsx
+<ProvidersClientWrapper assets={assets} consPath="/api/cons">
+  {children}
+</ProvidersClientWrapper>
+```
+
+The route location and `consPath` must match. The SDK will then call `/api/cons/challenge`, `/api/cons/verify`, `/api/cons/disconnect`, and `/api/cons/session`.
+
+| Route file | URL prefix | Provider setting |
+| --- | --- | --- |
+| `app/services/cons/[action]/route.ts` | `/services/cons` | Default; no `consPath` needed. |
+| `app/api/cons/[action]/route.ts` | `/api/cons` | `consPath="/api/cons"`. |
+
+The handler file contents are identical in both locations:
+
+```ts
+import { cordyServer } from "@/lib/cordy-server";
+
+export const { GET, POST } = cordyServer.handler();
+```
+
+### 3. Enable sign-in and read the session
+
+The provider remains client-safe and only needs the public asset configuration:
+
+```tsx
+<ProvidersClientWrapper assets={assets}>
+  {children}
+</ProvidersClientWrapper>
+```
+
+```tsx
+<ConnectWalletBT cons_session={true} navigate="/dashboard" />
+```
+
+Use `useConsSession()` for client UI and `cordyServer.session(request)` in protected server routes:
+
+```tsx
+const { loading, authenticated, address, chain } = useConsSession();
+```
+
+The hook is for displaying session state. Always check `cordyServer.session(request)` on the server before returning protected data. `cordyServer` also exposes `challenge(request)`, `verify(request)`, and `disconnect(request)` for custom routing; each returns a `{ success, ... }` result without throwing raw errors.
 
 ## `cordy.balance(options?)`
 
@@ -173,4 +258,4 @@ These legacy helpers remain available for compatibility and are deprecated in fa
 - `CordyStackTrans()` and `CordyStackTransStellar()` → `cordy.transfer()`
 - `getTokenBalance()` → `cordy.balance()`
 
-Use `cordy.cons_verify()` to check browser wallet connection state. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.
+Use `cordy.cons_verify()` or `useConsSession()` to read authentication state. For transfers and balances, prefer the typed `cordy.transfer()` and `cordy.balance()` results.

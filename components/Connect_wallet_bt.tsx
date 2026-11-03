@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { getTokenBalance, loadStellarBalance } from "../controllers";
 import { useStellarWallet, useWalletModal } from "../wagmi__providers";
@@ -21,8 +20,7 @@ export default function ConnectWalletBT({
   cons_session = false,
   navigate,
 }: ConnectWalletBTProps) {
-  const router = useRouter();
-  const { openModal, closeModal } = useWalletModal();
+  const { openModal } = useWalletModal();
   const { stellarWallet, setStellarWallet } = useStellarWallet();
   const { isConnected, address } = useAccount();
   const [balance, setBalance] = useState("");
@@ -39,13 +37,6 @@ export default function ConnectWalletBT({
   ) {
     throw new Error('ConnectWalletBT: "navigate" must be a safe internal path starting with "/".');
   }
-
-  useEffect(() => {
-    if (cons_session && navigate && walletConnected) {
-      closeModal();
-      router.replace(navigate);
-    }
-  }, [closeModal, cons_session, navigate, router, walletConnected]);
 
   useEffect(() => {
     if (cons_session || !isConnected || !address) return;
@@ -94,7 +85,7 @@ export default function ConnectWalletBT({
   return (
     <button
       className={className}
-      onClick={() => openModal({ consSession: cons_session })}
+      onClick={() => openModal({ consSession: cons_session, navigate })}
       data-cons-session={cons_session ? "enabled" : undefined}
       type="button"
     >

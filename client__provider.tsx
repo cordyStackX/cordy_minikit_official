@@ -4,6 +4,7 @@ import { configureCordyAssets, type CordyAssetsConfig } from './client/transfer'
 import getConfig, { config as defaultConfig, setActiveWagmiConfig } from './config/walletConfig';
 import { defineChain } from 'viem';
 import dynamic from 'next/dynamic';
+import { setConsPath } from './client/consRuntime';
 
 // Dynamically import WalletProviders with SSR disabled
 const WalletProviders = dynamic(() => import('./wagmi__providers'), {
@@ -13,11 +14,14 @@ const WalletProviders = dynamic(() => import('./wagmi__providers'), {
 export default function ProvidersClientWrapper({
   children,
   assets,
+  consPath,
 }: {
   children: ReactNode;
   assets?: CordyAssetsConfig;
+  consPath?: string;
 }) {
   if (assets) configureCordyAssets({ assets });
+  setConsPath(consPath);
 
   const walletConfig = useMemo(() => {
     const networks = assets?.networks ?? [];
@@ -39,5 +43,5 @@ export default function ProvidersClientWrapper({
 
   useEffect(() => setActiveWagmiConfig(walletConfig), [walletConfig]);
 
-  return <WalletProviders config={walletConfig}>{children}</WalletProviders>;
+  return <WalletProviders config={walletConfig} consPath={consPath}>{children}</WalletProviders>;
 }

@@ -6,7 +6,9 @@ const sections = [
   { id: "install", label: "Install" },
   { id: "getting-started", label: "Provider setup" },
   { id: "configuration", label: "Configure assets" },
-  { id: "wallet-checks", label: "Check wallet" },
+  { id: "authentication", label: "Wallet sign-in" },
+  { id: "wallet-checks", label: "Check session" },
+  { id: "use-functions", label: "Use the functions" },
   { id: "balance", label: "Read balances" },
   { id: "transfer", label: "Transfer assets" },
   { id: "swap", label: "Swap assets" },
@@ -72,21 +74,23 @@ export default function DocsHome() {
           <div className="sidebar-label">DEVELOPERS</div>
           <a className="sidebar-item" href="#install">Installation</a>
           <a className="sidebar-item" href="#configuration">Configure assets</a>
-          <a className="sidebar-item" href="#wallet-checks">Check wallet</a>
+          <a className="sidebar-item" href="#authentication">Wallet sign-in</a>
+          <a className="sidebar-item" href="#wallet-checks">Check session</a>
+          <a className="sidebar-item" href="#use-functions">Use the functions</a>
           <a className="sidebar-item" href="#balance">Read balances</a>
           <a className="sidebar-item" href="#transfer">Transfer assets</a>
           <a className="sidebar-item" href="#swap">Swap assets</a>
           <a className="sidebar-item" href="#disconnect">Disconnect wallet</a>
           <a className="sidebar-item" href="#bridge-api">Bridge</a>
           <div className="sidebar-bottom">
-            <span className="version-dot" /> Cordy Minikit <span>v3.0.10</span>
+            <span className="version-dot" /> Cordy Minikit <span>v3.1.0</span>
           </div>
         </aside>
 
         <main className="documentation-article">
           <div className="article-eyebrow">CORDY MINIKIT <span>›</span> DEVELOPERS <span>›</span> QUICK GUIDE</div>
           <h1>Getting Started</h1>
-          <p className="article-lead">Cordy Minikit provides wallet connection checks and asset operations for EVM and Stellar/Soroban. Follow this guide to install the package, configure assets, and use each method. Examples assume the user has connected the appropriate wallet and network.</p>
+          <p className="article-lead">Build wallet experiences for EVM and Stellar with one typed SDK. Connect wallets, verify sign-in on your server, and work with configured assets across balances, transfers, swaps, and bridges.</p>
 
           <section id="install" className="article-section">
             <h2>Install</h2>
@@ -136,7 +140,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   );
 }`}</CodeBlock>
             <h3>3. Render the wallet button</h3>
-            <p>The wrapper sets up the wallet and network clients for its children. Render <code>ConnectWalletBT</code> and call the <code>cordy.*</code> methods from components beneath it. EVM wallets and Stellar through Freighter are supported.</p>
+            <p>The wrapper sets up wallet and network clients for its children. Render <code>ConnectWalletBT</code> and use the <code>cordy.*</code> methods below it. Cordy supports EVM wallets and Stellar through Freighter.</p>
             <CodeBlock language="tsx">{`"use client";
 
 import { ConnectWalletBT } from "@cordystackx/cordy_minikit";
@@ -264,16 +268,84 @@ import assets from "./assets.json";
 cordy.configure({ assets });`}</CodeBlock>
           </section>
 
+          <section id="authentication" className="article-section">
+            <h2>Verify wallet sign-in</h2>
+            <p>Set <code>cons_session</code> to require a signature before navigation. Cordy requests a SIWE challenge for EVM wallets or a SEP-10 challenge for Stellar, verifies the signature on your server, and creates an HTTP-only session cookie. A rejected or invalid signature leaves the user on the current page.</p>
+            <CodeBlock language="tsx">{`<ConnectWalletBT cons_session={true} navigate="/dashboard" />`}</CodeBlock>
+            <h3>Configure the server</h3>
+            <p>Create the server instance in a server-only module. The SDK never reads environment variables. Keep both values in your app's server environment, and never pass secrets through the client provider.</p>
+            <CodeBlock language="ts">{`// src/lib/cordy-server.ts
+import "server-only";
+import { createCordyServer } from "@cordystackx/cordy_minikit/server";
+
+export const cordyServer = createCordyServer({
+  signingSecret: process.env.SIGNING_SECRET,
+  jwtKey: process.env.JWT_SECRET,
+  // allowedDomains: ["app.example.com"],
+});`}</CodeBlock>
+            <p><code>SIGNING_SECRET</code> is used to build Stellar SEP-10 challenges. <code>JWT_SECRET</code> must be a random value of at least 32 bytes. The default route prefix is <code>/services/cons</code>; mount the handler at <code>app/services/cons/[action]/route.ts</code>:</p>
+            <CodeBlock language="ts">{`import { cordyServer } from "@/lib/cordy-server";
+
+export const { GET, POST } = cordyServer.handler();`}</CodeBlock>
+            <p>The folder path before <code>[action]</code> is the URL prefix. If you move the route to <code>app/api/cons/[action]/route.ts</code>, set <code>consPath="/api/cons"</code> on <code>ProvidersClientWrapper</code> too. The route path and this prop must match; the SDK will request <code>/api/cons/challenge</code>, <code>/api/cons/verify</code>, <code>/api/cons/session</code>, and <code>/api/cons/disconnect</code>. Keep the default folder if you do not want to set <code>consPath</code>. For custom routing, the server instance also exposes <code>challenge(request)</code>, <code>verify(request)</code>, <code>session(request)</code>, and <code>disconnect(request)</code>.</p>
+            <CodeBlock language="tsx">{`// app/providers.tsx, when the route is app/api/cons/[action]/route.ts
+<ProvidersClientWrapper assets={assets} consPath="/api/cons">
+  {children}
+</ProvidersClientWrapper>`}</CodeBlock>
+          </section>
+
           <section id="wallet-checks" className="article-section">
-            <h2>Check the wallet connection</h2>
-            <p>Use <code>cordy.cons_verify()</code> to check the current browser connection. It returns status <code>200</code> when connected or <code>401</code> when disconnected. This reports local connection state; it does not authenticate wallet ownership to your server.</p>
+            <h2>Read the authenticated session</h2>
+            <p><code>cordy.cons_verify()</code> works by itself: call it when you need a one-time check of the current server session. You do not need to import <code>useConsSession()</code> for that. The hook is an optional React convenience that loads the session and updates the UI after sign-in or logout. Either one checks an existing session; sign-in must first succeed through <code>ConnectWalletBT</code> and the server handler. Protect private data by checking <code>cordyServer.session(request)</code> on the server.</p>
+            <h3>One-time check with the SDK function</h3>
             <CodeBlock language="ts">{`const wallet = await cordy.cons_verify();
 
-if (wallet.status === 200) {
-  console.log("Connected:", wallet.network, wallet.address);
+if (wallet.authenticated) {
+  console.log("Signed in:", wallet.chain, wallet.address);
 } else {
-  console.log("Connect a wallet to continue.");
+  console.log("Sign in to continue.");
 }`}</CodeBlock>
+            <h3>Reactive session state with the optional hook</h3>
+            <CodeBlock language="tsx">{`const { loading, authenticated, address, chain } = useConsSession();`}</CodeBlock>
+          </section>
+
+          <section id="use-functions" className="article-section">
+            <h2>Call functions from your app</h2>
+            <p>Put SDK calls in client components under <code>ProvidersClientWrapper</code>. Call them from a button or form submit handler, then show the result or error. These are app-side actions: your UI gathers values, Cordy performs the wallet operation, and your UI displays the response.</p>
+            <h3>Read and display a balance</h3>
+            <CodeBlock language="tsx">{`async function refreshBalance() {
+  const result = await cordy.balance({ asset: "USDT" });
+  setMessage(result.success
+    ? String(result.balance) + " " + String(result.asset) + " on " + String(result.network)
+    : result.error ?? "Could not read balance.");
+}
+
+<button onClick={refreshBalance}>Refresh USDT</button>`}</CodeBlock>
+            <h3>Send a transfer from a form</h3>
+            <CodeBlock language="tsx">{`async function sendTransfer() {
+  const result = await cordy.transfer(amount, recipient, { asset: "USDT" });
+  setMessage(result.success
+    ? "Transaction: " + result.transactionHash
+    : result.error ?? "Transfer failed.");
+}
+
+<button onClick={sendTransfer}>Send USDT</button>`}</CodeBlock>
+            <h3>Swap with selected options</h3>
+            <CodeBlock language="tsx">{`const result = await cordy.swap(amount, fromAsset, toAsset, 0.5, {
+  version: "auto",
+  feeTiers: [500, 3000, 10000],
+});`}</CodeBlock>
+            <p>Here, <code>0.5</code> means 0.5% slippage. The fee tiers choose which V3 pools Cordy quotes: 500 is a 0.05% pool fee, 3000 is 0.30%, and 10000 is 1.00%. These are separate settings.</p>
+            <h3>Bridge using a configured route</h3>
+            <CodeBlock language="tsx">{`const result = await cordy.bridge(
+  amount,
+  "internal",
+  "external",
+  recipient,
+  { routeId: "bot-testnet-sepolia-usdt" },
+);`}</CodeBlock>
+            <p>Choose the route ID from <code>assets.bridge.routes</code>. Mount <code>BridgeEvmWalletModal</code> once if you want Cordy to open its EVM wallet dialog and prepare the route network when needed. Bridge success confirms the source transaction; destination delivery follows the configured protocol.</p>
+            <p>For full examples with imports, session handling, errors, and logout, follow the <a href="https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/recipes.md" target="_blank" rel="noreferrer">Use Cordy in your app guide</a>.</p>
           </section>
 
           <section id="balance" className="article-section">
@@ -323,7 +395,7 @@ if (!result.success) {
 
           <section id="disconnect" className="article-section">
             <h2>Disconnect a wallet</h2>
-            <p><code>cordy.cons_disconnect()</code> disconnects the wallet locally. It does not need a server endpoint.</p>
+            <p><code>cordy.cons_disconnect()</code> clears the server session and disconnects connected wallets. The server handler must be mounted.</p>
             <CodeBlock language="ts">{`const result = await cordy.cons_disconnect();
 if (!result.success) console.error(result.error);`}</CodeBlock>
           </section>

@@ -1,77 +1,56 @@
 "use client";
 import { configureCordyAssets, cordy_balance, cordy_bridge, cordy_swap, cordy_transfer } from "./transfer";
+import { getConsUrl } from "./consRuntime";
 const STELLAR_WALLET_STORAGE_KEY = "cordy_minikit_stellar_wallet";
 const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
-function getStellarAddress() {
-    try {
-        const raw = window.localStorage.getItem(STELLAR_WALLET_STORAGE_KEY);
-        if (!raw)
-            return undefined;
-        const wallet = JSON.parse(raw);
-        if (typeof wallet !== "object" || wallet === null || !("address" in wallet))
-            return undefined;
-        const address = wallet.address;
-        return typeof address === "string" && address.length > 0 ? address : undefined;
-    }
-    catch {
-        return undefined;
-    }
-}
-/** Check whether this browser currently has a connected EVM or Stellar wallet. */
 export async function cons_verify() {
-    if (typeof window === "undefined") {
-        return { status: 401, connected: false };
-    }
-    const stellarAddress = getStellarAddress();
-    const activeWallet = window.localStorage.getItem(ACTIVE_WALLET_SESSION_KEY);
-    if (activeWallet === "stellar" && stellarAddress) {
-        return { status: 200, connected: true, network: "stellar", address: stellarAddress };
-    }
     try {
-        const { getActiveWagmiConfig } = await import("../config/walletConfig");
-        const state = getActiveWagmiConfig().state;
-        const currentConnection = state.current ? state.connections.get(state.current) : undefined;
-        const connection = currentConnection?.accounts[0]
-            ? currentConnection
-            : Array.from(state.connections.values()).find((item) => item.accounts[0]);
-        const address = connection?.accounts[0];
-        if (address) {
-            return { status: 200, connected: true, network: "evm", address };
-        }
+        const response = await fetch(getConsUrl("session"), { credentials: "same-origin", cache: "no-store" });
+        const body = await response.json();
+        return {
+            success: response.ok && body?.success === true,
+            authenticated: response.ok && body?.success === true,
+            ...(typeof body?.address === "string" ? { address: body.address } : {}),
+            ...(body?.chain === "evm" || body?.chain === "stellar" ? { chain: body.chain } : {}),
+            ...(typeof body?.message === "string" ? { message: body.message } : {}),
+        };
     }
     catch {
-        // A missing or unavailable EVM connector does not prevent checking Stellar.
+        return { success: false, authenticated: false, message: "Could not check the authentication session." };
     }
-    if (stellarAddress) {
-        return { status: 200, connected: true, network: "stellar", address: stellarAddress };
-    }
-    return { status: 401, connected: false };
 }
-/** Disconnect the connected EVM wallet and clear the Minikit Stellar wallet selection. */
 export async function cons_disconnect() {
-    if (typeof window === "undefined") {
-        return { success: false, walletDisconnected: false, error: "Wallet disconnect is only available in the browser." };
+    let serverCleared = false;
+    let walletDisconnected = false;
+    let message;
+    try {
+        const response = await fetch(getConsUrl("disconnect"), { method: "POST", credentials: "same-origin" });
+        const body = await response.json().catch(() => null);
+        serverCleared = response.ok && body?.success === true;
+        if (!serverCleared)
+            message = typeof body?.message === "string" ? body.message : "Could not clear the server session.";
+        else if (typeof window !== "undefined")
+            window.dispatchEvent(new Event("cordy:cons-session-cleared"));
+    }
+    catch {
+        message = "Could not reach the server to clear the session.";
     }
     try {
         const { disconnect } = await import("wagmi/actions");
         const { getActiveWagmiConfig } = await import("../config/walletConfig");
         const config = getActiveWagmiConfig();
         const connections = Array.from(config.state.connections.values());
-        for (const connection of connections) {
+        for (const connection of connections)
             await disconnect(config, { connector: connection.connector });
-        }
         window.localStorage.removeItem(STELLAR_WALLET_STORAGE_KEY);
         window.localStorage.removeItem(ACTIVE_WALLET_SESSION_KEY);
         window.dispatchEvent(new Event("cordy:disconnect-stellar-wallet"));
-        return { success: true, walletDisconnected: true };
+        walletDisconnected = true;
     }
-    catch (error) {
-        return {
-            success: false,
-            walletDisconnected: false,
-            error: error instanceof Error ? error.message : "Wallet disconnect failed.",
-        };
+    catch {
+        message = message ?? "Wallet disconnect failed.";
     }
+    return { success: serverCleared && walletDisconnected, walletDisconnected, ...(message ? { error: message } : {}) };
 }
 export const cordy = {
     configure: configureCordyAssets,

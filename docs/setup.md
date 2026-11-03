@@ -57,6 +57,8 @@ export default function RootLayout({
 
 `ProvidersClientWrapper` configures Wagmi, WalletConnect, EVM networks, Stellar endpoints, and the asset registry from this JSON. The wrapper must be above `ConnectWalletBT` and any component that calls `cordy.balance()` or `cordy.transfer()`. No `NEXT_PUBLIC_*` wallet or network variables are required.
 
+The authentication route defaults to `/services/cons`. If you mount it elsewhere, set `consPath` to the same base path. For example, `app/api/cons/[action]/route.ts` requires `<ProvidersClientWrapper assets={configuredAssets} consPath="/api/cons">`. See the [route setup example](./api.md#2-mount-one-dynamic-route).
+
 ## Render the wallet button
 
 ```tsx
@@ -75,7 +77,7 @@ For applications that need session-aware navigation:
 <ConnectWalletBT cons_session={true} navigate="/dashboard" />
 ```
 
-When `cons_session` is enabled, connecting a wallet navigates to the requested route. Use `cordy.cons_verify()` to check whether a wallet is still connected in the browser; it returns status `200` or `401` and does not call a server endpoint. This connection check is not server-side proof of wallet ownership.
+When `cons_session` is enabled, Cordy signs in through its server authentication handler before navigating. Follow [Server authentication](./api.md#server-authentication) to create `cordyServer` and mount the single dynamic route. Keep `SIGNING_SECRET` and `JWT_SECRET` in the server environment; they do not belong in this client provider.
 
 ## Active wallet rules
 
@@ -139,22 +141,36 @@ contracts in the chain-keyed registry.
 Mount the SDK modal once in a client component:
 
 ```tsx
+"use client";
+
 import { BridgeEvmWalletModal, cordy } from "@cordystackx/cordy_minikit";
 
-export function BridgeAccess() {
-  return <BridgeEvmWalletModal />;
-}
+export function BridgeAccess({ recipient }: { recipient: string }) {
+  async function startBridge() {
+    const result = await cordy.bridge(
+      "10.5",
+      "internal",
+      "external",
+      recipient,
+      { routeId: "bot-testnet-sepolia-usdt" },
+    );
+    console.log(result);
+  }
 
-const result = await cordy.bridge(
-  "10.5",
-  "internal",
-  "external",
-  recipient,
-  { routeId: "bot-testnet-sepolia-usdt" },
-);
+  return (
+    <>
+      <button type="button" onClick={() => void startBridge()}>Bridge 10.5 USDT</button>
+      <BridgeEvmWalletModal />
+    </>
+  );
+}
 ```
 
 When a bridge needs an EVM wallet and none is connected, `cordy.bridge()`
 opens the modal, waits for connection, prepares the configured route network,
 and continues without a second click. The exported `useBridgeEvmWallet()`
 hook remains available for applications requiring custom behavior.
+
+## Use the functions from your UI
+
+Import `cordy` in a client component below `ProvidersClientWrapper`. Call a function in response to a user action, such as a button click or form submit, then show its success data or error. The [Use Cordy in your app guide](./recipes.md) provides complete examples for balance reads, transfers, swaps, bridges, session display, and logout.

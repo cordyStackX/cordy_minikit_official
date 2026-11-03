@@ -2,6 +2,8 @@
 
 The Minikit reads browser-visible network and asset settings from the JSON object passed to `ProvidersClientWrapper`. Keep these values together in an app-owned JSON file and import it in the provider. The Minikit no longer reads `NEXT_PUBLIC_*` variables for wallet, network, or asset configuration.
 
+Authentication keys are separate from this public configuration. If you enable wallet sign-in, pass server environment values to `createCordyServer()` from a server-only module. Use a Stellar secret key for `SIGNING_SECRET` and a random value of at least 32 bytes for `JWT_SECRET`. Never put these values in `assets.json`, a `NEXT_PUBLIC_*` variable, or a client component. See [Server authentication](./api.md#server-authentication).
+
 ```tsx
 import assets from "./assets.json";
 import type { CordyAssetsConfig } from "@cordystackx/cordy_minikit";

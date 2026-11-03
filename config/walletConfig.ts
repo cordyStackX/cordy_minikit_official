@@ -4,6 +4,8 @@ import { walletConnect, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import type { Chain } from 'wagmi/chains';
 import { isEvmConfigReady } from '../client/runtimeConfig';
 
+const configCache = new Map<string, ReturnType<typeof createConfig>>();
+
 export default function getConfig(
   customChains: Record<string, Chain> = {},
   options: { walletConnectProjectId?: string } = {},
@@ -16,6 +18,19 @@ export default function getConfig(
   if (!firstChain) throw new Error('At least one EVM chain must be configured.');
   const allChains: [Chain, ...Chain[]] = [firstChain, ...otherChains];
 
+  const cacheKey = JSON.stringify({
+    walletConnectProjectId: options.walletConnectProjectId ?? null,
+    chains: allChains.map(({ id, name, nativeCurrency, rpcUrls, blockExplorers }) => ({
+      id,
+      name,
+      nativeCurrency,
+      rpcUrls,
+      blockExplorers,
+    })),
+  });
+  const cachedConfig = configCache.get(cacheKey);
+  if (cachedConfig) return cachedConfig;
+
   // Use the chain's RPC URL if available
   const transports = allChains.reduce((acc, chain) => {
     const rpcUrl = chain.rpcUrls?.default?.http?.[0];
@@ -23,7 +38,7 @@ export default function getConfig(
     return acc;
   }, {} as Record<number, ReturnType<typeof http>>);
 
-  return createConfig({
+  const nextConfig = createConfig({
     chains: allChains,
     connectors: [
       metaMask(),
@@ -34,6 +49,8 @@ export default function getConfig(
     ],
     transports,
   });
+  configCache.set(cacheKey, nextConfig);
+  return nextConfig;
 }
 
 export const config: ReturnType<typeof createConfig> =

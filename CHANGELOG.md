@@ -1,3 +1,23 @@
+## [3.1.0] - 2026-11-03
+
+### Added
+
+- Added `createCordyServer()` as a server-only factory for SIWE and SEP-10 challenges, signature verification, session reads, and logout.
+- Added signed short-lived challenge cookies and 24-hour HTTP-only session cookies.
+- Added the `useConsSession()` hook for reading authentication state in client UI.
+- Added configurable domain allowlisting through `allowedDomains`.
+
+### Changed
+
+- `ConnectWalletBT` with `cons_session` now verifies a wallet signature through the configured server handler before navigating.
+- `cordy.cons_verify()` now reads the server session; `cordy.cons_disconnect()` clears the server session and disconnects wallets.
+- Removed SDK reads of `process.env`; applications pass server secrets explicitly to `createCordyServer()`.
+- Documented server-only auth setup and the single dynamic Next.js route.
+
+### Security
+
+- Signing and JWT keys are accepted only by the server factory, never by client providers or components.
+
 ## [3.0.10] - 2026-11-02
 
 ### Added

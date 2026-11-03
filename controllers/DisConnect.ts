@@ -1,12 +1,13 @@
 "use client";                                                                                                                                                                                                              
 import { useDisconnect } from "wagmi";                                                                             
-import { useWalletModal, useStellarWallet } from "../wagmi__providers";                                            
+import { useWalletModal, useStellarWallet } from "../wagmi__providers";
+import { requestConsDisconnect } from "../client/consRuntime";
                                                                                                                     
 const ACTIVE_WALLET_SESSION_KEY = "***";                                                                           
                                                                                                                     
 export default function useDisconnectWallets() {                                                                   
   const { disconnectAsync } = useDisconnect();                                                                     
-  const { closeModal } = useWalletModal();                                                                         
+  const { closeModal, consSession, consSessionEnabled, consPath } = useWalletModal();
   const { clearStellarWallet } = useStellarWallet();                                                               
                                                                                                                     
   const clearSession = () => {                                                                                     
@@ -17,6 +18,7 @@ export default function useDisconnectWallets() {
                                                                                                                     
   const disconnectEVM = async (): Promise<boolean> => {                                                            
     try {                                                                                                          
+      if (consSession || consSessionEnabled) await requestConsDisconnect(consPath);
       await disconnectAsync();                                                                                     
       clearSession();                                                                                              
       closeModal();                                                                                                
@@ -29,6 +31,7 @@ export default function useDisconnectWallets() {
                                                                                                                     
   const disconnectStellar = async (): Promise<boolean> => {                                                        
     try {                                                                                                          
+      if (consSession || consSessionEnabled) await requestConsDisconnect(consPath);
       clearStellarWallet();                                                                                        
       clearSession();                                                                                              
       closeModal();                                                                                                
@@ -41,6 +44,7 @@ export default function useDisconnectWallets() {
                                                                                                                     
   const disconnectAll = async (): Promise<boolean> => {                                                            
     try {                                                                                                          
+      if (consSession || consSessionEnabled) await requestConsDisconnect(consPath);
       await disconnectAsync();                                                                                     
       clearStellarWallet();                                                                                        
       clearSession();                                                                                              

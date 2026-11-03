@@ -10,4 +10,5 @@ export { ConnectWalletBT } from "./components";
 export { CordyStackTrans, CordyStackTransStellar, useWalletStatus, useDisconnectWallets, WalletButton, StellarWalletButton, BridgeEvmWalletModal, bridgeRequestNeedsEvmWallet, useBridgeEvmWallet } from "./controllers";
 // Client-side JWT session helpers (safe for browser imports).
 export { cordy, cons_verify, cons_disconnect } from "./client";
+export { useConsSession } from "./client/useConsSession";
 export { configureCordyAssets, cordy_balance, cordy_configure, cordy_bridge, cordy_swap, cordy_transfer } from "./client/transfer";
