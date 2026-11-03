@@ -107,26 +107,32 @@ export default function DocsHome() {
             <p>In a Next.js app, create <code>app/providers.tsx</code>:</p>
             <CodeBlock language="tsx">{`"use client";
 
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  ProvidersClientWrapper,
-  type CordyAssetsConfig,
-} from "@cordystackx/cordy_minikit";
-import assetsJson from "./assets.json";
+import type { CordyAssetsConfig } from "@cordystackx/cordy_minikit";
+import assetsJson from "@/config/json_conf/assets.json";
 
 const queryClient = new QueryClient();
 const assets = assetsJson as CordyAssetsConfig;
+const CordyProvidersClient = dynamic<{
+  children: ReactNode;
+  assets?: CordyAssetsConfig;
+}>(
+  () => import("@cordystackx/cordy_minikit").then((sdk) => sdk.ProvidersClientWrapper),
+  { ssr: false, loading: () => <div className="min-h-screen bg-background" aria-busy="true" /> },
+);
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ProvidersClientWrapper assets={assets}>
+      <CordyProvidersClient assets={assets}>
         {children}
-      </ProvidersClientWrapper>
+      </CordyProvidersClient>
     </QueryClientProvider>
   );
-}`}</CodeBlock>
+}
+`}</CodeBlock>
             <h3>2. Wrap the application</h3>
             <p>Wrap the application with that provider from <code>app/layout.tsx</code>:</p>
             <CodeBlock language="tsx">{`import type { ReactNode } from "react";
