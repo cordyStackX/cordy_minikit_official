@@ -83,7 +83,7 @@ export default function DocsHome() {
           <a className="sidebar-item" href="#disconnect">Disconnect wallet</a>
           <a className="sidebar-item" href="#bridge-api">Bridge</a>
           <div className="sidebar-bottom">
-            <span className="version-dot" /> Cordy Minikit <span>v3.1.0</span>
+            <span className="version-dot" /> Cordy Minikit <span>v3.1.1</span>
           </div>
         </aside>
 

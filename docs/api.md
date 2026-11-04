@@ -158,7 +158,7 @@ an explicit unsupported-network error.
 
 ## `cordy.transfer(amount, recipient, options?)`
 
-Transfers a configured ERC-20 or Stellar asset through the active wallet:
+Transfers the configured native EVM currency, an ERC-20 token, or a Stellar asset through the active wallet:
 
 ```ts
 const result = await cordy.transfer("25", "0xRecipient", { asset: "USDT" });
@@ -173,14 +173,14 @@ const result = await cordy.transfer("3.5", "GRecipient", {
 });
 ```
 
-Transfers return `{ success, asset?, network?, transactionHash?, error? }` and require wallet approval. Native EVM assets such as ETH and BOT are currently supported by `cordy.balance()`; native EVM transfer support will be documented when it is released.
+Transfers return `{ success, asset?, network?, transactionHash?, error? }` and require wallet approval. Native EVM assets such as ETH and BOT are selected by passing their symbol in `{ asset }`; their decimals come from `networks[].nativeCurrency`.
 
 The recipient must match the active network:
 
 - EVM: a valid `0x...` address.
 - Stellar: a valid `G...` public address.
 
-Amounts must be positive decimal values. The configured ERC-20 decimals determine token precision. Stellar amounts support up to seven decimal places, and Stellar text memos are limited to 28 UTF-8 bytes.
+Amounts must be positive decimal values. Configured ERC-20 or native currency decimals determine EVM precision. Stellar amounts support up to seven decimal places, and Stellar text memos are limited to 28 UTF-8 bytes.
 
 ## `cordy.swap(amount, from, to, tolerancePercent?, options?)`
 

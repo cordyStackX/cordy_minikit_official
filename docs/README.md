@@ -1,4 +1,4 @@
-# Cordy Minikit 3.1.0 Documentation
+# Cordy Minikit 3.1.1 Documentation
 
 Cordy Minikit provides EVM and Stellar wallet access, server-verified wallet sign-in, asset transfers, balance reads, configurable EVM V2/V3 swaps, and configured EVM/Stellar bridge flows.
 

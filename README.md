@@ -54,8 +54,8 @@ belong under `evm["<chainId>"]`; bridge directions and contract details belong
 under `bridge.routes[]`.
 
 <p align="center">
-  <a href="https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/3.1.0">
-    <img src="https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/3.1.0" alt="Socket Badge" />
+  <a href="https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/3.1.1">
+    <img src="https://badge.socket.dev/npm/package/@cordystackx/cordy_minikit/3.1.1" alt="Socket Badge" />
   </a>
 </p>
 
@@ -85,13 +85,13 @@ npm install @cordystackx/cordy_minikit
 pnpm add @cordystackx/cordy_minikit
 ```
 
-## Version 3.1.0 documentation
+## Version 3.1.1 documentation
 
 Read the complete documentation in the [`docs/` folder](./docs/README.md):
 
 - [Documentation index](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/README.md)
 - [Environment configuration](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/environment.md)
-- [3.1.0 API reference](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/api.md)
+- [3.1.1 API reference](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/api.md)
 - [3.0.0 migration guide](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/migration-3.0.0.md)
 - [Provider and wallet UI setup](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/setup.md)
 - [Use Cordy functions in your app](https://github.com/cordyStackX/cordy_minikit_official/blob/main/docs/recipes.md)
@@ -107,7 +107,7 @@ const transfer = await cordy.transfer("1", recipient);
 await cordy.cons_disconnect();
 ```
 
-The current 3.1.0 API is:
+The current 3.1.1 API is:
 
 - `cordy.configure({ assets })`
 - `cordy.cons_verify()`

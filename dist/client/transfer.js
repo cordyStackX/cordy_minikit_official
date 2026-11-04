@@ -512,6 +512,17 @@ async function transferEvm(amount, recipient, requestedSymbol) {
     const chainId = Number(chain.chainId);
     requireConfiguredEvmNetwork(configuredAssets, chainId, chain.name);
     const tokenConfig = resolveEvmAsset(requestedSymbol, chainId, chain.name);
+    if (tokenConfig?.type === "native") {
+        const signer = await provider.getSigner(connection.accounts[0]);
+        const transaction = await signer.sendTransaction({
+            to: recipient,
+            value: parseUnits(amount, tokenConfig.decimals),
+        });
+        const receipt = await transaction.wait();
+        if (!receipt || receipt.status !== 1)
+            throw new Error("Native EVM transfer did not complete successfully.");
+        return { success: true, asset: tokenConfig.symbol, network: "evm", transactionHash: receipt.hash || transaction.hash };
+    }
     const contractAddress = tokenConfig?.contractAddress || "";
     if (!contractAddress) {
         throw new Error(`No ${requestedSymbol || "default"} EVM token configured. Add it to the asset JSON.`);
