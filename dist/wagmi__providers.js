@@ -1,11 +1,11 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, useAccount } from "wagmi";
+import { WagmiProvider } from "wagmi";
 import { config } from "./config/walletConfig";
 import { UI_Comp } from "./components";
-import { getConsUrl, requestConsDisconnect } from "./client/consRuntime";
+import { getConsUrl } from "./client/consRuntime";
 import { WatchWalletChanges } from "@stellar/freighter-api";
 const WalletContext = createContext(null);
 const StellarWalletContext = createContext(null);
@@ -110,11 +110,8 @@ export default function WalletProviders({ children, config: walletConfig = confi
                     }, children: [children, open && _jsx(UI_Comp, {}), " ", _jsx(WalletSessionDisconnectWatcher, { consPath: consPath, enabled: consSessionEnabled })] }) }) }) }));
 }
 function WalletSessionDisconnectWatcher({ consPath, enabled }) {
-    const { isConnected } = useAccount();
     const { stellarWallet, clearStellarWallet } = useStellarWallet();
     const [authenticated, setAuthenticated] = useState(false);
-    const previouslyConnected = useRef(Boolean(isConnected || stellarWallet.address));
-    const connected = Boolean(isConnected || stellarWallet.address);
     useEffect(() => {
         if (!enabled)
             return;
@@ -146,21 +143,6 @@ function WalletSessionDisconnectWatcher({ consPath, enabled }) {
         });
         return () => watcher.stop();
     }, [clearStellarWallet, stellarWallet.address]);
-    useEffect(() => {
-        if (!enabled)
-            return;
-        if (connected) {
-            previouslyConnected.current = true;
-            return;
-        }
-        if (previouslyConnected.current) {
-            previouslyConnected.current = false;
-            void requestConsDisconnect(consPath).then(() => setAuthenticated(false));
-        }
-        else if (!authenticated) {
-            previouslyConnected.current = false;
-        }
-    }, [authenticated, connected, consPath, enabled]);
     return null;
 }
 export function useWalletModal() {

@@ -90,6 +90,25 @@ export type CordyBridgeResult = {
   warning?: string;
 };
 
+async function disconnectActiveEvmWallets(): Promise<void> {
+  const walletConfig = getActiveWagmiConfig();
+  const connections = Array.from(walletConfig.state.connections.values());
+  if (connections.length === 0) return;
+  let disconnect: typeof import("wagmi/actions").disconnect;
+  try {
+    ({ disconnect } = await import("wagmi/actions"));
+  } catch {
+    return;
+  }
+  for (const connection of connections) {
+    try {
+      await disconnect(walletConfig, { connector: connection.connector });
+    } catch {
+      // A bridge result or its original error should not be replaced by cleanup failure.
+    }
+  }
+}
+
 // Bridge deployments and tokens are supplied through the app's bridge configuration.
 const BRIDGE_ERC20_ABI = [
   "function allowance(address owner,address spender) view returns (uint256)",
@@ -425,11 +444,6 @@ async function bridgeEvm(
   const transaction = await bridge.deposit(destinationChainId, route.resourceId!, recipient, amountIn);
   const receipt = await transaction.wait();
   if (!receipt || receipt.status !== 1) throw new Error("The source-chain bridge deposit failed.");
-  const { disconnect } = await import("wagmi/actions");
-  for (const activeConnection of Array.from(walletConfig.state.connections.values())) {
-    await disconnect(walletConfig, { connector: activeConnection.connector });
-  }
-
   return {
     success: true,
     asset: sourceConfig.assetSymbol,
@@ -565,6 +579,7 @@ export async function cordy_bridge(
   recipient: string,
   options: CordyBridgeOptions = {},
 ): Promise<CordyBridgeResult> {
+  let disconnectEvmAfterStellarCctp = false;
   try {
     const normalized = normalizedAmount(amount);
     const route = resolveBridgeRoute(configuredAssets?.bridge, options.routeId);
@@ -578,6 +593,10 @@ export async function cordy_bridge(
     if (!destinationConfig) {
       throw new Error(`Bridge destination configuration for '${to}' is missing.`);
     }
+    disconnectEvmAfterStellarCctp = route.protocol === "cctp" && (
+      (sourceConfig.networkType === "stellar" && destinationConfig.networkType === "evm") ||
+      (sourceConfig.networkType === "evm" && destinationConfig.networkType === "stellar")
+    );
     const needsEvmWallet = sourceConfig.networkType === "evm"
       || (route.protocol === "cctp" && sourceConfig.networkType === "stellar" && destinationConfig.networkType === "evm");
     if (needsEvmWallet) {
@@ -618,6 +637,8 @@ export async function cordy_bridge(
       error: errorDetail,
       errorDetail,
     };
+  } finally {
+    if (disconnectEvmAfterStellarCctp) await disconnectActiveEvmWallets();
   }
 }
 

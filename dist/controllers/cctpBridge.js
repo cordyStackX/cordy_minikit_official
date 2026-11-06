@@ -149,13 +149,6 @@ async function getDestinationEvmWallet(destination) {
     }
     return { walletConfig, connection, provider };
 }
-async function disconnectEvmWallets(walletConfig) {
-    const { disconnect } = await import("wagmi/actions");
-    const connections = Array.from(walletConfig.state.connections.values());
-    for (const connection of connections) {
-        await disconnect(walletConfig, { connector: connection.connector });
-    }
-}
 async function bridgeStellarToEvm(amount, from, to, recipient, route) {
     const source = route[from];
     const destination = route[to];
@@ -210,7 +203,6 @@ async function bridgeStellarToEvm(amount, from, to, recipient, route) {
     const receipt = await mintTransaction.wait();
     if (!receipt || receipt.status !== 1)
         throw new Error("EVM CCTP mint transaction failed.");
-    await disconnectEvmWallets(destinationWallet.walletConfig);
     return {
         success: true,
         asset: source.assetSymbol,
@@ -299,15 +291,6 @@ export async function cctpBridge(amount, from, to, recipient, route) {
     const receipt = await evmStep("wait for the EVM burn receipt", () => transaction.wait());
     if (!receipt || receipt.status !== 1)
         throw new Error("CCTP burn transaction failed.");
-    let disconnectWarning;
-    try {
-        await disconnectEvmWallets(walletConfig);
-    }
-    catch (error) {
-        disconnectWarning = error instanceof Error
-            ? `The bridge completed, but the EVM wallet could not be disconnected: ${error.message}`
-            : "The bridge completed, but the EVM wallet could not be disconnected.";
-    }
     return {
         success: true,
         asset: source.assetSymbol,
@@ -321,6 +304,5 @@ export async function cctpBridge(amount, from, to, recipient, route) {
         ...(approvalTransactionHash ? { approvalTransactionHash } : {}),
         transactionHash: receipt.hash || transaction.hash,
         status: "pending",
-        ...(disconnectWarning ? { warning: disconnectWarning } : {}),
     };
 }

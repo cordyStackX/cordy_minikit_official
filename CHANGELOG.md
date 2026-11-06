@@ -1,3 +1,11 @@
+## [3.1.2] - 2026-11-06
+
+### Fixed
+
+- EVM bridge flows no longer disconnect wallets after a successful bridge, preserving the connected wallet and SIWE UI session.
+- Wallet connection changes no longer clear an active SIWE or SEP-10 session; use `cordy.cons_disconnect()` to log out explicitly.
+- CCTP bridge flows involving Stellar disconnect the EVM wallet after completion or failure without clearing its SIWE session.
+
 ## [3.1.1] - 2026-11-04
 
 ### Fixed
