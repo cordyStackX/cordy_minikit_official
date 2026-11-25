@@ -3,6 +3,11 @@
 ### Fixed
 
 - Soroban transaction confirmation polling now stops after two minutes and returns the submitted transaction hash when confirmation is still pending. Stellar CCTP burn submissions retain their recovery record for later resumption.
+- Replaced trailing-slash regular-expression normalization for the configurable auth path with a bounded string operation.
+
+### Security
+
+- Updated the landing page's `minimatch` resolution to patched version 11.0.1 for the ESLint TypeScript parser dependency.
 
 ## [3.1.3] - 2026-11-25
 

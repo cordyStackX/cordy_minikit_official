@@ -5,7 +5,9 @@ export function setConsPath(path) {
         activeConsPath = DEFAULT_CONS_PATH;
         return;
     }
-    const normalized = path.trim().replace(/\/+$/, "");
+    let normalized = path.trim();
+    while (normalized.endsWith("/"))
+        normalized = normalized.slice(0, -1);
     if (!normalized.startsWith("/") || normalized.startsWith("//") || /[?#\\]/.test(normalized)) {
         throw new Error('ProvidersClientWrapper: "consPath" must be a same-origin path such as "/services/cons".');
     }
