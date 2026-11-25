@@ -273,6 +273,10 @@ Direction changes which wallets and completion steps are needed:
   `cordy:stellar-cctp-recovery-result` on `window` to receive the resulting
   `CordyBridgeResult` in your app UI. The burn submission is also announced by
   `cordy:stellar-cctp-burn-submitted` with its transaction hash.
+  Stellar Soroban confirmation polling is bounded to two minutes. If the
+  transaction is still unconfirmed, the result has `status: "pending"` and
+  includes its transaction hash; a pending CCTP burn remains available for
+  recovery.
 - **EVM → Stellar:** Cordy submits the EVM CCTP burn and returns with
   `status: "pending"`. The current SDK call does not submit the Stellar
   destination mint/forward. Confirm that the destination CCTP forwarder flow

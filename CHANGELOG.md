@@ -1,3 +1,9 @@
+## [3.1.4] - 2026-11-25
+
+### Fixed
+
+- Soroban transaction confirmation polling now stops after two minutes and returns the submitted transaction hash when confirmation is still pending. Stellar CCTP burn submissions retain their recovery record for later resumption.
+
 ## [3.1.3] - 2026-11-25
 
 ### Added

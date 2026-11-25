@@ -41,6 +41,17 @@ const MESSAGE_TRANSMITTER_ABI = [
 ];
 const EMPTY_DESTINATION_CALLER = `0x${"00".repeat(32)}`;
 const STELLAR_CCTP_RECOVERY_KEY = "cordy_minikit_stellar_cctp_recovery";
+const STELLAR_CONFIRMATION_POLL_INTERVAL_MS = 2000;
+const STELLAR_CONFIRMATION_MAX_POLLS = 60;
+
+class StellarTransactionPendingError extends Error {
+  constructor(readonly transactionHash: string, detail?: string) {
+    super(detail
+      ? `Stellar transaction ${transactionHash} was submitted, but confirmation could not be checked: ${detail}`
+      : `Stellar transaction ${transactionHash} was submitted but is still unconfirmed after ${STELLAR_CONFIRMATION_MAX_POLLS * STELLAR_CONFIRMATION_POLL_INTERVAL_MS / 1000} seconds.`);
+    this.name = "StellarTransactionPendingError";
+  }
+}
 
 async function getConnectedEvmProvider(connection: { connector: { getProvider?: () => Promise<unknown> } }): Promise<Eip1193Provider> {
   const connector = connection.connector as typeof connection.connector & { getProvider?: () => Promise<unknown> };
@@ -126,11 +137,18 @@ async function submitStellarSorobanTransaction(
     const result = await server.sendTransaction(TransactionBuilder.fromXDR(signed.signedTxXdr, networkPassphrase));
     if (result.status === "ERROR") throw new Error(`Stellar transaction submission failed: ${JSON.stringify(result)}`);
     onSubmitted?.(result.hash);
-    let completed = await server.getTransaction(result.hash);
-    while (completed.status === "NOT_FOUND") {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    let completed: Awaited<ReturnType<typeof server.getTransaction>>;
+    try {
       completed = await server.getTransaction(result.hash);
+      for (let poll = 0; completed.status === "NOT_FOUND" && poll < STELLAR_CONFIRMATION_MAX_POLLS; poll += 1) {
+        await new Promise((resolve) => setTimeout(resolve, STELLAR_CONFIRMATION_POLL_INTERVAL_MS));
+        completed = await server.getTransaction(result.hash);
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new StellarTransactionPendingError(result.hash, detail);
     }
+    if (completed.status === "NOT_FOUND") throw new StellarTransactionPendingError(result.hash);
     if (completed.status !== "SUCCESS") throw new Error(`Stellar transaction failed: ${JSON.stringify(completed)}`);
     return result.hash;
   }
@@ -221,26 +239,45 @@ async function waitForCctpAttestation(sourceDomain: number, transactionHash: str
     const amountIn = parseUnits(amount, 7);
     const owner = new Address(sourceAddress).toScVal();
     const messenger = new Address(source.tokenMessengerMinter).toScVal();
-    const approveHash = await submitStellarSorobanTransaction(server, source.tokenAddress, "approve", [
-      owner,
-      messenger,
-      nativeToScVal(amountIn, { type: "i128" }),
-      nativeToScVal(latestLedger.sequence + 100_000, { type: "u32" }),
-    ], networkPassphrase, sourceAddress);
+    let approveHash: string;
+    try {
+      approveHash = await submitStellarSorobanTransaction(server, source.tokenAddress, "approve", [
+        owner,
+        messenger,
+        nativeToScVal(amountIn, { type: "i128" }),
+        nativeToScVal(latestLedger.sequence + 100_000, { type: "u32" }),
+      ], networkPassphrase, sourceAddress);
+    } catch (error) {
+      if (error instanceof StellarTransactionPendingError) {
+        return { success: false, asset: source.assetSymbol, from, to, routeId: route.id, routeName: route.name, amount, status: "pending", transactionHash: error.transactionHash, error: error.message, errorDetail: error.message };
+      }
+      throw error;
+    }
     const recoveryForBurn = (burnTransactionHash: string) => ({ burnTransactionHash, from, to, routeId: route.id, routeName: route.name, amount, recipient, asset: source.assetSymbol, fromNetwork: source.networkName, toNetwork: destination.networkName });
-    const burnHash = await submitStellarSorobanTransaction(server, source.tokenMessengerMinter, "deposit_for_burn", [
-      owner,
-      nativeToScVal(amountIn, { type: "i128" }),
-      nativeToScVal(destination.domain, { type: "u32" }),
-      evmAddressBytes32(recipient),
-      new Address(source.tokenAddress).toScVal(),
-      xdr.ScVal.scvBytes(Buffer.alloc(32)),
-      nativeToScVal(0n, { type: "i128" }),
-      nativeToScVal(2000, { type: "u32" }),
-    ], networkPassphrase, sourceAddress, (hash) => {
-      try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recoveryForBurn(hash))); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
-      window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-burn-submitted", { detail: { transactionHash: hash } }));
-    });
+    let burnHash: string;
+    try {
+      burnHash = await submitStellarSorobanTransaction(server, source.tokenMessengerMinter, "deposit_for_burn", [
+        owner,
+        nativeToScVal(amountIn, { type: "i128" }),
+        nativeToScVal(destination.domain, { type: "u32" }),
+        evmAddressBytes32(recipient),
+        new Address(source.tokenAddress).toScVal(),
+        xdr.ScVal.scvBytes(Buffer.alloc(32)),
+        nativeToScVal(0n, { type: "i128" }),
+        nativeToScVal(2000, { type: "u32" }),
+      ], networkPassphrase, sourceAddress, (hash) => {
+        try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recoveryForBurn(hash))); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+        window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-burn-submitted", { detail: { transactionHash: hash } }));
+      });
+    } catch (error) {
+      if (error instanceof StellarTransactionPendingError) {
+        const recovery = recoveryForBurn(error.transactionHash);
+        try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recovery)); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+        return { success: false, ...recovery, status: "pending", transactionHash: error.transactionHash, error: error.message, errorDetail: error.message };
+      }
+      try { window.localStorage.removeItem(STELLAR_CCTP_RECOVERY_KEY); } catch { /* Ignore storage cleanup failures. */ }
+      throw error;
+    }
     const recovery = recoveryForBurn(burnHash);
     try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recovery)); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
     try {
