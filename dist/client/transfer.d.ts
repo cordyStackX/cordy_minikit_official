@@ -58,7 +58,8 @@ export type CordyBridgeResult = {
     amount?: string;
     approvalTransactionHash?: string;
     transactionHash?: string;
-    status?: "submitted" | "pending";
+    status?: "submitted" | "pending" | "burned";
+    burnTransactionHash?: string;
     error?: string;
     errorDetail?: string;
     warning?: string;
@@ -68,6 +69,8 @@ export declare function configureCordyAssets({ assets }: {
 }): void;
 /** Bridge a configured ERC-20 asset between the configured internal and external EVM sides. */
 export declare function cordy_bridge(amount: number | string, from: CordyBridgeSide, to: CordyBridgeSide, recipient: string, options?: CordyBridgeOptions): Promise<CordyBridgeResult>;
+/** Resume destination delivery for the most recent Stellar-to-EVM CCTP burn saved in this browser. */
+export declare function cordy_resumeBridge(): Promise<CordyBridgeResult>;
 /** Read the full-precision balance for the active wallet and selected asset. */
 export declare function cordy_balance(options?: CordyBalanceOptions): Promise<CordyBalanceResult>;
 /** Swap two configured assets using the active EVM or Stellar wallet. */

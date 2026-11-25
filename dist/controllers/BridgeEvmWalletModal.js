@@ -1,11 +1,12 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useSyncExternalStore, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore, useState } from "react";
 import { useConnect } from "wagmi";
 import Images from "../config/Image.json";
 import { UI_Comp__css } from "../css";
 import { isEvmEnvironmentConfigured } from "../config/walletConfig";
 import { getConfiguredEvmAssets, getCordyRuntimeConfig } from "../client/runtimeConfig";
+import { cordy_resumeBridge } from "../client/transfer";
 import { getBridgeWalletSession, rejectBridgeWalletSession, resolveBridgeWalletSession, subscribeBridgeWalletSession, } from "./bridgeWalletSession";
 const ALWAYS_AVAILABLE_CONNECTOR_NAMES = new Set([
     "WalletConnect",
@@ -69,6 +70,7 @@ async function prepareConnectedWallet(connector, routeId, from, to) {
     }
 }
 export default function BridgeEvmWalletModal({ open: controlledOpen, onClose: controlledOnClose, onConnected, onConnectionError, targetChainName, title, note, }) {
+    const recoveryStarted = useRef(false);
     const sessionRequest = useSyncExternalStore(subscribeBridgeWalletSession, getBridgeWalletSession, () => undefined);
     const open = controlledOpen ?? Boolean(sessionRequest);
     const onClose = controlledOnClose ?? (() => rejectBridgeWalletSession());
@@ -90,6 +92,26 @@ export default function BridgeEvmWalletModal({ open: controlledOpen, onClose: co
             setError(undefined);
         }
     }, [open]);
+    useEffect(() => {
+        if (recoveryStarted.current || typeof window === "undefined")
+            return;
+        try {
+            if (!window.localStorage.getItem("cordy_minikit_stellar_cctp_recovery"))
+                return;
+        }
+        catch {
+            return;
+        }
+        recoveryStarted.current = true;
+        void cordy_resumeBridge().then((result) => {
+            window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-recovery-result", { detail: result }));
+        }).catch((error) => {
+            const errorDetail = error instanceof Error ? error.message : String(error);
+            window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-recovery-result", {
+                detail: { success: false, status: "burned", error: errorDetail, errorDetail },
+            }));
+        });
+    }, []);
     if (!open)
         return null;
     const connect = async (connector) => {

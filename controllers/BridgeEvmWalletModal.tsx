@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore, useState } from "react";
 import { useConnect } from "wagmi";
 import type { Connector } from "wagmi";
 import type { Eip1193Provider } from "ethers";
@@ -8,6 +8,7 @@ import Images from "../config/Image.json";
 import { UI_Comp__css } from "../css";
 import { isEvmEnvironmentConfigured } from "../config/walletConfig";
 import { getConfiguredEvmAssets, getCordyRuntimeConfig } from "../client/runtimeConfig";
+import { cordy_resumeBridge } from "../client/transfer";
 import {
   getBridgeWalletSession,
   rejectBridgeWalletSession,
@@ -104,6 +105,7 @@ export default function BridgeEvmWalletModal({
   title,
   note,
 }: BridgeEvmWalletModalProps) {
+  const recoveryStarted = useRef(false);
   const sessionRequest = useSyncExternalStore(
     subscribeBridgeWalletSession,
     getBridgeWalletSession,
@@ -130,6 +132,24 @@ export default function BridgeEvmWalletModal({
       setError(undefined);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (recoveryStarted.current || typeof window === "undefined") return;
+    try {
+      if (!window.localStorage.getItem("cordy_minikit_stellar_cctp_recovery")) return;
+    } catch {
+      return;
+    }
+    recoveryStarted.current = true;
+    void cordy_resumeBridge().then((result) => {
+      window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-recovery-result", { detail: result }));
+    }).catch((error) => {
+      const errorDetail = error instanceof Error ? error.message : String(error);
+      window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-recovery-result", {
+        detail: { success: false, status: "burned", error: errorDetail, errorDetail },
+      }));
+    });
+  }, []);
 
   if (!open) return null;
 

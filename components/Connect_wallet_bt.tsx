@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { getTokenBalance, loadStellarBalance } from "../controllers";
 import { useStellarWallet, useWalletModal } from "../wagmi__providers";
+import { useConsSession } from "../client/useConsSession";
+
+function ConsSessionRedirect({ navigate }: { navigate: string }) {
+  const router = useRouter();
+  const session = useConsSession();
+
+  useEffect(() => {
+    if (session.authenticated) router.replace(navigate);
+  }, [navigate, router, session.authenticated]);
+
+  return null;
+}
 
 // const ACTIVE_WALLET_SESSION_KEY = "cordy_minikit_active_wallet_session";
 const STELLAR_BALANCE_REFRESH_EVENT = "cordy:stellar-balance-updated";
@@ -83,19 +96,22 @@ export default function ConnectWalletBT({
   }, [cons_session, setStellarWallet, stellarWallet.address]);
 
   return (
-    <button
-      className={className}
-      onClick={() => openModal({ consSession: cons_session, navigate })}
-      data-cons-session={cons_session ? "enabled" : undefined}
-      type="button"
-    >
-      {cons_session
-        ? walletConnected ? "Connected" : "Connect Wallet"
-        : isConnected
-          ? `BAL ${balance} ${symbol}`
-          : stellarWallet.address
-            ? `BAL ${stellarWallet.balance ?? "0"} XLM`
-            : "Connect Wallet"}
-    </button>
+    <>
+      {cons_session && navigate && <ConsSessionRedirect navigate={navigate} />}
+      <button
+        className={className}
+        onClick={() => openModal({ consSession: cons_session, navigate })}
+        data-cons-session={cons_session ? "enabled" : undefined}
+        type="button"
+      >
+        {cons_session
+          ? walletConnected ? "Connected" : "Connect Wallet"
+          : isConnected
+            ? `BAL ${balance} ${symbol}`
+            : stellarWallet.address
+              ? `BAL ${stellarWallet.balance ?? "0"} XLM`
+              : "Connect Wallet"}
+      </button>
+    </>
   );
 }

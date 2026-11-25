@@ -32,6 +32,17 @@ const MESSAGE_TRANSMITTER_ABI = [
     "function receiveMessage(bytes message,bytes attestation)",
 ];
 const EMPTY_DESTINATION_CALLER = `0x${"00".repeat(32)}`;
+const STELLAR_CCTP_RECOVERY_KEY = "cordy_minikit_stellar_cctp_recovery";
+async function getConnectedEvmProvider(connection) {
+    const connector = connection.connector;
+    if (typeof connector.getProvider === "function") {
+        return await connector.getProvider();
+    }
+    const injectedProvider = window.ethereum;
+    if (injectedProvider)
+        return injectedProvider;
+    throw new Error("The connected EVM wallet provider is unavailable. Reconnect the destination wallet and resume the bridge.");
+}
 function toBytes32(value) {
     if (!isAddress(value))
         throw new Error("CCTP EVM recipients must be valid EVM addresses.");
@@ -67,7 +78,7 @@ function evmAddressBytes32(value) {
         throw new Error("CCTP EVM recipients must be valid EVM addresses.");
     return xdr.ScVal.scvBytes(Buffer.from(value.slice(2).padStart(64, "0"), "hex"));
 }
-async function submitStellarSorobanTransaction(server, contractId, method, args, networkPassphrase, sourceAddress) {
+async function submitStellarSorobanTransaction(server, contractId, method, args, networkPassphrase, sourceAddress, onSubmitted) {
     const account = await server.getAccount(sourceAddress);
     const transaction = new TransactionBuilder(account, {
         fee: "10000000",
@@ -91,6 +102,7 @@ async function submitStellarSorobanTransaction(server, contractId, method, args,
     const result = await server.sendTransaction(TransactionBuilder.fromXDR(signed.signedTxXdr, networkPassphrase));
     if (result.status === "ERROR")
         throw new Error(`Stellar transaction submission failed: ${JSON.stringify(result)}`);
+    onSubmitted?.(result.hash);
     let completed = await server.getTransaction(result.hash);
     while (completed.status === "NOT_FOUND") {
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -125,7 +137,7 @@ async function getDestinationEvmWallet(destination) {
     if (!connection) {
         throw new Error("Connect an EVM wallet on the destination network before starting the Stellar CCTP transfer.");
     }
-    const rawProvider = await connection.connector.getProvider();
+    const rawProvider = await getConnectedEvmProvider(connection);
     let provider = new BrowserProvider(rawProvider);
     const chain = await evmStep(`read the connected wallet chain for ${destination.networkName}`, () => provider.getNetwork());
     if (destination.chainId === undefined || Number(chain.chainId) !== destination.chainId) {
@@ -186,6 +198,7 @@ async function bridgeStellarToEvm(amount, from, to, recipient, route) {
         nativeToScVal(amountIn, { type: "i128" }),
         nativeToScVal(latestLedger.sequence + 100000, { type: "u32" }),
     ], networkPassphrase, sourceAddress);
+    const recoveryForBurn = (burnTransactionHash) => ({ burnTransactionHash, from, to, routeId: route.id, routeName: route.name, amount, recipient, asset: source.assetSymbol, fromNetwork: source.networkName, toNetwork: destination.networkName });
     const burnHash = await submitStellarSorobanTransaction(server, source.tokenMessengerMinter, "deposit_for_burn", [
         owner,
         nativeToScVal(amountIn, { type: "i128" }),
@@ -195,7 +208,48 @@ async function bridgeStellarToEvm(amount, from, to, recipient, route) {
         xdr.ScVal.scvBytes(Buffer.alloc(32)),
         nativeToScVal(0n, { type: "i128" }),
         nativeToScVal(2000, { type: "u32" }),
-    ], networkPassphrase, sourceAddress);
+    ], networkPassphrase, sourceAddress, (hash) => {
+        try {
+            window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recoveryForBurn(hash)));
+        }
+        catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+        window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-burn-submitted", { detail: { transactionHash: hash } }));
+    });
+    const recovery = recoveryForBurn(burnHash);
+    try {
+        window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recovery));
+    }
+    catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+    try {
+        const result = await finishStellarToEvm(burnHash, source, destination, destinationWallet);
+        try {
+            window.localStorage.removeItem(STELLAR_CCTP_RECOVERY_KEY);
+        }
+        catch { /* Ignore storage cleanup failures. */ }
+        return {
+            success: true,
+            asset: source.assetSymbol,
+            from,
+            to,
+            fromNetwork: source.networkName,
+            toNetwork: destination.networkName,
+            routeId: route.id,
+            routeName: route.name,
+            amount,
+            transactionHash: result.hash,
+            status: "submitted",
+            approvalTransactionHash: approveHash,
+            burnTransactionHash: burnHash,
+        };
+    }
+    catch (error) {
+        const errorDetail = error instanceof Error ? error.message : String(error);
+        return { success: false, ...recovery, status: "burned", error: `The Stellar burn succeeded (${burnHash}), but destination minting did not finish: ${errorDetail}`, errorDetail };
+    }
+}
+async function finishStellarToEvm(burnHash, source, destination, destinationWallet) {
+    if (source.domain === undefined || !destination.messageTransmitter)
+        throw new Error("The saved CCTP route is missing its source domain or destination transmitter.");
     const attestation = await waitForCctpAttestation(source.domain, burnHash);
     const signer = await destinationWallet.provider.getSigner(destinationWallet.connection.accounts[0]);
     const transmitter = new Contract(destination.messageTransmitter, MESSAGE_TRANSMITTER_ABI, signer);
@@ -203,20 +257,19 @@ async function bridgeStellarToEvm(amount, from, to, recipient, route) {
     const receipt = await mintTransaction.wait();
     if (!receipt || receipt.status !== 1)
         throw new Error("EVM CCTP mint transaction failed.");
-    return {
-        success: true,
-        asset: source.assetSymbol,
-        from,
-        to,
-        fromNetwork: source.networkName,
-        toNetwork: destination.networkName,
-        routeId: route.id,
-        routeName: route.name,
-        amount,
-        transactionHash: receipt.hash || mintTransaction.hash,
-        status: "submitted",
-        approvalTransactionHash: approveHash,
-    };
+    return { hash: receipt.hash || mintTransaction.hash };
+}
+export async function cctpResumeStellarToEvm(burnHash, route, from, to) {
+    const source = route[from];
+    const destination = route[to];
+    if (!source || source.networkType !== "stellar" || !destination || destination.networkType !== "evm") {
+        throw new Error("Recovery requires a Stellar-to-EVM CCTP route.");
+    }
+    if (!destination.messageTransmitter)
+        throw new Error("The destination CCTP message transmitter is not configured.");
+    const wallet = await getDestinationEvmWallet(destination);
+    const result = await finishStellarToEvm(burnHash, source, destination, wallet);
+    return result.hash;
 }
 export async function cctpBridge(amount, from, to, recipient, route) {
     const source = route[from];

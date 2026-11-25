@@ -265,6 +265,14 @@ Direction changes which wallets and completion steps are needed:
 - **Stellar → EVM:** Cordy requires a connected Stellar wallet with the USDC
   trustline and an EVM wallet on the destination chain. It signs Stellar
   approval/burn calls, waits for Circle attestation, and submits the EVM mint.
+  If delivery fails after the burn, the response has `status: "burned"` and
+  `burnTransactionHash`; `cordy_resumeBridge()` retries attestation and minting
+  from the recovery record saved in that browser, without burning again.
+  When `<BridgeEvmWalletModal />` is mounted, the SDK automatically checks for
+  a saved burn on load and resumes delivery. Listen for
+  `cordy:stellar-cctp-recovery-result` on `window` to receive the resulting
+  `CordyBridgeResult` in your app UI. The burn submission is also announced by
+  `cordy:stellar-cctp-burn-submitted` with its transaction hash.
 - **EVM → Stellar:** Cordy submits the EVM CCTP burn and returns with
   `status: "pending"`. The current SDK call does not submit the Stellar
   destination mint/forward. Confirm that the destination CCTP forwarder flow
@@ -311,6 +319,11 @@ export function StellarToEvmBridge({ amount, evmRecipient }: {
   );
 }
 ```
+
+After a `burned` response, keep the user on the same browser and call
+`cordy_resumeBridge()` after the destination EVM wallet is available. A
+successful result includes both `burnTransactionHash` and the destination
+`transactionHash`.
 
 For this direction, the Stellar wallet signs the source approval/burn and the
 EVM wallet is needed to receive the attested destination mint. If the EVM

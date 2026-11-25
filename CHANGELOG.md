@@ -1,3 +1,16 @@
+## [3.1.3] - 2026-11-25
+
+### Added
+
+- Added `cordy_resumeBridge()` to retry Stellar-to-EVM CCTP attestation and minting from the saved burn hash without submitting another burn.
+- The SDK now resumes a saved Stellar-to-EVM CCTP burn when its `<BridgeEvmWalletModal />` mounts, opening the wallet flow if needed.
+
+### Fixed
+
+- Stellar-to-EVM CCTP failures after a confirmed Stellar burn now return `status: "burned"` and the burn transaction hash so the transfer can be recovered.
+- Stellar CCTP recovery can use the injected EVM provider when a restored wallet connector does not expose `getProvider()`.
+- `ConnectWalletBT` now redirects to its configured path when a valid server session already exists, including after returning to the app in a new tab.
+
 ## [3.1.2] - 2026-11-06
 
 ### Fixed
