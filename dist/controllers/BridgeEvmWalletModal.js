@@ -7,6 +7,7 @@ import { UI_Comp__css } from "../css";
 import { isEvmEnvironmentConfigured } from "../config/walletConfig";
 import { getConfiguredEvmAssets, getCordyRuntimeConfig } from "../client/runtimeConfig";
 import { cordy_resumeBridge } from "../client/transfer";
+import { getStellarCctpRecoveryRecords } from "./cctpBridge";
 import { getBridgeWalletSession, rejectBridgeWalletSession, resolveBridgeWalletSession, subscribeBridgeWalletSession, } from "./bridgeWalletSession";
 const ALWAYS_AVAILABLE_CONNECTOR_NAMES = new Set([
     "WalletConnect",
@@ -96,7 +97,7 @@ export default function BridgeEvmWalletModal({ open: controlledOpen, onClose: co
         if (recoveryStarted.current || typeof window === "undefined")
             return;
         try {
-            if (!window.localStorage.getItem("cordy_minikit_stellar_cctp_recovery"))
+            if (getStellarCctpRecoveryRecords().length === 0)
                 return;
         }
         catch {

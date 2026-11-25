@@ -38,11 +38,69 @@ const CCTP_MESSENGER_ABI = [
 ];
 const MESSAGE_TRANSMITTER_ABI = [
   "function receiveMessage(bytes message,bytes attestation)",
+  "function usedNonces(bytes32 nonce) view returns (bool)",
 ];
 const EMPTY_DESTINATION_CALLER = `0x${"00".repeat(32)}`;
 const STELLAR_CCTP_RECOVERY_KEY = "cordy_minikit_stellar_cctp_recovery";
 const STELLAR_CONFIRMATION_POLL_INTERVAL_MS = 2000;
 const STELLAR_CONFIRMATION_MAX_POLLS = 60;
+const CCTP_MINT_LOCK_TTL_MS = 15 * 60 * 1000;
+const activeCctpMints = new Set<string>();
+
+export type StellarCctpRecoveryRecord = {
+  burnTransactionHash: string;
+  from: CordyBridgeSide;
+  to: CordyBridgeSide;
+  routeId: string;
+  routeName?: string;
+  amount?: string;
+  recipient?: string;
+  asset?: string;
+  fromNetwork?: string;
+  toNetwork?: string;
+  mintTransactionHash?: string;
+};
+
+function readStellarCctpRecoveryMap(): Record<string, StellarCctpRecoveryRecord> {
+  try {
+    const stored = window.localStorage.getItem(STELLAR_CCTP_RECOVERY_KEY);
+    if (!stored) return {};
+    const parsed = JSON.parse(stored) as StellarCctpRecoveryRecord | Record<string, StellarCctpRecoveryRecord>;
+    const legacyRecord = parsed as Partial<StellarCctpRecoveryRecord>;
+    if (typeof legacyRecord.burnTransactionHash === "string") {
+      return { [legacyRecord.burnTransactionHash]: legacyRecord as StellarCctpRecoveryRecord };
+    }
+    return parsed as Record<string, StellarCctpRecoveryRecord>;
+  } catch {
+    return {};
+  }
+}
+
+export function getStellarCctpRecoveryRecords(): StellarCctpRecoveryRecord[] {
+  return Object.values(readStellarCctpRecoveryMap()).filter((record) => Boolean(record?.burnTransactionHash && record?.routeId));
+}
+
+function saveStellarCctpRecoveryRecord(record: StellarCctpRecoveryRecord): void {
+  const records = readStellarCctpRecoveryMap();
+  records[record.burnTransactionHash] = record;
+  window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(records));
+}
+
+export function removeStellarCctpRecoveryRecord(burnHash: string): void {
+  const records = readStellarCctpRecoveryMap();
+  delete records[burnHash];
+  try {
+    if (Object.keys(records).length) window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(records));
+    else window.localStorage.removeItem(STELLAR_CCTP_RECOVERY_KEY);
+  } catch { /* Ignore storage cleanup failures. */ }
+}
+
+class CctpMintPendingError extends Error {
+  constructor(readonly burnTransactionHash: string, readonly mintTransactionHash?: string) {
+    super(`Destination mint recovery for burn ${burnTransactionHash} is already in progress. Check the pending wallet transaction before retrying.`);
+    this.name = "CctpMintPendingError";
+  }
+}
 
 class StellarTransactionPendingError extends Error {
   constructor(readonly transactionHash: string, detail?: string) {
@@ -226,6 +284,39 @@ async function waitForCctpAttestation(sourceDomain: number, transactionHash: str
       throw new Error("Configure stellarNetwork.sorobanRpcUrl for Stellar CCTP.");
     }
     const destinationWallet = await getDestinationEvmWallet(destination);
+    const pendingRecovery = getStellarCctpRecoveryRecords().find((record) =>
+      record.routeId === route.id && record.from === from && record.to === to,
+    );
+    if (pendingRecovery) {
+      try {
+        const resumed = await finishStellarToEvm(pendingRecovery.burnTransactionHash, source, destination, destinationWallet);
+        removeStellarCctpRecoveryRecord(pendingRecovery.burnTransactionHash);
+        return {
+          success: true,
+          asset: pendingRecovery.asset ?? source.assetSymbol,
+          from,
+          to,
+          fromNetwork: pendingRecovery.fromNetwork ?? source.networkName,
+          toNetwork: pendingRecovery.toNetwork ?? destination.networkName,
+          routeId: route.id,
+          routeName: route.name,
+          amount: pendingRecovery.amount,
+          burnTransactionHash: pendingRecovery.burnTransactionHash,
+          transactionHash: resumed.hash,
+          status: "submitted",
+          ...(resumed.alreadyReceived ? { warning: "This CCTP message was already received on the destination; no additional mint was submitted." } : {}),
+        };
+      } catch (error) {
+        const errorDetail = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          ...pendingRecovery,
+          status: error instanceof CctpMintPendingError ? "pending" : "burned",
+          error: errorDetail,
+          errorDetail,
+        };
+      }
+    }
     const access = await requestAccess();
     const sourceAddress = access.address;
     if (!sourceAddress) throw new Error("No Stellar wallet account is available.");
@@ -266,23 +357,22 @@ async function waitForCctpAttestation(sourceDomain: number, transactionHash: str
         nativeToScVal(0n, { type: "i128" }),
         nativeToScVal(2000, { type: "u32" }),
       ], networkPassphrase, sourceAddress, (hash) => {
-        try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recoveryForBurn(hash))); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+        try { saveStellarCctpRecoveryRecord(recoveryForBurn(hash)); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
         window.dispatchEvent(new CustomEvent("cordy:stellar-cctp-burn-submitted", { detail: { transactionHash: hash } }));
       });
     } catch (error) {
       if (error instanceof StellarTransactionPendingError) {
         const recovery = recoveryForBurn(error.transactionHash);
-        try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recovery)); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+        try { saveStellarCctpRecoveryRecord(recovery); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
         return { success: false, ...recovery, status: "pending", transactionHash: error.transactionHash, error: error.message, errorDetail: error.message };
       }
-      try { window.localStorage.removeItem(STELLAR_CCTP_RECOVERY_KEY); } catch { /* Ignore storage cleanup failures. */ }
       throw error;
     }
     const recovery = recoveryForBurn(burnHash);
-    try { window.localStorage.setItem(STELLAR_CCTP_RECOVERY_KEY, JSON.stringify(recovery)); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
+    try { saveStellarCctpRecoveryRecord(recovery); } catch { /* Recovery storage may be unavailable in restricted browsers. */ }
     try {
       const result = await finishStellarToEvm(burnHash, source, destination, destinationWallet);
-      try { window.localStorage.removeItem(STELLAR_CCTP_RECOVERY_KEY); } catch { /* Ignore storage cleanup failures. */ }
+      removeStellarCctpRecoveryRecord(burnHash);
       return {
       success: true,
       asset: source.assetSymbol,
@@ -297,25 +387,83 @@ async function waitForCctpAttestation(sourceDomain: number, transactionHash: str
       status: "submitted",
       approvalTransactionHash: approveHash,
       burnTransactionHash: burnHash,
+      ...(result.alreadyReceived ? { warning: "This CCTP message was already received on the destination; no additional mint was submitted." } : {}),
       };
     } catch (error) {
       const errorDetail = error instanceof Error ? error.message : String(error);
+      if (error instanceof CctpMintPendingError) {
+        return { success: false, ...recovery, status: "pending", transactionHash: error.mintTransactionHash, error: errorDetail, errorDetail };
+      }
       return { success: false, ...recovery, status: "burned", error: `The Stellar burn succeeded (${burnHash}), but destination minting did not finish: ${errorDetail}`, errorDetail };
     }
 }
 
 async function finishStellarToEvm(burnHash: string, source: CordyBridgeRouteConfig["internal"], destination: CordyBridgeRouteConfig["external"], destinationWallet: Awaited<ReturnType<typeof getDestinationEvmWallet>>) {
   if (source.domain === undefined || !destination.messageTransmitter) throw new Error("The saved CCTP route is missing its source domain or destination transmitter.");
-  const attestation = await waitForCctpAttestation(source.domain, burnHash);
-  const signer = await destinationWallet.provider.getSigner(destinationWallet.connection.accounts[0]);
-  const transmitter = new Contract(destination.messageTransmitter, MESSAGE_TRANSMITTER_ABI, signer);
-  const mintTransaction = await transmitter.receiveMessage(attestation.message, attestation.attestation);
-  const receipt = await mintTransaction.wait();
-  if (!receipt || receipt.status !== 1) throw new Error("EVM CCTP mint transaction failed.");
-  return { hash: receipt.hash || mintTransaction.hash };
+  if (activeCctpMints.has(burnHash)) throw new CctpMintPendingError(burnHash);
+  activeCctpMints.add(burnHash);
+  const lockKey = `${STELLAR_CCTP_RECOVERY_KEY}:mint:${burnHash}`;
+  let mintTransactionHash: string | undefined;
+  let lockWritten = false;
+  let transmitter: Contract | undefined;
+  let nonce: string | undefined;
+  try {
+    const attestation = await waitForCctpAttestation(source.domain, burnHash);
+    const signer = await destinationWallet.provider.getSigner(destinationWallet.connection.accounts[0]);
+    transmitter = new Contract(destination.messageTransmitter, MESSAGE_TRANSMITTER_ABI, signer);
+    if (!/^0x[\da-fA-F]{88,}$/.test(attestation.message)) throw new Error("Circle returned a malformed CCTP message; its nonce cannot be checked.");
+    nonce = `0x${attestation.message.slice(2 + 24, 2 + 24 + 64)}`;
+    if (await transmitter.usedNonces(nonce)) {
+      try { window.localStorage.removeItem(lockKey); } catch { /* The on-chain nonce is authoritative. */ }
+      return { alreadyReceived: true as const };
+    }
+
+    let previousLock: { expiresAt?: number; mintTransactionHash?: string } | undefined;
+    try {
+      const rawLock = window.localStorage.getItem(lockKey);
+      previousLock = rawLock ? JSON.parse(rawLock) as typeof previousLock : undefined;
+    } catch { /* Ignore malformed or inaccessible lock data and continue with the nonce check. */ }
+    if (previousLock?.expiresAt && previousLock.expiresAt > Date.now()) {
+      throw new CctpMintPendingError(burnHash, previousLock.mintTransactionHash);
+    }
+
+    const lock = { burnTransactionHash: burnHash, expiresAt: Date.now() + CCTP_MINT_LOCK_TTL_MS };
+    try {
+      window.localStorage.setItem(lockKey, JSON.stringify(lock));
+      lockWritten = true;
+    } catch { /* In-memory guard still protects retries in this tab. */ }
+
+    const mintTransaction = await transmitter.receiveMessage(attestation.message, attestation.attestation);
+    mintTransactionHash = mintTransaction.hash;
+    const extendedLock = { ...lock, mintTransactionHash, expiresAt: Date.now() + CCTP_MINT_LOCK_TTL_MS };
+    try {
+      window.localStorage.setItem(lockKey, JSON.stringify(extendedLock));
+      const recovery = readStellarCctpRecoveryMap()[burnHash];
+      if (recovery) saveStellarCctpRecoveryRecord({ ...recovery, mintTransactionHash });
+    } catch { /* Keep the persistent pre-submit lock if storage becomes unavailable. */ }
+
+    const receipt = await mintTransaction.wait();
+    if (!receipt || receipt.status !== 1) throw new Error("EVM CCTP mint transaction failed.");
+    try { window.localStorage.removeItem(lockKey); } catch { /* Nonce check protects the next retry. */ }
+    return { hash: receipt.hash || mintTransactionHash };
+  } catch (error) {
+    if (lockWritten && !mintTransactionHash) {
+      try { window.localStorage.removeItem(lockKey); } catch { /* Ignore lock cleanup failures. */ }
+    } else if (lockWritten && mintTransactionHash) {
+      try {
+        const receipt = await destinationWallet.provider.getTransactionReceipt(mintTransactionHash);
+        if (receipt && (receipt.status === 0 || (transmitter && nonce && await transmitter.usedNonces(nonce)))) {
+          window.localStorage.removeItem(lockKey);
+        }
+      } catch { /* Keep the lock while transaction outcome remains unknown. */ }
+    }
+    throw error;
+  } finally {
+    activeCctpMints.delete(burnHash);
+  }
 }
 
-export async function cctpResumeStellarToEvm(burnHash: string, route: CordyBridgeRouteConfig, from: CordyBridgeSide, to: CordyBridgeSide): Promise<string> {
+export async function cctpResumeStellarToEvm(burnHash: string, route: CordyBridgeRouteConfig, from: CordyBridgeSide, to: CordyBridgeSide): Promise<{ transactionHash?: string; alreadyReceived?: boolean }> {
   const source = route[from];
   const destination = route[to];
   if (!source || source.networkType !== "stellar" || !destination || destination.networkType !== "evm") {
@@ -324,7 +472,7 @@ export async function cctpResumeStellarToEvm(burnHash: string, route: CordyBridg
   if (!destination.messageTransmitter) throw new Error("The destination CCTP message transmitter is not configured.");
   const wallet = await getDestinationEvmWallet(destination);
   const result = await finishStellarToEvm(burnHash, source, destination, wallet);
-  return result.hash;
+  return { transactionHash: result.hash, alreadyReceived: result.alreadyReceived };
 }
 
 export async function cctpBridge(

@@ -1,3 +1,10 @@
+## [3.1.5] - Unrelease
+
+### Fixed
+
+- CCTP recovery now guards an in-flight mint per burn and checks the transmitter nonce before retrying, preventing reloads from prompting duplicate mints.
+- Stellar CCTP recovery records are kept per burn hash; starting the same route again resumes its saved burn instead of overwriting it or burning again.
+
 ## [3.1.4] - 2026-11-25
 
 ### Fixed

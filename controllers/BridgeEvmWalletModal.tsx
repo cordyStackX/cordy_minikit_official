@@ -9,6 +9,7 @@ import { UI_Comp__css } from "../css";
 import { isEvmEnvironmentConfigured } from "../config/walletConfig";
 import { getConfiguredEvmAssets, getCordyRuntimeConfig } from "../client/runtimeConfig";
 import { cordy_resumeBridge } from "../client/transfer";
+import { getStellarCctpRecoveryRecords } from "./cctpBridge";
 import {
   getBridgeWalletSession,
   rejectBridgeWalletSession,
@@ -136,7 +137,7 @@ export default function BridgeEvmWalletModal({
   useEffect(() => {
     if (recoveryStarted.current || typeof window === "undefined") return;
     try {
-      if (!window.localStorage.getItem("cordy_minikit_stellar_cctp_recovery")) return;
+      if (getStellarCctpRecoveryRecords().length === 0) return;
     } catch {
       return;
     }

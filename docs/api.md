@@ -272,7 +272,12 @@ Direction changes which wallets and completion steps are needed:
   a saved burn on load and resumes delivery. Listen for
   `cordy:stellar-cctp-recovery-result` on `window` to receive the resulting
   `CordyBridgeResult` in your app UI. The burn submission is also announced by
-  `cordy:stellar-cctp-burn-submitted` with its transaction hash.
+  `cordy:stellar-cctp-burn-submitted` with its transaction hash. Recovery
+  guards an in-flight destination mint per burn and checks the transmitter
+  nonce before retrying, so reloading does not submit the same mint twice.
+  Recovery records are keyed by burn hash. Starting the same Stellar-to-EVM
+  route again resumes its saved burn rather than overwriting the record or
+  submitting another burn.
   Stellar Soroban confirmation polling is bounded to two minutes. If the
   transaction is still unconfirmed, the result has `status: "pending"` and
   includes its transaction hash; a pending CCTP burn remains available for

@@ -6,7 +6,7 @@ import { BrowserProvider, Contract, formatUnits, isAddress, JsonRpcProvider, par
 import { getActiveWagmiConfig } from "../config/walletConfig";
 import { readTokenBalance } from "../controllers/Get_Balance";
 import loadStellarBalance from "../controllers/loadStellarBalance";
-import { cctpBridge, cctpResumeStellarToEvm } from "../controllers/cctpBridge";
+import { cctpBridge, cctpResumeStellarToEvm, getStellarCctpRecoveryRecords, removeStellarCctpRecoveryRecord } from "../controllers/cctpBridge";
 import tokenAbi from "../config/ERC20_ABI.json";
 import { setCordyRuntimeConfig } from "./runtimeConfig";
 import { waitForBridgeEvmWallet } from "../controllers/bridgeWalletSession";
@@ -647,10 +647,8 @@ export async function cordy_bridge(
 export async function cordy_resumeBridge(): Promise<CordyBridgeResult> {
   let disconnectEvmAfterResume = false;
   try {
-    const raw = window.localStorage.getItem("cordy_minikit_stellar_cctp_recovery");
-    if (!raw) throw new Error("No recoverable Stellar CCTP burn was found in this browser.");
-    const recovery = JSON.parse(raw) as { burnTransactionHash?: string; from?: CordyBridgeSide; to?: CordyBridgeSide; routeId?: string; amount?: string; recipient?: string; asset?: string; fromNetwork?: string; toNetwork?: string; routeName?: string };
-    if (!recovery.burnTransactionHash || !recovery.from || !recovery.to || !recovery.routeId) throw new Error("The saved Stellar CCTP recovery record is incomplete.");
+    const recovery = getStellarCctpRecoveryRecords()[0];
+    if (!recovery) throw new Error("No recoverable Stellar CCTP burn was found in this browser.");
     const route = resolveBridgeRoute(configuredAssets?.bridge, recovery.routeId);
     const source = route[recovery.from];
     const destination = route[recovery.to];
@@ -673,11 +671,15 @@ export async function cordy_resumeBridge(): Promise<CordyBridgeResult> {
         destinationNetworkType: "evm",
       });
     }
-    const transactionHash = await cctpResumeStellarToEvm(recovery.burnTransactionHash, route, recovery.from, recovery.to);
-    try { window.localStorage.removeItem("cordy_minikit_stellar_cctp_recovery"); } catch { /* Ignore storage cleanup failures after a successful mint. */ }
-    return { success: true, from: recovery.from, to: recovery.to, routeId: route.id, routeName: route.name, amount: recovery.amount, asset: recovery.asset, fromNetwork: recovery.fromNetwork, toNetwork: recovery.toNetwork, burnTransactionHash: recovery.burnTransactionHash, transactionHash, status: "submitted" };
+    const resumed = await cctpResumeStellarToEvm(recovery.burnTransactionHash, route, recovery.from, recovery.to);
+    removeStellarCctpRecoveryRecord(recovery.burnTransactionHash);
+    return { success: true, from: recovery.from, to: recovery.to, routeId: route.id, routeName: route.name, amount: recovery.amount, asset: recovery.asset, fromNetwork: recovery.fromNetwork, toNetwork: recovery.toNetwork, burnTransactionHash: recovery.burnTransactionHash, transactionHash: resumed.transactionHash, status: "submitted", ...(resumed.alreadyReceived ? { warning: "This CCTP message was already received on the destination. No additional mint was submitted." } : {}) };
   } catch (error) {
     const errorDetail = error instanceof Error ? error.message : String(error);
+    if (error instanceof Error && error.name === "CctpMintPendingError") {
+      const pendingError = error as Error & { burnTransactionHash?: string; mintTransactionHash?: string };
+      return { success: false, status: "pending", burnTransactionHash: pendingError.burnTransactionHash, transactionHash: pendingError.mintTransactionHash, error: errorDetail, errorDetail };
+    }
     return { success: false, status: "burned", error: errorDetail, errorDetail };
   } finally {
     if (disconnectEvmAfterResume) await disconnectActiveEvmWallets();
