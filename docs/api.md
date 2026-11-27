@@ -277,7 +277,9 @@ Direction changes which wallets and completion steps are needed:
   nonce before retrying, so reloading does not submit the same mint twice.
   Recovery records are keyed by burn hash. Starting the same Stellar-to-EVM
   route again resumes its saved burn rather than overwriting the record or
-  submitting another burn.
+  submitting another burn. CCTP EVM transaction waits follow wallet speed-ups
+  and use the replacement receipt; cancelling a pending mint clears its lock
+  so the saved burn can be resumed.
   Stellar Soroban confirmation polling is bounded to two minutes. If the
   transaction is still unconfirmed, the result has `status: "pending"` and
   includes its transaction hash; a pending CCTP burn remains available for

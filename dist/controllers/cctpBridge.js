@@ -1,4 +1,4 @@
-import { BrowserProvider, Contract, isAddress, parseUnits } from "ethers";
+import { BrowserProvider, Contract, isAddress, isError, parseUnits } from "ethers";
 import { Address, Contract as StellarContract, nativeToScVal, rpc, StrKey, TransactionBuilder, xdr } from "@stellar/stellar-sdk";
 import { getNetworkDetails, requestAccess, signTransaction as freighterSignTransaction } from "@stellar/freighter-api";
 import { getCordyRuntimeConfig } from "../client/runtimeConfig";
@@ -79,6 +79,25 @@ class CctpMintPendingError extends Error {
         this.burnTransactionHash = burnTransactionHash;
         this.mintTransactionHash = mintTransactionHash;
         this.name = "CctpMintPendingError";
+    }
+}
+class EvmTransactionCancelledError extends Error {
+    constructor(replacementHash) {
+        super("The wallet cancelled the EVM transaction by replacing it with a cancellation transaction.");
+        this.replacementHash = replacementHash;
+        this.name = "EvmTransactionCancelledError";
+    }
+}
+async function waitForReplaceableEvmTransaction(transaction, startBlock) {
+    try {
+        return await transaction.replaceableTransaction(startBlock).wait();
+    }
+    catch (error) {
+        if (!isError(error, "TRANSACTION_REPLACED"))
+            throw error;
+        if (error.cancelled)
+            throw new EvmTransactionCancelledError(error.receipt?.hash);
+        return error.receipt;
     }
 }
 class StellarTransactionPendingError extends Error {
@@ -409,6 +428,7 @@ async function finishStellarToEvm(burnHash, source, destination, destinationWall
             lockWritten = true;
         }
         catch { /* In-memory guard still protects retries in this tab. */ }
+        const startBlock = await signer.provider.getBlockNumber();
         const mintTransaction = await transmitter.receiveMessage(attestation.message, attestation.attestation);
         mintTransactionHash = mintTransaction.hash;
         const extendedLock = { ...lock, mintTransactionHash, expiresAt: Date.now() + CCTP_MINT_LOCK_TTL_MS };
@@ -419,7 +439,40 @@ async function finishStellarToEvm(burnHash, source, destination, destinationWall
                 saveStellarCctpRecoveryRecord({ ...recovery, mintTransactionHash });
         }
         catch { /* Keep the persistent pre-submit lock if storage becomes unavailable. */ }
-        const receipt = await mintTransaction.wait();
+        let receipt;
+        try {
+            receipt = await waitForReplaceableEvmTransaction(mintTransaction, startBlock);
+        }
+        catch (error) {
+            if (error instanceof EvmTransactionCancelledError) {
+                try {
+                    window.localStorage.removeItem(lockKey);
+                }
+                catch { /* A cancelled tx cannot consume this CCTP nonce. */ }
+                lockWritten = false;
+                const recovery = readStellarCctpRecoveryMap()[burnHash];
+                if (recovery) {
+                    const { mintTransactionHash: _ignored, ...withoutMintHash } = recovery;
+                    try {
+                        saveStellarCctpRecoveryRecord(withoutMintHash);
+                    }
+                    catch { /* Keep the burn record for another resume attempt. */ }
+                }
+                mintTransactionHash = undefined;
+            }
+            throw error;
+        }
+        if (receipt?.hash) {
+            mintTransactionHash = receipt.hash;
+            try {
+                const lock = { burnTransactionHash: burnHash, mintTransactionHash, expiresAt: Date.now() + CCTP_MINT_LOCK_TTL_MS };
+                window.localStorage.setItem(lockKey, JSON.stringify(lock));
+                const recovery = readStellarCctpRecoveryMap()[burnHash];
+                if (recovery)
+                    saveStellarCctpRecoveryRecord({ ...recovery, mintTransactionHash });
+            }
+            catch { /* The receipt hash is still returned to the caller below. */ }
+        }
         if (!receipt || receipt.status !== 1)
             throw new Error("EVM CCTP mint transaction failed.");
         try {
@@ -513,8 +566,9 @@ export async function cctpBridge(amount, from, to, recipient, route) {
     const allowance = BigInt(allowanceValue.toString());
     let approvalTransactionHash;
     if (allowance < amountIn) {
+        const approvalStartBlock = await signer.provider.getBlockNumber();
         const approval = await evmStep(`submit ${source.assetSymbol} approval`, () => token.approve(source.tokenMessenger, amountIn));
-        const receipt = await evmStep("wait for the EVM approval receipt", () => approval.wait());
+        const receipt = await evmStep("wait for the EVM approval receipt", () => waitForReplaceableEvmTransaction(approval, approvalStartBlock));
         if (!receipt || receipt.status !== 1)
             throw new Error("CCTP token approval failed.");
         approvalTransactionHash = receipt.hash || approval.hash;
@@ -523,6 +577,7 @@ export async function cctpBridge(amount, from, to, recipient, route) {
     const destinationDomain = requireCctpArgument(destination.domain, "destination domain");
     const maxFee = 0n;
     const minFinalityThreshold = 2000;
+    const burnStartBlock = await signer.provider.getBlockNumber();
     if (destination.networkType === "stellar") {
         const forwarder = stellarContractToBytes32(destination.cctpForwarder);
         const hookData = buildForwarderHook(recipient);
@@ -532,7 +587,7 @@ export async function cctpBridge(amount, from, to, recipient, route) {
         const mintRecipient = toBytes32(recipient);
         transaction = await evmStep("submit the EVM CCTP burn", () => messenger.depositForBurn(amountIn, destinationDomain, mintRecipient, source.tokenAddress, EMPTY_DESTINATION_CALLER, maxFee, minFinalityThreshold));
     }
-    const receipt = await evmStep("wait for the EVM burn receipt", () => transaction.wait());
+    const receipt = await evmStep("wait for the EVM burn receipt", () => waitForReplaceableEvmTransaction(transaction, burnStartBlock));
     if (!receipt || receipt.status !== 1)
         throw new Error("CCTP burn transaction failed.");
     return {

@@ -4,6 +4,7 @@
 
 - CCTP recovery now guards an in-flight mint per burn and checks the transmitter nonce before retrying, preventing reloads from prompting duplicate mints.
 - Stellar CCTP recovery records are kept per burn hash; starting the same route again resumes its saved burn instead of overwriting it or burning again.
+- CCTP EVM mint, approval, and burn waits now follow speed-up replacements and return the replacement receipt; cancelling a pending mint releases its recovery lock.
 
 ## [3.1.4] - 2026-11-25
 
